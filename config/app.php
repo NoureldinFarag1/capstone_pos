@@ -105,6 +105,13 @@ return [
         ),
     ],
 
+    'aliases' => [
+        // Other aliases...
+    
+        'PDF' => Barryvdh\DomPDF\Facade::class,
+        'Route'     => "Illuminate\Support\Facades\Route",
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Maintenance Mode Driver
@@ -122,5 +129,6 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+    
 
 ];

@@ -1,0 +1,71 @@
+.card {
+    transition: transform 0.2s; /* Animation */
+}
+
+.card:hover {
+    transform: scale(1.05); /* Slight zoom on hover */
+}
+
+.card-img-top {
+    width: 100%; /* Make the image take the full width of the card */
+    height: auto; /* Maintain aspect ratio */
+    object-fit: cover; /* Cover the container, cropping if necessary */
+    max-height: 200px; /* Set a max height to control the image size */
+}
+
+/* Notification icon styling */
+.navbar .nav-item .fas.fa-bell {
+    font-size: 1.5rem;
+    position: relative;
+}
+
+/* Badge for notification count */
+.badge-danger {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    margin-right: 30px; /* Move the icon a bit to the left */
+    padding: 5px 10px;
+    border-radius: 50%;
+    background-color: red;
+    color: white;
+}
+
+/* Dropdown menu for low-stock alerts */
+.dropdown-menu {
+    width: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.dropdown-header {
+    font-weight: bold;
+    color: #333;
+}
+
+.dropdown-item {
+    padding: 10px;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.navbar .badge-danger {
+    background-color: red;
+    font-size: 0.8rem;
+    position: absolute;
+    top: 5px; /* Adjust this as needed */
+    right: 20px; /* Move the badge further to the left */;
+}
+
+.navbar .fa-bell {
+    font-size: 1.5rem;
+    margin-right: 10px; /* Move the icon a bit to the left */
+    position: relative;
+}
+
+.navbar .dropdown-menu {
+    left: 0; /* Align dropdown to the left side */
+    right: auto; /* Ensure it's not aligned to the right */
+}
