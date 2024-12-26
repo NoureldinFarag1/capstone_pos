@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Print Gift Receipt Handler
 if (printGiftReceiptBtn) {
-    printGiftReceiptBtn.addEventListener('click', handlePrintGiftReceipt);
+    printGiftReceiptBtn.addEventListener('click', printBothReceipts);
 }
 
 function handlePrintGiftReceipt() {
