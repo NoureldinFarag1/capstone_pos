@@ -3,16 +3,40 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "vite build"
+        "build": "vite build",
+        "electron": "electron ."
     },
     "devDependencies": {
-        "@tailwindcss/forms": "^0.5.2",
+        "@tailwindcss/forms": "^0.5.9",
+        "@vitejs/plugin-vue": "^5.2.1",
         "alpinejs": "^3.4.2",
-        "autoprefixer": "^10.4.2",
+        "autoprefixer": "^10.4.20",
         "axios": "^1.7.4",
+        "electron": "^33.2.1",
         "laravel-vite-plugin": "^1.0",
-        "postcss": "^8.4.31",
-        "tailwindcss": "^3.1.0",
+        "postcss": "^8.4.49",
+        "tailwindcss": "^3.4.15",
         "vite": "^5.0"
-    }
+    },
+    "dependencies": {
+        "vue": "^3.5.13"
+    },
+    "name": "capstone_pos",
+    "version": "1.0.0",
+    "description": "<p align=\"center\"><a href=\"https://laravel.com\" target=\"_blank\"><img src=\"https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg\" width=\"400\" alt=\"Laravel Logo\"></a></p>",
+    "main": "postcss.config.js",
+    "directories": {
+        "test": "tests"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/NoureldinFarag1/capstone_pos.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/NoureldinFarag1/capstone_pos/issues"
+    },
+    "homepage": "https://github.com/NoureldinFarag1/capstone_pos#readme"
 }

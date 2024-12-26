@@ -69,3 +69,96 @@
     left: 0; /* Align dropdown to the left side */
     right: auto; /* Ensure it's not aligned to the right */
 }
+
+.nav-item .badge {
+    font-size: 0.75rem; /* Adjust badge size */
+    padding: 0.25em 0.5em;
+    min-width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Initially hide the widgets */
+.widget-container {
+    position: fixed;
+    left: -250px;  /* Move the widgets off-screen */
+    top: 50%;
+    transform: translateY(-50%);
+    transition: left 0.4s ease;  /* Smooth transition */
+    z-index: 10;
+}
+
+.widget-trigger-area {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 30px;  /* Width of the hover-trigger area */
+    z-index: 5;
+    background: transparent;  /* Invisible but active */
+}
+
+/* Show widgets when hovering near the left edge */
+.widget-trigger-area:hover ~ .widget-container,
+.widget-container:hover {
+    left: 0;  /* Slide into view */
+}
+
+/* Toggle button styles */
+.toggle-btn {
+    position: fixed;
+    left: 260px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: left 0.4s ease;
+    z-index: 1000;
+}
+
+/* Adjust position when sidebar is collapsed */
+.toggle-btn.collapsed-arrow {
+    left: 10px;
+}
+
+/* Change arrow direction when collapsed */
+.toggle-btn.collapsed-arrow i {
+    transform: rotate(180deg);
+}
+
+/* Optional: Style the dropdown menu */
+.dropdown-menu {
+    min-width: 200px;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Optional: Change the toggle button style */
+.btn-primary {
+    background-color: #007bff;
+    border: none;
+}
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+.no-underline {
+    text-decoration: none;
+  }
+
+.pagination .page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+}

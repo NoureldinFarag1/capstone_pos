@@ -19,7 +19,7 @@ class CategoryController extends Controller
         $request->validate([
             'name' => 'required',
             'brand_id' => 'required|exists:brands,id',
-            'picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         if ($request->hasFile('picture')) {
@@ -48,7 +48,7 @@ class CategoryController extends Controller
         $brands = Brand::all(); // To show all brands for selection
         return view('categories.edit', compact('category', 'brands'));
     }
-    
+
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -56,27 +56,27 @@ class CategoryController extends Controller
             'brand_id' => 'required|exists:brands,id',
             'picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
-    
+
         $category = Category::findOrFail($id);
-    
+
         // If a new picture is uploaded, store it
         if ($request->hasFile('picture')) {
             $picturePath = $request->file('picture')->store('categories', 'public');
             $category->picture = $picturePath;
         }
-    
+
         $category->name = $request->input('name');
         $category->brand_id = $request->input('brand_id');
         $category->save();
-    
+
         return redirect()->route('categories.index')->with('success', 'Category updated successfully.');
     }
-    
+
     public function destroy($id)
     {
         $category = Category::findOrFail($id);
         $category->delete();
-    
+
         return redirect()->route('categories.index')->with('success', 'Category deleted successfully.');
     }
 

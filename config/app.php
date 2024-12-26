@@ -107,9 +107,10 @@ return [
 
     'aliases' => [
         // Other aliases...
-    
-        'PDF' => Barryvdh\DomPDF\Facade::class,
+
+        'PDF' => Barryvdh\DomPDF\Facade\Pdf::class,
         'Route'     => "Illuminate\Support\Facades\Route",
+        'DB' => Illuminate\Support\Facades\DB::class,
     ],
 
     /*
@@ -129,6 +130,6 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
-    
+
 
 ];

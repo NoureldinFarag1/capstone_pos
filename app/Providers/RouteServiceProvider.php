@@ -2,12 +2,15 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\CheckCashDrawer;
 use Illuminate\Support\Facades\Route; // Import the Route facade
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
-use Illuminate\Cache\RateLimiter;
+use Illuminate\Support\Facades\RateLimiter; // Use only this for RateLimiter
 use Illuminate\Http\Request;
-use Illuminate\Cache\RateLimiter as Limiter; // Import Limiter for clarity
-use Illuminate\Support\Facades\RateLimiter as FacadesRateLimiter;
+use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Gate;
+use App\Http\Middleware\RoleMiddleware;
+
 
 class RouteServiceProvider extends ServiceProvider
 {
@@ -29,20 +32,19 @@ class RouteServiceProvider extends ServiceProvider
     /**
      * Bootstrap services.
      */
-    public function boot(): void
+    public function boot()
     {
-        // Optional: Configure rate limiting if needed
-        $this->configureRateLimiting();
-
-        $this->routes(function () {
-            Route::middleware('api')
-                ->namespace($this->namespace)
-                ->group(base_path('routes/api.php'));
-
-            Route::middleware('web')
-                ->namespace($this->namespace)
-                ->group(base_path('routes/web.php'));
+        // Define gates directly without registerPolicies
+        Gate::define('admin', function ($user) {
+            return $user->hasRole('admin');
         });
+
+        Gate::define('moderator', function ($user) {
+            return $user->hasRole('moderator');
+        });
+
+        $this->configureRateLimiting();
+        app('router')->aliasMiddleware('role', RoleMiddleware::class);
     }
 
     /**
@@ -52,8 +54,15 @@ class RouteServiceProvider extends ServiceProvider
      */
     protected function configureRateLimiting()
     {
-        FacadesRateLimiter::for('api', function (Request $request) {
-            return Limiter::perMinute(60); // This is now correct usage
+        RateLimiter::for('api', function (Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(60); // Correct usage
         });
     }
+
+    protected function mapWebRoutes()
+    {
+        Route::middleware(['web', CheckCashDrawer::class])
+             ->group(base_path('routes/web.php'));
+    }
+
 }

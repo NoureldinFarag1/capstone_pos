@@ -1,6 +1,12 @@
 @extends('layouts.dashboard')
 
 @section('content')
+<style>
+    #barcode:focus {
+        outline: 2px solid #96c9ff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+</style>
 <div class="container">
     <h1>Create New Sale</h1>
 
@@ -14,141 +20,403 @@
         </div>
     @endif
 
-    <form action="{{ route('sales.store') }}" method="POST">
+    <form id="saleForm" action="{{ route('sales.store') }}" method="POST">
         @csrf
 
-        <div class="mb-3">
-            <label for="barcode" class="form-label">Barcode</label>
-            <input type="text" class="form-control" id="barcode" name="barcode">
-            <button type="button" id="searchByBarcode" class="btn btn-info mt-2">Search Item</button>
+        <div class="row mb-3">
+            <!-- Item Selection -->
+            <div class="col-md-6">
+                <label for="itemSelect" class="form-label">Item</label>
+                <select id="itemSelect" class="form-select">
+                    <option value="">Select an item</option>
+                    @foreach($items as $item)
+                        <option value="{{ $item->id }}"
+                                data-price="{{ $item->priceAfterSale() }}"
+                                data-original-price="{{ $item->selling_price }}"
+                                data-code="{{ $item->code }}">
+                            {{ $item->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Quantity Selection -->
+            <div class="col-md-4">
+                <label for="quantity" class="form-label">Quantity</label>
+                <input type="number" id="quantity" class="form-control" min="1" value="1">
+            </div>
+
+            <!-- Add Button -->
+            <div class="col-md-2 align-self-end">
+                <button type="button" id="addItemButton" class="btn btn-success w-100">Add</button>
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label for="brand" class="form-label">Brand</label>
-            <select class="form-select" id="brand" name="brand_id" required>
-                <option value="">Select Brand</option>
-                @foreach($brands as $brand)
-                    <option value="{{ $brand->id }}">{{ $brand->name }}</option>
-                @endforeach
-            </select>
+        <div class="row mb-3">
+            <!-- Barcode Scan -->
+            <div class="col-md-6">
+                <label for="barcode" class="form-label">Scan Barcode</label>
+                <input type="text" id="barcode" class="form-control" placeholder="Scan barcode" autofocus>
+            </div>
+
+            <!-- Customer Details -->
+            <div class="col-md-6">
+                <label for="customerName" class="form-label">Customer Name</label>
+                <input type="text" id="customerName" name="customer_name" class="form-control">
+
+                <label for="customerPhone" class="form-label">Phone Number</label>
+                <input type="text" id="customerPhone" name="customer_phone" class="form-control">
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label for="category" class="form-label">Category</label>
-            <select class="form-select" id="category" name="category_id" required>
-                <option value="">Select Category</option>
-                @foreach($categories as $category)
-                    <option value="{{ $category->id }}">{{ $category->name }}</option>
-                @endforeach
-            </select>
+        <!-- Item List -->
+        <ul id="itemList" class="list-group mb-3"></ul>
+
+        <!-- Discount Section -->
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label for="discountType" class="form-label">Discount Type</label>
+                <select id="discountType" class="form-select">
+                    <option value="none">No Discount</option>
+                    <option value="percentage">Percentage</option>
+                    <option value="fixed">Fixed Amount</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="discountValue" class="form-label">Discount Value</label>
+                <input type="number" id="discountValue" class="form-control" min="0" value="0">
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label for="item" class="form-label">Item</label>
-            <select class="form-select" id="item" name="item_id" required>
-                <option value="">Select Item</option>
-            </select>
+        <!-- Payment Methods -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="paymentMethod" class="form-label">Payment Method</label>
+                <select id="paymentMethod" name="payment_method" class="form-select" required>
+                    <option value="">Select Payment Method</option>
+                    <option value="cash">Cash</option>
+                    <option value="credit_card">Visa</option>
+                    <option value="mobile_pay">Mobile Payment</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="paymentReference" class="form-label">Payment Reference</label>
+                <input type="text" id="paymentReference" name="payment_reference" class="form-control" placeholder="Transaction ID, etc.">
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label for="quantity" class="form-label">Quantity</label>
-            <input type="number" class="form-control" id="quantity" name="quantity" required>
+        <!-- Total Amount -->
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <h4>Subtotal: <span id="subtotalAmount" class="text">$0.00</span></h4>
+                <h4>Discount: <span id="discountAmount" class="text-danger">$0.00</span></h4>
+                <h4>Total: <span id="totalAmount" class="text">$0.00</span></h4>
+            </div>
         </div>
 
-        <div id="itemList" class="mb-3"></div>
+        <input type="hidden" name="subtotal" id="hiddenSubtotal">
+        <input type="hidden" name="total" id="hiddenTotal">
+        <input type="hidden" name="discount_type" id="hiddenDiscountType">
+        <input type="hidden" name="discount_value" id="hiddenDiscountValue">
 
-        <button type="button" id="addItemButton" class="btn btn-secondary mb-3">Add Item</button>
+        <!-- Submit Button -->
         <button type="submit" class="btn btn-primary">Create Sale</button>
+        <button type="button" id="printGiftReceiptBtn" class="btn btn-secondary">
+            Print Gift Receipt
+        </button>
     </form>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    // Fetch items based on selected brand and category
-    document.getElementById('brand').addEventListener('change', updateItems);
-    document.getElementById('category').addEventListener('change', updateItems);
+document.addEventListener('DOMContentLoaded', function() {
+    const itemSelect = document.getElementById('itemSelect');
+    const quantityInput = document.getElementById('quantity');
+    const addItemButton = document.getElementById('addItemButton');
+    const itemList = document.getElementById('itemList');
+    const barcodeInput = document.getElementById('barcode');
+    const subtotalAmountDisplay = document.getElementById('subtotalAmount');
+    const discountAmountDisplay = document.getElementById('discountAmount');
+    const totalAmountDisplay = document.getElementById('totalAmount');
+    const discountTypeSelect = document.getElementById('discountType');
+    const discountValueInput = document.getElementById('discountValue');
+    const saleForm = document.getElementById('saleForm');
+    const printGiftReceiptBtn = document.getElementById('printGiftReceiptBtn');
 
-    function updateItems(callback = null) {
-        const brandId = document.getElementById('brand').value;
-        const categoryId = document.getElementById('category').value;
 
-        if (brandId && categoryId) {
-            fetch(`/api/items/filter?brand_id=${brandId}&category_id=${categoryId}`)
-                .then(response => response.json())
-                .then(data => {
-                    const itemSelect = document.getElementById('item');
-                    itemSelect.innerHTML = '<option value="">Select Item</option>';
 
-                    data.forEach(item => {
-                        itemSelect.innerHTML += `<option value="${item.id}">${item.name}</option>`;
-                    });
+    // Store items in a map to consolidate quantities
+    const addedItems = new Map();
 
-                    if (callback) callback(); // Execute the callback to select the item
-                })
-                .catch(error => console.error('Error fetching items:', error));
+    // Add item to list with quantity consolidation
+    function addItemToList(item, quantity) {
+        // Ensure quantity is a number
+        quantity = parseInt(quantity) || 1;
+
+        // Check if item already exists in the list
+        if (addedItems.has(item.id)) {
+            // Update existing item's quantity
+            const existingEntry = addedItems.get(item.id);
+            existingEntry.quantity += quantity;
+            updateItemInList(item, existingEntry.quantity);
+        } else {
+            // Add new item to the list
+            const newEntry = {
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                originalPrice: item.originalPrice,
+                quantity: quantity
+            };
+            addedItems.set(item.id, newEntry);
+            createNewItemListEntry(newEntry);
+        }
+
+        // Recalculate total
+        calculateTotal();
+    }
+
+    // Create a new list entry for an item
+    function createNewItemListEntry(itemEntry) {
+        const listItem = document.createElement('li');
+        listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+        listItem.setAttribute('data-item-id', itemEntry.id);
+
+        listItem.innerHTML = `
+            ${itemEntry.name} - $${itemEntry.price.toFixed(2)}
+            <div class="d-flex align-items-center">
+                <span class="badge bg-primary rounded-pill me-2">
+                    Qty: ${itemEntry.quantity}
+                </span>
+                <button type="button" class="btn btn-danger btn-sm remove-item">
+                    Remove
+                </button>
+                <input type="hidden" name="items[${itemEntry.id}][item_id]" value="${itemEntry.id}">
+                <input type="hidden" name="items[${itemEntry.id}][quantity]" value="${itemEntry.quantity}">
+                <input type="hidden" name="items[${itemEntry.id}][price]" value="${itemEntry.price}">
+            </div>
+        `;
+
+        itemList.appendChild(listItem);
+
+        // Add remove item event listener
+        listItem.querySelector('.remove-item').addEventListener('click', function() {
+            const itemId = listItem.getAttribute('data-item-id');
+            addedItems.delete(itemId);
+            listItem.remove();
+            calculateTotal();
+        });
+    }
+
+    // Update an existing item in the list
+    function updateItemInList(item, newQuantity) {
+        const existingListItem = itemList.querySelector(`[data-item-id="${item.id}"]`);
+        if (existingListItem) {
+            const badgeElement = existingListItem.querySelector('.badge');
+            const quantityInput = existingListItem.querySelector('input[name$="[quantity]"]');
+
+            if (badgeElement) badgeElement.textContent = `Qty: ${newQuantity}`;
+            if (quantityInput) quantityInput.value = newQuantity;
         }
     }
 
-    // Search by Barcode
-document.getElementById('searchByBarcode').addEventListener('click', function() {
-    const barcode = document.getElementById('barcode').value;
+    // Calculate total price with discount
+    function calculateTotal() {
+        let subtotal = 0;
+        let discountAmount = 0;
 
-    if (barcode) {
-        fetch(`/api/items/search?barcode=${barcode}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data) {
-                    document.getElementById('brand').value = data.brand_id;
-                    document.getElementById('category').value = data.category_id;
+        // Calculate subtotal
+        addedItems.forEach((itemEntry) => {
+            subtotal += itemEntry.price * itemEntry.quantity;
+        });
 
-                    // Automatically add the item to the sale with quantity set to 1
-                    addItemToSale(data.id, data.name); // Call function to add item
-                    document.getElementById('quantity').value = '1'; // Set quantity to 1
+        // Calculate discount
+        const discountType = discountTypeSelect.value;
+        const discountValue = parseFloat(discountValueInput.value) || 0;
 
-                    // Optionally update items dropdown if you need
-                    updateItems(() => {
-                        document.getElementById('item').value = data.id; // Select the correct item after dropdown is populated
-                    });
-                } else {
-                    alert('No item found with the given barcode.');
-                }
-            })
-            .catch(error => console.error('Error searching item by barcode:', error));
+        if (discountType === 'percentage') {
+            discountAmount = subtotal * (discountValue / 100);
+        } else if (discountType === 'fixed') {
+            discountAmount = Math.min(discountValue, subtotal);
+        }
+
+        const total = subtotal - discountAmount;
+
+        // Update display
+        subtotalAmountDisplay.textContent = `$${subtotal.toFixed(2)}`;
+        discountAmountDisplay.textContent = `$${discountAmount.toFixed(2)}`;
+        totalAmountDisplay.textContent = `$${total.toFixed(2)}`;
+
+        // Update hidden fields
+        document.getElementById('hiddenSubtotal').value = subtotal.toFixed(2);
+        document.getElementById('hiddenTotal').value = total.toFixed(2);
+        document.getElementById('hiddenDiscountType').value = discountType;
+        document.getElementById('hiddenDiscountValue').value = discountValue;
     }
-});
 
+    function getSaleItemsFromForm() {
+    // This is a example structure - adapt it to match your form
+    const saleItems = [];
+    const itemRows = document.querySelectorAll('.sale-item-row');
 
-    // Add item button listener
-    document.getElementById('addItemButton').addEventListener('click', function() {
-        const itemId = document.getElementById('item').value; // Get selected item ID
-        const itemName = document.getElementById('item').options[document.getElementById('item').selectedIndex].text; // Get selected item name
-        addItemToSale(itemId, itemName);
+    itemRows.forEach(row => {
+            saleItems.push({
+                item_id: row.querySelector('[name="item_id[]"]').value,
+                quantity: row.querySelector('[name="quantity[]"]').value,
+                item: {
+                    name: row.querySelector('[name="item_name[]"]').value
+                }
+            });
+        });
+        return saleItems;
+    }
+
+    // Barcode scanning function
+    function handleBarcodeScanning(barcode) {
+        // Find the option with matching code
+        const matchingOption = Array.from(itemSelect.options).find(
+            option => option.getAttribute('data-code') === barcode
+        );
+
+        if (matchingOption) {
+            // Select the item and add to list
+            itemSelect.value = matchingOption.value;
+            const item = {
+                id: matchingOption.value,
+                name: matchingOption.text,
+                price: parseFloat(matchingOption.getAttribute('data-price')),
+                originalPrice: parseFloat(matchingOption.getAttribute('data-original-price'))
+            };
+
+            addItemToList(item, 1);
+
+            // Clear barcode input
+            barcodeInput.value = '';
+        } else {
+            alert('Item not found for the scanned barcode code.');
+        }
+    }
+
+    // Prevent form submission on Enter key and refocus barcode input
+    saleForm.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && e.target === barcodeInput) {
+            e.preventDefault(); // Prevent form submission
+            barcodeInput.value = ''; // Clear the input
+            barcodeInput.focus(); // Refocus the input
+        }
     });
 
-    // Function to add item to sale
-    function addItemToSale(itemId, itemName) {
-    const quantity = 1; // Set quantity to 1 for barcode scans
+    // Add Item Button Handler
+    addItemButton.addEventListener('click', function() {
+        const selectedOption = itemSelect.options[itemSelect.selectedIndex];
 
-    if (itemId) {
-        const itemList = document.getElementById('itemList');
-        
-        // Create a new list item
-        const listItem = document.createElement('div');
-        listItem.className = 'item'; // Optional: add a class for styling
-        listItem.innerHTML = `${itemName} (Qty: ${quantity}) 
-            <input type="hidden" name="items[][item_id]" value="${itemId}">
-            <input type="hidden" name="items[][quantity]" value="${quantity}">`;
-        
-        // Append the new list item to the item list
-        itemList.appendChild(listItem);
-        
-        // Clear the barcode field for the next scan
-        document.getElementById('barcode').value = '';
-    } else {
-        alert('Invalid item.');
+        if (selectedOption.value) {
+            const item = {
+                id: selectedOption.value,
+                name: selectedOption.text,
+                price: parseFloat(selectedOption.getAttribute('data-price')),
+                originalPrice: parseFloat(selectedOption.getAttribute('data-original-price'))
+            };
+            const quantity = quantityInput.value || 1;
+
+            addItemToList(item, quantity);
+
+            // Reset inputs
+            itemSelect.value = '';
+            quantityInput.value = 1;
+        } else {
+            alert('Please select an item.');
+        }
+    });
+
+    // Barcode Input Handler
+    barcodeInput.addEventListener('input', function(e) {
+        const barcode = e.target.value.trim();
+
+        // Trigger barcode search if length is sufficient
+        if (barcode.length >= 10) {
+            handleBarcodeScanning(barcode);
+            setTimeout(() => {
+                barcodeInput.focus(); // Refocus after scanning
+            }, 100);
+        }
+    });
+
+    // Discount and Total Calculation Handlers
+    discountTypeSelect.addEventListener('change', calculateTotal);
+    discountValueInput.addEventListener('input', calculateTotal);
+
+    // Print Gift Receipt Handler
+if (printGiftReceiptBtn) {
+    printGiftReceiptBtn.addEventListener('click', handlePrintGiftReceipt);
+}
+
+function handlePrintGiftReceipt() {
+    if (itemList.children.length === 0) {
+        alert('Please add at least one item before printing a gift receipt');
+        return;
     }
+
+    // Collect sale items (without prices)
+    const saleItems = Array.from(itemList.querySelectorAll('li.list-group-item')).map(item => {
+        // Get the raw text content and split it properly
+        const itemText = item.firstChild.textContent.trim();
+        const itemName = itemText.split(' - ')[0].trim();
+
+        // Get quantity from the badge
+        const quantityBadge = item.querySelector('.badge');
+        const quantity = parseInt(quantityBadge.textContent.replace('Qty:', '').trim()) || 1;
+
+        // Return item data (with the item object containing the name)
+        return {
+            item: {
+                name: itemName  // Wrap the name inside an 'item' object
+            },
+            quantity: quantity
+        };
+    });
+
+    if (saleItems.length === 0) {
+        alert('Please add valid items before printing a gift receipt');
+        return;
+    }
+
+    // Get CSRF token from meta tag
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    console.log(saleItems);
+
+    // Send AJAX request to print the gift receipt without prices
+    fetch('{{ route("sales.print-gift-receipt") }}', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            saleItems,  // Send the sale items as an array
+            customer_name: document.getElementById('customerName').value,
+            subtotal: document.getElementById('hiddenSubtotal').value,
+            total: document.getElementById('hiddenTotal').value,
+            discount_type: document.getElementById('hiddenDiscountType').value,
+            discount_value: document.getElementById('hiddenDiscountValue').value
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Gift receipt printed successfully');
+        } else {
+            throw new Error(data.message || 'Failed to print gift receipt');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error printing gift receipt: ' + error.message);
+    });
 }
 
 });
 </script>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 @endsection

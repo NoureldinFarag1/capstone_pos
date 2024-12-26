@@ -12,12 +12,10 @@ class SalesPerBrandExport implements FromCollection, WithHeadings
 {
     public function collection()
     {
-        // Get all brands
         $brands = Brand::all();
         $data = new Collection();
 
         foreach ($brands as $brand) {
-            // Get total sales and quantities for the brand through SaleItems
             $totalSales = SaleItem::whereHas('item', function ($query) use ($brand) {
                 $query->where('brand_id', $brand->id);
             })->sum('price');
@@ -26,24 +24,38 @@ class SalesPerBrandExport implements FromCollection, WithHeadings
                 $query->where('brand_id', $brand->id);
             })->sum('quantity');
 
-            // Add brand data to collection
+            $salesCount = SaleItem::whereHas('item', function ($query) use ($brand) {
+                $query->where('brand_id', $brand->id);
+            })->count();
+
+            $averagePrice = $totalQuantity > 0 ? $totalSales / $totalQuantity : 0;
+
+            $lastSaleDate = SaleItem::whereHas('item', function ($query) use ($brand) {
+                $query->where('brand_id', $brand->id);
+            })->latest('created_at')->value('created_at');
+
             $data->push([
                 'Brand' => $brand->name,
                 'Total Sales' => $totalSales,
                 'Total Quantity' => $totalQuantity,
+                'Sales Count' => $salesCount,
+                'Average Price' => number_format($averagePrice, 2),
+                'Last Sale Date' => $lastSaleDate ? $lastSaleDate->format('Y-m-d') : 'N/A',
             ]);
         }
 
         return $data;
     }
 
-    // Define headings for the Excel file
     public function headings(): array
     {
         return [
             'Brand',
             'Total Sales',
             'Total Quantity',
+            'Sales Count',
+            'Average Price',
+            'Last Sale Date',
         ];
     }
 }

@@ -11,16 +11,18 @@ class Item extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 
-        'price', 
-        'category_id', 
-        'brand_id', 
+        'name',
+        'price',
+        'category_id',
+        'brand_id',
         'picture',
         'quantity',
         'buying_price',
         'selling_price',
         'tax',
-        'applied_sale',];
+        'discount_type',
+        'discount_value',
+    ];
 
     public function category()
     {
@@ -39,22 +41,31 @@ class Item extends Model
     {
         // Calculate discount amount if applied sale exists
         $discountAmount = 0;
-        if ($this->applied_sale) {
-            $discountAmount = $this->selling_price * ($this->applied_sale / 100);
+        if ($this->discount_value && $this->discount_type === 'percentage') {
+            $discountAmount = $this->selling_price * ($this->discount_value / 100);
         }
-        
+
+        elseif ($this->discount_value && $this->discount_type === 'fixed') {
+            $discountAmount = min($this->discount_value, $this->selling_price);  // Ensure the discount is not greater than the selling price
+        }
+
         // Calculate selling price after discount
         return $this->selling_price - $discountAmount;
     }
-    
+
+    public function sales()
+    {
+        return $this->hasMany(SaleItem::class);
+    }
+
     public function sellingPriceWithTax()
     {
         // Calculate discount amount if applied sale exists
         $discountAmount = 0;
-        if ($this->applied_sale) {
-            $discountAmount = $this->selling_price * ($this->applied_sale / 100);
+        if ($this->discount_value) {
+            $discountAmount = $this->selling_price * ($this->discount_value / 100);
         }
-        
+
         // Calculate selling price after discount
         $sellingPriceAfterDiscount = $this->selling_price - $discountAmount;
 
@@ -66,4 +77,15 @@ class Item extends Model
     {
         return $this->sellingPriceWithTax() - $this->buying_price;
     }
+
+    public function sizes()
+    {
+        return $this->belongsToMany(Size::class);
+    }
+
+    public function colors()
+    {
+        return $this->belongsToMany(Color::class);
+    }
+
 }
