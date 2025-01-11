@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Print Gift Receipt Handler
 if (printGiftReceiptBtn) {
-    printGiftReceiptBtn.addEventListener('click', printBothReceipts);
+    printGiftReceiptBtn.addEventListener('click', handlePrintGiftReceipt);
 }
 
 function handlePrintGiftReceipt() {
@@ -355,50 +355,30 @@ function handlePrintGiftReceipt() {
         return;
     }
 
-    // Collect sale items (without prices)
-    const saleItems = Array.from(itemList.querySelectorAll('li.list-group-item')).map(item => {
-        // Get the raw text content and split it properly
-        const itemText = item.firstChild.textContent.trim();
-        const itemName = itemText.split(' - ')[0].trim();
+    const saleItems = Array.from(itemList.children).map(item => {
+        const itemText = item.firstChild.textContent.split(' - ')[0].trim();
+        const quantityMatch = item.querySelector('.badge').textContent.match(/\d+/);
+        const quantity = quantityMatch ? parseInt(quantityMatch[0]) : 1;
 
-        // Get quantity from the badge
-        const quantityBadge = item.querySelector('.badge');
-        const quantity = parseInt(quantityBadge.textContent.replace('Qty:', '').trim()) || 1;
-
-        // Return item data (with the item object containing the name)
         return {
             item: {
-                name: itemName  // Wrap the name inside an 'item' object
+                name: itemText
             },
             quantity: quantity
         };
     });
 
-    if (saleItems.length === 0) {
-        alert('Please add valid items before printing a gift receipt');
-        return;
-    }
-
-    // Get CSRF token from meta tag
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    console.log(saleItems);
-
-    // Send AJAX request to print the gift receipt without prices
     fetch('<?php echo e(route("sales.print-gift-receipt")); ?>', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
         },
         body: JSON.stringify({
-            saleItems,  // Send the sale items as an array
-            customer_name: document.getElementById('customerName').value,
-            subtotal: document.getElementById('hiddenSubtotal').value,
-            total: document.getElementById('hiddenTotal').value,
-            discount_type: document.getElementById('hiddenDiscountType').value,
-            discount_value: document.getElementById('hiddenDiscountValue').value
+            saleItems: saleItems
         })
     })
     .then(response => response.json())

@@ -58,9 +58,9 @@
 </head>
 <body>
     <div>
-        <div class="item-name"><?php echo e($item->name); ?></div>
         <img class="barcode" src="<?php echo e($barcodePath); ?>" alt="Barcode">
         <div class="item-code"><?php echo e($item->code); ?></div>
+        <div class="item-name"><?php echo e($item->name); ?></div>
         <div class="pricing">
             <?php if($item->discount_value > 0): ?>
                 <span class="original-price">EGP <?php echo e(number_format($item->selling_price, 2)); ?></span>

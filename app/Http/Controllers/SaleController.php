@@ -41,7 +41,7 @@ class SaleController extends Controller
 
         // Create sale with pre-calculated total
         $sale = Sale::create([
-            'user_id' => auth()->id(), // Attach the currently authenticated user
+            'user_id' => \Illuminate\Support\Facades\Auth::user()->id, // Attach the currently authenticated user
             'total_amount' => $request->total, // Use the calculated total from frontend
             'subtotal' => $request->subtotal,
             'customer_name' => $request->customer_name,
@@ -84,268 +84,115 @@ class SaleController extends Controller
         return redirect()->route('sales.index')->with('success', 'Sale created successfully.');
     }
 
-    // public function printGiftReceipt(Request $request)
-    // {
-    //     try {
-    //         Log::info('Starting gift receipt print');
-
-    //     // Log the full request data to check the received structure
-    //     Log::info('Sale Items before validation:', $request->saleItems);
-
-    //     // Validate the incoming request
-    //     $request->validate([
-    //         'saleItems' => 'required|array',
-    //         'saleItems.*.quantity' => 'required|integer|min:1',
-    //         'saleItems.*.item' => 'required|array',
-    //         'saleItems.*.item.name' => 'required|string'
-    //     ]);
-
-    //     // Create a temporary Sale object with the form data
-    //     $sale = new Sale([
-    //         'id' => time(), // Temporary ID for receipt
-    //         'created_at' => now()
-    //     ]);
-
-    //     // Process sale items and check for missing data
-    //     $sale->saleItems = collect($request->saleItems)->map(function ($item) {
-    //         // Check if quantity or item.name is missing
-    //         if (empty($item['quantity']) || empty($item['item']['name'])) {
-    //             Log::error('Invalid sale item detected:', ['item' => $item]);
-    //             throw new \Exception('Sale item is missing quantity or item.name.');
-    //         }
-
-    //         return new SaleItem([
-    //             'quantity' => $item['quantity'],
-    //             'item' => new Item(['name' => $item['item']['name']])
-    //         ]);
-    //     });
-
-    //     // Check if item or item name is missing in sale items
-    //     foreach ($sale->saleItems as $saleItem) {
-    //         if (!isset($saleItem->item) || !isset($saleItem->item->name)) {
-    //             Log::error('Sale item is missing item or item name:', ['saleItem' => $saleItem]);
-    //             throw new \Exception('Sale item is missing item or item name.');
-    //         }
-
-    //         $itemName = $saleItem->item->name;
-    //         $quantity = $saleItem->quantity;
-    //     }
-
-    //         $printerName = 'Xprinter_XP_T361U';
-
-    //         Log::info('Connecting to printer: ' . $printerName);
-    //         $connector = new CupsPrintConnector($printerName);
-    //         //$connector = new WindowsPrintConnector($printerName);
-    //         $printer = new Printer($connector);
-
-    //         // Initialize printer
-    //         $printer->initialize();
-
-    //         // Store Header with Logo-like formatting
-    //         $printer->setJustification(Printer::JUSTIFY_CENTER);
-    //         $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH | Printer::MODE_DOUBLE_HEIGHT);
-    //         $printer->setEmphasis(true);
-    //         $printer->text("LOCAL HUB\n");
-    //         $printer->setEmphasis(false);
-    //         $printer->selectPrintMode();
-    //         $printer->feed(1);
-    //         $printer->setEmphasis(true);
-    //         $printer->text("It's not just a Showroom\n");
-    //         $printer->setEmphasis(false);
-    //         $printer->feed(1);
-
-    //         // Gift Receipt Header
-    //         $printer->setJustification(Printer::JUSTIFY_CENTER);
-    //         $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
-    //         $printer->setEmphasis(true);
-    //         $printer->text("GIFT RECEIPT\n");
-    //         $printer->setEmphasis(false);
-    //         $printer->selectPrintMode();
-    //         $printer->feed(1);
-
-    //         // Receipt Info
-    //         $printer->setJustification(Printer::JUSTIFY_LEFT);
-    //         $printer->text(str_repeat("·", 48) . "\n");
-    //         $printer->setEmphasis(true);
-    //         $printer->text("RECEIPT #" . str_pad($sale->id, 4, '0', STR_PAD_LEFT) . "\n");
-    //         $printer->setEmphasis(false);
-    //         $printer->text("Date: " . ($sale->created_at ? $sale->created_at->format('d M Y') : 'N/A') . "\n");
-    //         $printer->text("Time: " . ($sale->created_at ? $sale->created_at->format('H:i:s') : 'N/A') . "\n");
-    //         $printer->text(str_repeat("·", 48) . "\n");
-    //         $printer->feed(1);
-
-    //         // Items Header
-    //         $printer->setEmphasis(true);
-    //         $printer->text("ITEMS\n");
-    //         $printer->setEmphasis(false);
-    //         $printer->text(str_repeat("-", 48) . "\n");
-
-    //         // Print items (without prices)
-    //         foreach ($sale->saleItems as $saleItem) {
-    //             $itemName = $saleItem->item->name;
-    //             $quantity = $saleItem->quantity;
-
-    //             // Item details with quantity only
-    //             $printer->text(str_pad(substr($itemName, 0, 35), 36));
-    //             $printer->text(str_pad("Qty: " . $quantity, 12, ' ', STR_PAD_LEFT) . "\n");
-    //         }
-
-    //         // Footer section
-    //         $printer->feed(1);
-    //         $printer->text(str_repeat("-", 48) . "\n");
-    //         $printer->setJustification(Printer::JUSTIFY_CENTER);
-
-    //         // Exchange/Return Policy
-    //         $printer->setEmphasis(true);
-    //         $printer->text("Exchange & Return Policy\n");
-    //         $printer->setEmphasis(false);
-    //         $printer->text("Items may be exchanged within 14 days\n");
-    //         $printer->text("with original receipt and tags attached\n");
-    //         $printer->feed(1);
-
-    //         // Thank you message
-    //         $printer->setEmphasis(true);
-    //         $printer->text("Thank You For Shopping With Us!\n");
-    //         $printer->setEmphasis(false);
-    //         $printer->feed(1);
-
-    //         // Social media
-    //         $printer->text("Follow us on Instagram\n");
-    //         $printer->selectPrintMode(Printer::MODE_EMPHASIZED);
-    //         $printer->text("@localhub_egy\n");
-    //         $printer->selectPrintMode();
-    //         $printer->feed(1);
-    //         $printer->text(str_repeat(".", 48) . "\n");
-
-    //         // Cut receipt
-    //         $printer->feed(3);
-    //         $printer->cut();
-    //         $printer->close();
-
-    //         Log::info('Gift receipt printed successfully');
-
-    //         if ($request->wantsJson()) {
-    //             return response()->json(['success' => true, 'message' => 'Gift receipt printed successfully']);
-    //         }
-
-    //         return redirect()->route('sales.index')->with('success', 'Gift receipt printed successfully');
-    //     } catch (\Exception $e) {
-    //         Log::error('Gift receipt printing error: ' . $e->getMessage());
-    //         Log::error('Stack trace: ' . $e->getTraceAsString());
-    //         if ($request->wantsJson()) {
-    //             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-    //         }
-
-    //         return redirect()->route('sales.index')
-    //             ->with('error', 'Printer error: ' . $e->getMessage());
-    //     }
-    // }
-    public function printGiftReceipt($id)
-{
-    try {
-        Log::info('Starting gift receipt print for sale #' . $id);
-
-        $sale = Sale::with('saleItems.item')->findOrFail($id);
-        $printerName = 'Xprinter_XP_T361U';
-
-        Log::info('Connecting to printer: ' . $printerName);
-        $connector = new CupsPrintConnector($printerName);
-        $printer = new Printer($connector);
-
-        // Initialize printer
-        $printer->initialize();
-        $logoPath = public_path('images/RECEIPTLOGO.png');
-        if (file_exists($logoPath)) {
-            try {
-                $printer->setJustification(Printer::JUSTIFY_CENTER);
-                $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH | Printer::MODE_DOUBLE_HEIGHT);
-                $printer->setEmphasis(true);
-                $printer->text("LOCAL HUB\n");
-
-                $printer->feed(1);
-                $printer->setEmphasis(false);
-                $logo = EscposImage::load($logoPath);
-                $printer->bitImage($logo);
-                $printer->selectPrintMode();
-                $printer->feed(1);
-                $printer->setEmphasis(true);
-                $printer->text("It's not just a Showroom\n");
-                $printer->setEmphasis(false);
-                $printer->feed(1);
-            } catch (\Exception $e) {
-                Log::error("Error loading logo: " . $e->getMessage());
-                $printer->setJustification(Printer::JUSTIFY_CENTER);
-                $printer->text("Logo could not be printed\n");
-            }
+    private function getPrinterConnector($printerName)
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            return new WindowsPrintConnector($printerName);
+        } else {
+            return new CupsPrintConnector($printerName);
         }
-
-        // Gift Receipt Header
-        $printer->setJustification(Printer::JUSTIFY_CENTER);
-        $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
-        $printer->setEmphasis(true);
-        $printer->text("GIFT RECEIPT\n");
-        $printer->selectPrintMode();
-        $printer->setEmphasis(false);
-        $printer->feed(1);
-
-        // Receipt Info
-        $printer->setJustification(Printer::JUSTIFY_LEFT);
-        $printer->text(str_repeat("·", 48) . "\n");
-        $printer->setEmphasis(true);
-        $printer->text("RECEIPT #" . str_pad($sale->id, 4, '0', STR_PAD_LEFT) . "\n");
-        $printer->setEmphasis(false);
-        $printer->text("Date: " . $sale->created_at->format('d M Y') . "\n");
-        $printer->text(str_repeat("·", 48) . "\n");
-        $printer->feed(1);
-
-        // Items Header
-        $printer->setEmphasis(true);
-        $printer->text("ITEMS\n");
-        $printer->setEmphasis(false);
-        $printer->text(str_repeat("-", 48) . "\n");
-
-        // Print items (without prices)
-        foreach ($sale->saleItems as $saleItem) {
-            $itemName = $saleItem->item->name;
-            $quantity = $saleItem->quantity;
-
-            // Item details without prices
-            $printer->text(str_pad(substr($itemName, 0, 35), 36));
-            $printer->text(str_pad("Qty: " . $quantity, 12, ' ', STR_PAD_LEFT) . "\n");
-        }
-
-        // Footer
-        $printer->feed(1);
-        $printer->text(str_repeat("-", 48) . "\n");
-        $printer->setJustification(Printer::JUSTIFY_CENTER);
-        $printer->setEmphasis(true);
-        $printer->text("Thank You For Shopping With Us!\n");
-        $printer->setEmphasis(false);
-        $printer->feed(1);
-        $printer->text("Exchange valid within 14 days\n");
-        $printer->text("with original receipt\n");
-        $printer->feed(1);
-        $printer->text("Follow us on Instagram\n");
-        $printer->selectPrintMode(Printer::MODE_EMPHASIZED);
-        $printer->text("@localhub_egy\n");
-        $printer->selectPrintMode();
-        $printer->feed(1);
-        $printer->text(str_repeat(".", 48) . "\n");
-
-        // Cut receipt
-        $printer->feed(3);
-        $printer->cut();
-        $printer->close();
-        Log::info('Gift receipt printed successfully');
-        return true;
-
-    } catch (\Exception $e) {
-        Log::error('Gift receipt printing error: ' . $e->getMessage());
-        Log::error('Stack trace: ' . $e->getTraceAsString());
-        return false;
     }
-}
 
+    public function printGiftReceipt(Request $request)
+    {
+        try {
+            Log::info('Starting gift receipt print', ['request' => $request->all()]);
+
+            // Create a temporary receipt structure
+            $items = collect($request->input('saleItems', []));
+
+            $printerName = 'Xprinter_XP_T361U';
+            $connector = $this->getPrinterConnector($printerName);
+            $printer = new Printer($connector);
+
+            // Initialize printer
+            $printer->initialize();
+
+            // Print logo and header
+            $logoPath = public_path('images/RECEIPTLOGO.png');
+            if (file_exists($logoPath)) {
+                try {
+                    $printer->setJustification(Printer::JUSTIFY_CENTER);
+                    $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH | Printer::MODE_DOUBLE_HEIGHT);
+                    $printer->text("LOCAL HUB\n");
+                    $printer->selectPrintMode();
+
+                    $logo = EscposImage::load($logoPath);
+                    $printer->bitImage($logo);
+
+                    $printer->feed(1);
+                    $printer->text("It's not just a Showroom\n");
+                    $printer->feed(1);
+                } catch (\Exception $e) {
+                    Log::error("Logo error: " . $e->getMessage());
+                }
+            }
+
+            // Gift Receipt Header
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
+            $printer->setEmphasis(true);
+            $printer->text("GIFT RECEIPT\n");
+            $printer->setEmphasis(false);
+            $printer->selectPrintMode();
+            $printer->feed(1);
+
+            // Receipt Info
+            $printer->setJustification(Printer::JUSTIFY_LEFT);
+            $printer->text(str_repeat("-", 48) . "\n");
+            $printer->text("Date: " . now()->format('d M Y') . "\n");
+            $printer->text("Time: " . now()->format('H:i:s') . "\n");
+            $printer->text(str_repeat("-", 48) . "\n");
+
+            // Items
+            $printer->setEmphasis(true);
+            $printer->text("ITEMS\n");
+            $printer->setEmphasis(false);
+
+            foreach ($items as $item) {
+                if (isset($item['item']['name']) && isset($item['quantity'])) {
+                    $name = $item['item']['name'];
+                    $qty = $item['quantity'];
+
+                    // Print item details without price
+                    $printer->text(str_pad(substr($name, 0, 35), 35));
+                    $printer->text(str_pad("Qty: " . $qty, 13, ' ', STR_PAD_LEFT) . "\n");
+                }
+            }
+
+            // Footer
+            $printer->feed(1);
+            $printer->text(str_repeat("-", 48) . "\n");
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+
+            $printer->setEmphasis(true);
+            $printer->text("Exchange & Return Policy\n");
+            $printer->setEmphasis(false);
+            $printer->text("Items may be exchanged within 14 days\n");
+            $printer->text("with original receipt and tags attached\n");
+
+            $printer->feed(1);
+            $printer->setEmphasis(true);
+            $printer->text("Thank You For Shopping With Us!\n");
+            $printer->setEmphasis(false);
+
+            $printer->feed(1);
+            $printer->text("Follow us on Instagram\n");
+            $printer->text("@localhub_egy\n");
+
+            // Cut receipt
+            $printer->feed(3);
+            $printer->cut();
+            $printer->close();
+
+            return response()->json(['success' => true]);
+
+        } catch (\Exception $e) {
+            Log::error('Gift receipt error: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 
     public function printThermalReceipt($id)
     {
@@ -356,7 +203,7 @@ class SaleController extends Controller
             $printerName = 'Xprinter_XP_T361U';
 
             Log::info('Connecting to printer: ' . $printerName);
-            $connector = new CupsPrintConnector($printerName);
+            $connector = $this->getPrinterConnector($printerName);
             //$connector = new WindowsPrintConnector($printerName);
             $printer = new Printer($connector);
 
@@ -528,8 +375,7 @@ class SaleController extends Controller
             $printerName = 'Xprinter_XP_T361U';
             Log::info('Using printer: ' . $printerName);
 
-            $connector = new CupsPrintConnector($printerName);
-            //$connector = new WindowsPrintConnector($printerName);
+            $connector = $this->getPrinterConnector($printerName);
             $printer = new Printer($connector);
 
             // Send raw bytes directly, bypassing text encoding

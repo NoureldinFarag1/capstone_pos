@@ -11,6 +11,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CashDrawerController;
 use App\Http\Controllers\ColorController;
+use App\Http\Controllers\CustomerController;
 use Illuminate\Support\Facades\DB;
 
 Route::get('/connection-test', function() {
@@ -111,6 +112,8 @@ Route::get('/sales/{sale}/refund', [RefundController::class, 'create'])->name('r
 Route::post('/refund', [RefundController::class, 'store'])->name('refund.store');
 Route::resource('colors', ColorController::class);
 Route::post('/sales/print-gift-receipt', [SaleController::class, 'printGiftReceipt'])->name('sales.print-gift-receipt');
+Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
+
 
 // Default homepage
 Route::get('/', function () {

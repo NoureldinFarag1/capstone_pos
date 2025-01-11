@@ -312,11 +312,18 @@ class ItemController extends BaseController
         // Use Excel or CSV package (like Laravel Excel) to export
         return Excel::download(new ItemsExport($items), 'items.xlsx');
     }
+
+    private function isWindows()
+    {
+        return PHP_OS_FAMILY === 'Windows';
+    }
+
     public function printLabel($id, Request $request)
     {
         try {
             $item = Item::findOrFail($id);
             $quantity = $request->input('quantity', 1);
+            $printerName = 'Xprinter_XP_T361U';
 
             // Generate PDF in memory
             $barcodePath = public_path('storage/' . $item->barcode);
@@ -329,9 +336,13 @@ class ItemController extends BaseController
             $tempPath = storage_path('app/temp/label_' . uniqid() . '.pdf');
             $pdf->save($tempPath);
 
-            // Send to printer using lp command
-            $printerName = 'Xprinter_XP_T361U'; // Update this to match your printer name
-            exec("lp -d $printerName -n $quantity $tempPath");
+            if ($this->isWindows()) {
+                // Windows printing using direct command with copies parameter
+                shell_exec('print /d:"' . $printerName . '" /n:' . $quantity . ' "' . $tempPath . '"');
+            } else {
+                // Mac/Linux printing using lp command
+                exec("lp -d $printerName -n $quantity $tempPath");
+            }
 
             // Clean up temp file
             unlink($tempPath);
@@ -345,6 +356,7 @@ class ItemController extends BaseController
             ], 500);
         }
     }
+
     public function exportCSV(Request $request)
     {
         $brandId = $request->input('brand_id');

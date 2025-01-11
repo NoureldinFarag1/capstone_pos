@@ -117,6 +117,27 @@ class DashboardController extends Controller
 
         $recentItems = Item::latest()->take(5)->get();
 
+        // Add new metrics
+        $salesAnalytics = [
+            'hourly' => $this->getHourlySales(),
+            'weekly' => $this->getWeeklySales(),
+            'yearly' => $this->getYearlySales(),
+        ];
+
+        $inventoryMetrics = [
+            'total_value' => Item::sum(DB::raw('quantity * selling_price')),
+            'avg_item_price' => Item::avg('selling_price'),
+            'out_of_stock' => Item::where('quantity', 0)->count(),
+            'inventory_turnover' => $this->calculateInventoryTurnover()
+        ];
+
+        $categoryPerformance = Category::withCount('items')
+            ->withSum('items', 'quantity')
+            ->withAvg('items', 'selling_price')
+            ->get();
+
+        $salesForecasting = $this->calculateSalesForecasting();
+
         return view('layouts.dashboard', [
             'lowStockItems' => $lowStockItems,
             'monthlySales' => $monthlySales,
@@ -141,6 +162,116 @@ class DashboardController extends Controller
             'creditPaymentsMonthly' => $creditPaymentsMonthly,
             'mobilePaymentsMonthly' => $mobilePaymentsMonthly,
             'topSellingBrandDetails' => $topSellingBrandDetails,
-            ]);
+            'salesAnalytics' => $salesAnalytics,
+            'inventoryMetrics' => $inventoryMetrics,
+            'categoryPerformance' => $categoryPerformance,
+            'salesForecasting' => $salesForecasting,
+            'bestSellingDays' => $this->getBestSellingDays(),
+            'peakHours' => $this->getPeakHours(),
+            'customerMetrics' => $this->getCustomerMetrics(),
+        ]);
+    }
+
+    private function getYearlySales()
+    {
+        return Sale::select(
+            DB::raw('YEAR(created_at) as year'),
+            DB::raw('COUNT(*) as count'),
+            DB::raw('SUM(total_amount) as total')
+        )
+        ->groupBy('year')
+        ->get();
+    }
+
+    private function getWeeklySales()
+    {
+        return Sale::select(
+            DB::raw('WEEK(created_at) as week'),
+            DB::raw('COUNT(*) as count'),
+            DB::raw('SUM(total_amount) as total')
+        )
+        ->groupBy('week')
+        ->get();
+    }
+
+    private function getHourlySales()
+    {
+        return Sale::select(
+            DB::raw('HOUR(created_at) as hour'),
+            DB::raw('COUNT(*) as count'),
+            DB::raw('SUM(total_amount) as total')
+        )
+        ->whereDate('created_at', Carbon::today())
+        ->groupBy('hour')
+        ->get();
+    }
+
+    private function calculateInventoryTurnover()
+    {
+        $averageInventory = Item::avg('quantity');
+        $costOfGoodsSold = SaleItem::sum(DB::raw('quantity * price'));
+
+        return $averageInventory > 0 ? $costOfGoodsSold / $averageInventory : 0;
+    }
+
+    private function getBestSellingDays()
+    {
+        return Sale::select(
+            DB::raw('DAYNAME(created_at) as day'),
+            DB::raw('COUNT(*) as count'),
+            DB::raw('SUM(total_amount) as total')
+        )
+        ->groupBy('day')
+        ->orderBy('total', 'desc')
+        ->get();
+    }
+
+    private function getPeakHours()
+    {
+        return Sale::select(
+            DB::raw('HOUR(created_at) as hour'),
+            DB::raw('COUNT(*) as count')
+        )
+        ->groupBy('hour')
+        ->orderBy('count', 'desc')
+        ->limit(5)
+        ->get();
+    }
+
+    private function getCustomerMetrics()
+    {
+        return [
+            'repeat_customers' => Sale::select('customer_phone')
+                ->whereNotNull('customer_phone')
+                ->groupBy('customer_phone')
+                ->havingRaw('COUNT(*) > 1')
+                ->count(),
+            'avg_transaction' => Sale::avg('total_amount'),
+            'max_transaction' => Sale::max('total_amount'),
+            'total_customers' => Sale::distinct('customer_phone')->count('customer_phone'),
+        ];
+    }
+
+    private function calculateSalesForecasting()
+    {
+        // Simple moving average forecasting
+        $historicalSales = Sale::select(
+            DB::raw('DATE(created_at) as date'),
+            DB::raw('SUM(total_amount) as total')
+        )
+        ->groupBy('date')
+        ->orderBy('date', 'desc')
+        ->limit(30)
+        ->get();
+
+        // Calculate 7-day moving average
+        $movingAverage = collect($historicalSales)
+            ->take(7)
+            ->avg('total');
+
+        return [
+            'next_day_forecast' => $movingAverage,
+            'historical_trend' => $historicalSales
+        ];
     }
 }

@@ -58,9 +58,9 @@
 </head>
 <body>
     <div>
-        <div class="item-name">{{ $item->name }}</div>
         <img class="barcode" src="{{ $barcodePath }}" alt="Barcode">
         <div class="item-code">{{ $item->code }}</div>
+        <div class="item-name">{{ $item->name }}</div>
         <div class="pricing">
             @if ($item->discount_value > 0)
                 <span class="original-price">EGP {{ number_format($item->selling_price, 2) }}</span>
