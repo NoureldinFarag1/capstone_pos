@@ -18,7 +18,7 @@
         </div>
     @else
         <!-- Product Sizes Table -->
-        <div class="card">
+        <div class="card shadow-sm">
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
@@ -37,14 +37,14 @@
                                     <td class="text-right">
                                         <div class="btn-group" role="group">
                                             <!-- Edit Button -->
-                                            <a href="{{ route('sizes.edit', $size->id) }}" class="btn btn-warning" title="Edit Size">
+                                            <a href="{{ route('sizes.edit', $size->id) }}" class="btn btn-warning btn-sm ml-2" title="Edit Size">
                                                 <i class="fas fa-edit mr-1"></i>Edit
                                             </a>
                                             <!-- Delete Button -->
                                             <form action="{{ route('sizes.destroy', $size->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this size?');">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-danger" title="Delete Size">
+                                                <button type="submit" class="btn btn-danger btn-sm ml-2" title="Delete Size">
                                                     <i class="fas fa-trash mr-1"></i>Delete
                                                 </button>
                                             </form>

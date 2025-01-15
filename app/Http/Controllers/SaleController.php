@@ -39,6 +39,29 @@ class SaleController extends Controller
             'payment_reference' => 'nullable|string',
         ]);
 
+        // Validate stock availability for all items before proceeding
+        foreach ($request->items as $itemData) {
+            $item = Item::find($itemData['item_id']);
+
+            if (!$item) {
+                return redirect()->back()
+                    ->with('error', 'Item not found.')
+                    ->withInput();
+            }
+
+            if ($item->quantity <= 0) {
+                return redirect()->back()
+                    ->with('error', "'{$item->name}' is out of stock.")
+                    ->withInput();
+            }
+
+            if ($item->quantity < $itemData['quantity']) {
+                return redirect()->back()
+                    ->with('error', "Insufficient stock for '{$item->name}'. Available: {$item->quantity}")
+                    ->withInput();
+            }
+        }
+
         // Create sale with pre-calculated total
         $sale = Sale::create([
             'user_id' => \Illuminate\Support\Facades\Auth::user()->id, // Attach the currently authenticated user
@@ -169,7 +192,7 @@ class SaleController extends Controller
             $printer->text("Exchange & Return Policy\n");
             $printer->setEmphasis(false);
             $printer->text("Items may be exchanged within 14 days\n");
-            $printer->text("with original receipt and tags attached\n");
+            $printer->text("Refunds are only with the original receipt\n");
 
             $printer->feed(1);
             $printer->setEmphasis(true);
@@ -338,10 +361,12 @@ class SaleController extends Controller
             $printer->feed(1);
             $printer->setJustification(Printer::JUSTIFY_CENTER);
             $printer->setEmphasis(true);
+            $printer->text("طلب استبدال أو استرداد قيمة المنتج خلال ١٤ يوم\n");
+            $printer->text("Exchanges and Refunds are only applicable for 14 days\n");
             $printer->text("Thank You For Shopping With Us!\n");
             $printer->setEmphasis(false);
             $printer->feed(1);
-            $printer->text("Follow us on Instagram\n");
+            $printer->text("Find us on Instagram\n");
             $printer->selectPrintMode(Printer::MODE_EMPHASIZED);
             $printer->text("@localhub_egy\n");
             $printer->selectPrintMode();

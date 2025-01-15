@@ -54,12 +54,18 @@
             font-size: 10px;
             color: black; /* Sale price color */
         }
+        .brand-name {
+            font-size: 8px; /* Font size for brand name */
+            margin: 0;
+            padding-top: 2px; /* Space between brand name and item name */
+        }
     </style>
 </head>
 <body>
     <div>
         <img class="barcode" src="{{ $barcodePath }}" alt="Barcode">
         <div class="item-code">{{ $item->code }}</div>
+        <div class="brand-name">{{ $item->brand->name }}</div>
         <div class="item-name">{{ $item->name }}</div>
         <div class="pricing">
             @if ($item->discount_value > 0)

@@ -28,13 +28,17 @@
                 <select id="itemSelect" class="form-select">
                     <option value="">Select an item</option>
                     <?php $__currentLoopData = $items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <option value="<?php echo e($item->id); ?>"
-                                data-price="<?php echo e($item->priceAfterSale()); ?>"
-                                data-original-price="<?php echo e($item->selling_price); ?>"
-                                data-code="<?php echo e($item->code); ?>">
-                            <?php echo e($item->name); ?>
+                        <?php if(!$item->is_parent): ?>
+                            <option value="<?php echo e($item->id); ?>"
+                                    data-price="<?php echo e($item->priceAfterSale()); ?>"
+                                    data-original-price="<?php echo e($item->selling_price); ?>"
+                                    data-code="<?php echo e($item->code); ?>"
+                                    data-stock="<?php echo e($item->quantity); ?>"
+                                    <?php echo e($item->quantity <= 0 ? 'disabled' : ''); ?>>
+                                <?php echo e($item->name); ?> (Stock: <?php echo e($item->quantity); ?>) <?php echo e($item->quantity <= 0 ? '- Out of Stock' : ''); ?>
 
-                        </option>
+                            </option>
+                        <?php endif; ?>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
             </div>
@@ -151,6 +155,27 @@ document.addEventListener('DOMContentLoaded', function() {
         // Ensure quantity is a number
         quantity = parseInt(quantity) || 1;
 
+        // Get current stock quantity
+        const stockQuantity = parseInt(itemSelect.options[itemSelect.selectedIndex].getAttribute('data-stock'));
+
+        // Check if item is in stock
+        if (stockQuantity <= 0) {
+            alert('This item is out of stock.');
+            return false;
+        }
+
+        // Calculate total requested quantity (existing + new)
+        let totalRequestedQuantity = quantity;
+        if (addedItems.has(item.id)) {
+            totalRequestedQuantity += addedItems.get(item.id).quantity;
+        }
+
+        // Check if total quantity exceeds stock
+        if (totalRequestedQuantity > stockQuantity) {
+            alert(`Cannot add ${quantity} items. Only ${stockQuantity} available in stock.`);
+            return false;
+        }
+
         // Check if item already exists in the list
         if (addedItems.has(item.id)) {
             // Update existing item's quantity
@@ -172,6 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Recalculate total
         calculateTotal();
+        return true;
     }
 
     // Create a new list entry for an item
@@ -277,21 +303,27 @@ document.addEventListener('DOMContentLoaded', function() {
         );
 
         if (matchingOption) {
+            if (matchingOption.disabled) {
+                alert('This item is out of stock.');
+                barcodeInput.value = '';
+                return;
+            }
+
             // Select the item and add to list
             itemSelect.value = matchingOption.value;
             const item = {
                 id: matchingOption.value,
-                name: matchingOption.text,
+                name: matchingOption.text.replace(' Out of stock', ''),
                 price: parseFloat(matchingOption.getAttribute('data-price')),
                 originalPrice: parseFloat(matchingOption.getAttribute('data-original-price'))
             };
 
-            addItemToList(item, 1);
-
-            // Clear barcode input
-            barcodeInput.value = '';
+            if (addItemToList(item, 1)) {
+                barcodeInput.value = '';
+            }
         } else {
             alert('Item not found for the scanned barcode code.');
+            barcodeInput.value = '';
         }
     }
 
@@ -331,8 +363,8 @@ document.addEventListener('DOMContentLoaded', function() {
     barcodeInput.addEventListener('input', function(e) {
         const barcode = e.target.value.trim();
 
-        // Trigger barcode search if length is sufficient
-        if (barcode.length >= 10) {
+        // Trigger barcode search immediately after input
+        if (barcode.length > 0) {
             handleBarcodeScanning(barcode);
             setTimeout(() => {
                 barcodeInput.focus(); // Refocus after scanning

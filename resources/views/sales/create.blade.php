@@ -30,12 +30,16 @@
                 <select id="itemSelect" class="form-select">
                     <option value="">Select an item</option>
                     @foreach($items as $item)
-                        <option value="{{ $item->id }}"
-                                data-price="{{ $item->priceAfterSale() }}"
-                                data-original-price="{{ $item->selling_price }}"
-                                data-code="{{ $item->code }}">
-                            {{ $item->name }}
-                        </option>
+                        @if(!$item->is_parent)
+                            <option value="{{ $item->id }}"
+                                    data-price="{{ $item->priceAfterSale() }}"
+                                    data-original-price="{{ $item->selling_price }}"
+                                    data-code="{{ $item->code }}"
+                                    data-stock="{{ $item->quantity }}"
+                                    {{ $item->quantity <= 0 ? 'disabled' : '' }}>
+                                {{ $item->name }} (Stock: {{ $item->quantity }}) {{ $item->quantity <= 0 ? '- Out of Stock' : ''}}
+                            </option>
+                        @endif
                     @endforeach
                 </select>
             </div>
@@ -152,6 +156,27 @@ document.addEventListener('DOMContentLoaded', function() {
         // Ensure quantity is a number
         quantity = parseInt(quantity) || 1;
 
+        // Get current stock quantity
+        const stockQuantity = parseInt(itemSelect.options[itemSelect.selectedIndex].getAttribute('data-stock'));
+
+        // Check if item is in stock
+        if (stockQuantity <= 0) {
+            alert('This item is out of stock.');
+            return false;
+        }
+
+        // Calculate total requested quantity (existing + new)
+        let totalRequestedQuantity = quantity;
+        if (addedItems.has(item.id)) {
+            totalRequestedQuantity += addedItems.get(item.id).quantity;
+        }
+
+        // Check if total quantity exceeds stock
+        if (totalRequestedQuantity > stockQuantity) {
+            alert(`Cannot add ${quantity} items. Only ${stockQuantity} available in stock.`);
+            return false;
+        }
+
         // Check if item already exists in the list
         if (addedItems.has(item.id)) {
             // Update existing item's quantity
@@ -173,6 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Recalculate total
         calculateTotal();
+        return true;
     }
 
     // Create a new list entry for an item
@@ -278,21 +304,27 @@ document.addEventListener('DOMContentLoaded', function() {
         );
 
         if (matchingOption) {
+            if (matchingOption.disabled) {
+                alert('This item is out of stock.');
+                barcodeInput.value = '';
+                return;
+            }
+
             // Select the item and add to list
             itemSelect.value = matchingOption.value;
             const item = {
                 id: matchingOption.value,
-                name: matchingOption.text,
+                name: matchingOption.text.replace(' Out of stock', ''),
                 price: parseFloat(matchingOption.getAttribute('data-price')),
                 originalPrice: parseFloat(matchingOption.getAttribute('data-original-price'))
             };
 
-            addItemToList(item, 1);
-
-            // Clear barcode input
-            barcodeInput.value = '';
+            if (addItemToList(item, 1)) {
+                barcodeInput.value = '';
+            }
         } else {
             alert('Item not found for the scanned barcode code.');
+            barcodeInput.value = '';
         }
     }
 
@@ -332,8 +364,8 @@ document.addEventListener('DOMContentLoaded', function() {
     barcodeInput.addEventListener('input', function(e) {
         const barcode = e.target.value.trim();
 
-        // Trigger barcode search if length is sufficient
-        if (barcode.length >= 10) {
+        // Trigger barcode search immediately after input
+        if (barcode.length > 0) {
             handleBarcodeScanning(barcode);
             setTimeout(() => {
                 barcodeInput.focus(); // Refocus after scanning

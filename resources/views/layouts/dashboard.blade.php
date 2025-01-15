@@ -17,6 +17,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <!-- Add SweetAlert2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100">
     <nav class="bg-white shadow-lg sticky">
@@ -197,7 +199,6 @@
         @if(Request::routeIs('dashboard')) <!-- Show only on the dashboard page -->
         <!-- Dashboard Widgets -->
         <div class="container mx-auto p-6">
-            <!-- Quick Actions Card -->
             <div class="mb-8">
                 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="border-b border-gray-100 p-6">
@@ -210,130 +211,140 @@
                     </div>
                     <div class="p-6">
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <a href="/sales/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-md hover:shadow-lg">
+
+                            <a href="/sales/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl hover:shadow-lg transition-all duration-300">
                                 <i class="fas fa-plus-circle text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
                                 <span class="text-white font-medium">New Sale</span>
                             </a>
-                            <a href="/items/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 shadow-md hover:shadow-lg">
-                                <i class="fas fa-box-open text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
-                                <span class="text-white font-medium">Add Item</span>
-                            </a>
-                            <a href="/items" class="group flex items-center justify-center p-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-300 shadow-md hover:shadow-lg">
-                                <i class="fas fa-boxes text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
-                                <span class="text-white font-medium">View Inventory</span>
-                            </a>
-                            <a href="/sales" class="group flex items-center justify-center p-6 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-300 shadow-md hover:shadow-lg">
+                            <a href="/sales" class="group flex items-center justify-center p-6 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl hover:shadow-lg transition-all duration-300">
                                 <i class="fas fa-chart-line text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
                                 <span class="text-white font-medium">Sales Overview</span>
                             </a>
-                            <a href="/items/export" class="group flex items-center justify-center p-6 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl hover:from-teal-600 hover:to-teal-700 transition-all duration-300 shadow-md hover:shadow-lg">
-                                <i class="fas fa-file-download text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
-                                <span class="text-white font-medium">Export All Inventory</span>
+                            <a href="/items/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-green-500 to-green-700 rounded-xl hover:shadow-lg transition-all duration-300">
+                                <i class="fas fa-box-open text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-white font-medium">Add Item</span>
                             </a>
-                            <a href="/users/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 shadow-md hover:shadow-lg">
+                            <a href="/items" class="group flex items-center justify-center p-6 bg-gradient-to-br from-gray-500 to-gray-700 rounded-xl hover:shadow-lg transition-all duration-300">
+                                <i class="fas fa-boxes text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-white font-medium">View Inventory</span>
+                            </a>
+                            <a href="/items/export" class="group flex items-center justify-center p-6 bg-gradient-to-br from-gray-400 to-gray-600 rounded-xl hover:shadow-lg transition-all duration-300">
+                                <i class="fas fa-file-download text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-white font-medium">Export Inventory</span>
+                            </a>
+
+                            <a href="/users/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl hover:shadow-lg transition-all duration-300">
                                 <i class="fas fa-users-cog text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
-                                <span class="text-white font-medium">Newcomers</span>
+                                <span class="text-white font-medium">New User</span>
+                            </a>
+                            <a href="/brands/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl hover:shadow-lg transition-all duration-300">
+                                <i class="fas fa-tag text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-white font-medium">Add Brand</span>
+                            </a>
+                            <a href="/categories/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl hover:shadow-lg transition-all duration-300">
+                                <i class="fas fa-th-list text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-white font-medium">Add Category</span>
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- Key Metrics Row -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-                <!-- Today's Revenue -->
-                <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+
+                <div class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
                     <div class="relative z-10">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-medium">Today's Earnings</h3>
-                            <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                                 <i class="fas fa-dollar-sign text-2xl"></i>
                             </div>
                         </div>
-                        <div class="text-3xl font-bold mb-2">{{ number_format($todayRevenue ?? 0, 2) }} EGP </div>
+                        <div class="text-3xl font-bold mb-2">{{ number_format($todayRevenue ?? 0, 2) }} EGP</div>
                         @if(isset($revenueGrowth) && $revenueGrowth > 0)
-                            <div class="text-sm bg-white/10 rounded-lg px-3 py-1.5 inline-block">
+                            <div class="text-sm bg-white/20 rounded-lg px-3 py-1.5 inline-block">
                                 <i class="fas fa-arrow-up mr-1"></i>
                                 {{ number_format($revenueGrowth, 1) }}% from yesterday
                             </div>
                         @endif
                         <div class="mt-6 space-y-3">
-                            <div class="flex justify-between items-center py-2.5 px-4 bg-white/10 rounded-lg">
-                                <span class="text-sm font-medium">Cash</span>
+                            <div class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm">
+                                <span>Cash</span>
                                 <span class="font-bold">{{ number_format($cashPayments, 2) }} EGP</span>
                             </div>
-                            <div class="flex justify-between items-center py-2.5 px-4 bg-white/10 rounded-lg">
-                                <span class="text-sm font-medium">Visa</span>
+                            <div class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm">
+                                <span>Visa</span>
                                 <span class="font-bold">{{ number_format($creditPayments, 2) }} EGP</span>
                             </div>
-                            <div class="flex justify-between items-center py-2.5 px-4 bg-white/10 rounded-lg">
-                                <span class="text-sm font-medium">Mobile Payment</span>
+                            <div class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm">
+                                <span>Mobile Payment</span>
                                 <span class="font-bold">{{ number_format($mobilePayments, 2) }} EGP</span>
                             </div>
                         </div>
                     </div>
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-full -mr-16 -mt-16"></div>
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-16 -mt-16"></div>
                 </div>
-                <!-- Monthly Sales -->
-                <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+
+                <div class="bg-gradient-to-br from-green-500 to-green-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
                     <div class="relative z-10">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-medium">Monthly Sales</h3>
-                            <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                                 <i class="fas fa-chart-bar text-2xl"></i>
                             </div>
                         </div>
                         <div class="text-3xl font-bold mb-2">{{ number_format($monthlySales, 2) }} EGP</div>
-                        <div class="text-sm bg-white/10 rounded-lg px-3 py-1.5 inline-block">
+                        <div class="text-sm bg-white/20 rounded-lg px-3 py-1.5 inline-block">
                             {{ $salesGrowthPercentage >= 0 ? '+' : '' }}{{ number_format($salesGrowthPercentage, 2) }}% from last month
                         </div>
                         <div class="mt-6 space-y-3">
-                            <div class="flex justify-between items-center py-2.5 px-4 bg-white/10 rounded-lg">
-                                <span class="text-sm font-medium">Cash</span>
+                            <div class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm">
+                                <span>Cash</span>
                                 <span class="font-bold">{{ number_format($cashPaymentsMonthly, 2) }} EGP</span>
                             </div>
-                            <div class="flex justify-between items-center py-2.5 px-4 bg-white/10 rounded-lg">
-                                <span class="text-sm font-medium">Visa</span>
+                            <div class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm">
+                                <span>Visa</span>
                                 <span class="font-bold">{{ number_format($creditPaymentsMonthly, 2) }} EGP</span>
                             </div>
-                            <div class="flex justify-between items-center py-2.5 px-4 bg-white/10 rounded-lg">
-                                <span class="text-sm font-medium">Mobile Payment</span>
+                            <div class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm">
+                                <span>Mobile Payment</span>
                                 <span class="font-bold">{{ number_format($mobilePaymentsMonthly, 2) }} EGP</span>
                             </div>
                         </div>
                     </div>
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-full -mr-16 -mt-16"></div>
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-16 -mt-16"></div>
                 </div>
-                <!-- Top Payment Method -->
-                <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+
+                <div class="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
                     <div class="relative z-10">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-medium">Top Payment Method</h3>
-                            <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                                 @if($topPaymentMethod === 'cash')
-                                    <i class="fas fa-cash-register text-2xl text-white"></i>
+                                    <i class="fas fa-cash-register text-2xl"></i>
                                 @elseif ($topPaymentMethod === 'credit_card')
-                                    <i class="fas fa-credit-card text-2xl text-white"></i>
+                                    <i class="fas fa-credit-card text-2xl"></i>
                                 @elseif($topPaymentMethod === 'mobile_pay')
-                                    <i class="fas fa-mobile-alt text-2xl text-white"></i>
+                                    <i class="fas fa-mobile-alt text-2xl"></i>
                                 @endif
                             </div>
                         </div>
                         <div class="text-3xl font-bold mb-4">{{ ucfirst($topPaymentMethod) }}</div>
-                        <div class="bg-white/10 rounded-lg p-4">
-                            <div class="mb-2">
-                                <span class="text-sm font-medium">Top Payment Method</span>
-                                <span class="float-right font-bold">{{ number_format($topPaymentMethodPercentage, 2) }}%</span>
+                        <div class="bg-white/20 rounded-lg p-4 text-sm">
+                            <div class="mb-2 flex justify-between">
+                                <span>Top Payment Method</span>
+                                <span class="font-bold">{{ number_format($topPaymentMethodPercentage, 2) }}%</span>
                             </div>
-                            <div class="w-full bg-white/10 rounded-full h-2 mb-4">
+                            <div class="w-full bg-white/30 rounded-full h-2 mb-4">
                                 <div class="bg-white h-2 rounded-full" style="width: {{ $topPaymentMethodPercentage }}%"></div>
                             </div>
-                            <div class="text-sm text-white/90">
+                            <div class="text-white/80">
                                 {{ $topPaymentMethodCount }} out of {{ $AllSalesCount }} transactions
                             </div>
                         </div>
                     </div>
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-full -mr-16 -mt-16"></div>
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-16 -mt-16"></div>
                 </div>
+
             </div>
             <!-- Add after existing metrics -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -452,6 +463,60 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+            <!-- Refund Metrics -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <div class="border-b border-gray-100 mb-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-2xl font-bold text-gray-900">Refund Analytics</h3>
+                        <span class="px-3 py-1 text-sm font-medium text-red-700 bg-red-50 rounded-full">
+                            Refund Overview
+                        </span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Today's Refunds -->
+                    <div class="p-4 bg-red-50 rounded-lg">
+                        <div class="text-sm text-red-600">Today's Refunds</div>
+                        <div class="text-2xl font-bold text-red-700">
+                            {{ number_format($refundMetrics['today_refunds'], 2) }} EGP
+                        </div>
+                    </div>
+                    <!-- Monthly Refunds -->
+                    <div class="p-4 bg-orange-50 rounded-lg">
+                        <div class="text-sm text-orange-600">Monthly Refunds</div>
+                        <div class="text-2xl font-bold text-orange-700">
+                            {{ number_format($refundMetrics['month_refunds'], 2) }} EGP
+                        </div>
+                    </div>
+                    <!-- Refund Rate -->
+                    <div class="p-4 bg-blue-50 rounded-lg">
+                        <div class="text-sm text-blue-600">Refund Rate</div>
+                        <div class="text-2xl font-bold text-blue-700">
+                            {{ number_format($refundMetrics['refund_rate'], 1) }}%
+                        </div>
+                    </div>
+                </div>
+                <!-- Recent Refunds -->
+                @if($refundMetrics['recent_refunds']->isNotEmpty())
+                <div class="mt-6">
+                    <h4 class="text-lg font-semibold mb-4">Recent Refunds</h4>
+                    <div class="space-y-3">
+                        @foreach($refundMetrics['recent_refunds'] as $refund)
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <div class="flex flex-col">
+                                <span class="font-medium">Sale #{{ $refund->sale_id }}</span>
+                                <span class="text-sm text-gray-500">{{ $refund->item->name }}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="font-bold text-red-600">{{ number_format($refund->refund_amount, 2) }} EGP</span>
+                                <div class="text-xs text-gray-500">{{ $refund->created_at->diffForHumans() }}</div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
             </div>
             <!-- Details Row -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -645,6 +710,31 @@
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Add SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Flash Messages -->
+    @if(session('success'))
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: "{{ session('success') }}",
+            timer: 3000,
+            timerProgressBar: true
+        });
+    </script>
+    @endif
+
+    @if(session('error'))
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: "{{ session('error') }}"
+        });
+    </script>
+    @endif
 </body>
 <footer class="bg-gray-100 border-t border-gray-200 py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

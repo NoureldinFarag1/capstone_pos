@@ -108,6 +108,7 @@
                         <th>Item</th>
                         <th class="quantity">Quantity</th>
                         <th class="price">Price</th>
+                        <th class="discount">Discount</th>
                         <th class="price">Amount</th>
                     </tr>
                 </thead>
@@ -116,7 +117,8 @@
                     <tr>
                         <td>{{ $saleItem->item->name }}</td>
                         <td class="quantity">{{ $saleItem->quantity }}</td>
-                        <td class="price">${{ number_format($saleItem->price, 2) }}</td>
+                        <td class="price">${{ number_format($saleItem->item->selling_price, 2) }}</td>
+                        <td class="discount">${{ $saleItem->item->formatted_discount }}</td>
                         <td class="price">${{ number_format($saleItem->quantity * $saleItem->price, 2) }}</td>
                     </tr>
                     @endforeach

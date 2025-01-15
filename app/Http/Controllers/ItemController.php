@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Symfony\Component\Process\Process;
 
 class ItemController extends BaseController
 {
@@ -59,21 +60,41 @@ class ItemController extends BaseController
             $picturePath = null;
         }
 
-        // Calculate the discounted price using your model's discount method
-        $createdItems = [];
+        // Create parent item
+        $parentItem = Item::create([
+            'name' => $request->input('name'),
+            'category_id' => $request->input('category_id'),
+            'brand_id' => $request->input('brand_id'),
+            'picture' => $picturePath,
+            'quantity' => 0, // Parent item doesn't hold quantity
+            'buying_price' => $request->input('buying_price'),
+            'selling_price' => $request->input('selling_price'),
+            'tax' => $request->input('tax'),
+            'discount_type' => $request->input('discount_type'),
+            'discount_value' => $request->input('discount_value'),
+            'is_parent' => true,
+        ]);
 
-        // Get the size and color names for reference
+        // Generate parent barcode
+        $parentBarcode = Str::padLeft($brand->id, 3, '0') .
+                        Str::padLeft($category->id, 3, '0') .
+                        Str::padLeft($parentItem->id, 4, '0');
+
+        $parentItem->code = $parentBarcode;
+        $parentItem->save();
+
+        // Get the sizes and colors
         $sizes = Size::whereIn('id', $request->input('sizes'))->get();
         $colors = Color::whereIn('id', $request->input('colors'))->get();
 
-        // Create an item for each size and color combination
+        // Create variants (child items)
         foreach ($colors as $color) {
             foreach ($sizes as $size) {
-                // Create a unique name for this variation
-                $variantName = $request->input('name') . ' - ' . $color->name . ' - ' . $size->name;
+                // Create variant name
+                $variantName = $request->input('name') . ' - ' . $size->name . ' - ' . $color->name;
 
-                // Create the item variation
-                $item = Item::create([
+                // Create the variant
+                $variant = Item::create([
                     'name' => $variantName,
                     'category_id' => $request->input('category_id'),
                     'brand_id' => $request->input('brand_id'),
@@ -84,36 +105,41 @@ class ItemController extends BaseController
                     'tax' => $request->input('tax'),
                     'discount_type' => $request->input('discount_type'),
                     'discount_value' => $request->input('discount_value'),
+                    'parent_id' => $parentItem->id,
+                    'is_parent' => false,
                 ]);
 
-                // Generate unique barcode
-                $barcode = Str::padLeft($brand->id, 3, '0') .
-                          Str::padLeft($category->id, 3, '0') .
-                          Str::padLeft($item->id, 4, '0');
+                // Generate variant barcode
+                $variantBarcode = $parentBarcode .
+                                 Str::padLeft($color->id, 2, '0') .
+                                 Str::padLeft($size->id, 2, '0');
 
                 // Generate barcode image
                 $barcodeGenerator = new BarcodeGeneratorPNG();
-                $barcodePath = 'barcodes/' . $barcode . '.png';
+                $barcodePath = 'barcodes/' . $variantBarcode . '.png';
                 file_put_contents(
                     storage_path('app/public/' . $barcodePath),
-                    $barcodeGenerator->getBarcode($barcode, $barcodeGenerator::TYPE_CODE_128)
+                    $barcodeGenerator->getBarcode($variantBarcode, $barcodeGenerator::TYPE_CODE_128)
                 );
 
-                // Update the item with the barcode
-                $item->barcode = $barcodePath;
-                $item->code = $barcode;
+                // Update variant with barcode
+                $variant->barcode = $barcodePath;
+                $variant->code = $variantBarcode;
 
-                // Attach the specific size and color to this item
-                $item->sizes()->attach([$size->id]);
-                $item->colors()->attach([$color->id]);
+                // Attach size and color
+                $variant->sizes()->attach([$size->id]);
+                $variant->colors()->attach([$color->id]);
 
-                $item->save();
-
-                $createdItems[] = $item;
+                $variant->save();
             }
         }
 
-        return redirect()->route('items.index')->with('success', 'Item created successfully.');
+        // Update parent item's total quantity
+        $totalQuantity = $parentItem->variants()->sum('quantity');
+        $parentItem->quantity = $totalQuantity;
+        $parentItem->save();
+
+        return redirect()->route('items.index')->with('success', 'Item and variants created successfully.');
     }
     public function getRelatedItems($name)
     {
@@ -148,59 +174,82 @@ class ItemController extends BaseController
 
     public function edit($id)
     {
-        $item = Item::findOrFail($id);
-        $categories = Category::all(); // To show all categories for selection
-        $brands = Brand::all(); // To show all brands for selection
+        $item = Item::with(['variants', 'sizes', 'colors'])->findOrFail($id);
+        $categories = Category::all();
+        $brands = Brand::all();
         $sizes = Size::all();
-        return view('items.edit', compact('item', 'categories', 'brands', 'sizes'));
-    }
+        $colors = Color::all();
 
-    public function update(Request $request, $id)
-    {
-        // Validate incoming request
-        $request->validate([
-            'name' => 'required',
-            'category_id' => 'required|exists:categories,id',
-            'brand_id' => 'required|exists:brands,id',
-            'selling_price' => 'required|numeric|min:0',
-            'discount_type' => 'required|in:percentage,fixed',
-            'discount_value' => 'required|numeric|min:0',
-            'tax' => 'nullable|numeric|min:0|max:100',
-            'picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'quantity' => 'required|integer|min:0',
-            'sizes' => 'nullable'
-        ]);
-
-        $item = Item::findOrFail($id);
-
-        // If a new picture is uploaded, store it
-        if ($request->hasFile('picture')) {
-            $picturePath = $request->file('picture')->store('items', 'public');
-            $item->picture = $picturePath;
+        if (!$item->is_parent) {
+            $parentItems = Item::where('is_parent', true)->get();
+            return view('items.edit', compact('item', 'categories', 'brands', 'sizes', 'colors', 'parentItems'));
         }
 
-        // Update other item details
-        $item->name = $request->input('name');
-        $item->category_id = $request->input('category_id');
-        $item->brand_id = $request->input('brand_id');
-        $item->selling_price = $request->input('selling_price');
-        $item->tax = $request->input('tax');
-        $item->discount_type = $request->discount_type;
-        $item->discount_value = $request->discount_value;
-        $item->quantity = $request->input('quantity');
-        $item->sizes()->sync($request->sizes);
-        $item->save(); // Save the changes to the database
-
-        return redirect()->route('items.index')->with('success', 'Item updated successfully.');
+        return view('items.edit', compact('item', 'categories', 'brands', 'sizes', 'colors'));
     }
 
-
-    public function destroy($id)
+    public function update(Request $request, Item $item)
     {
-        $item = Item::findOrFail($id);
-        $item->delete(); // Delete the item from the database
+        DB::beginTransaction();
+        try {
+            if ($item->is_parent) {
+                // Update parent item
+                $item->update([
+                    'name' => $request->name,
+                    'category_id' => $request->category_id,
+                    'brand_id' => $request->brand_id,
+                    'selling_price' => $request->selling_price,
+                    'tax' => $request->tax,
+                    'discount_type' => $request->discount_type,
+                    'discount_value' => $request->discount_value,
+                ]);
 
-        return redirect()->route('items.index')->with('success', 'Item deleted successfully.');
+                // Handle picture upload
+                if ($request->hasFile('picture')) {
+                    $picturePath = $request->file('picture')->store('items', 'public');
+                    $item->update(['picture' => $picturePath]);
+                }
+
+                // Update all variants with new shared properties
+                $item->variants()->update([
+                    'selling_price' => $request->selling_price,
+                    'tax' => $request->tax,
+                    'discount_type' => $request->discount_type,
+                    'discount_value' => $request->discount_value,
+                ]);
+            } else {
+                // Update variant
+                $item->update([
+                    'quantity' => $request->quantity
+                ]);
+
+                // Update parent's total quantity
+                if ($item->parent) {
+                    $item->parent->update([
+                        'quantity' => $item->parent->variants()->sum('quantity')
+                    ]);
+                }
+            }
+
+            DB::commit();
+            return redirect()->route('items.index')->with('success', 'Item updated successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Update error: ' . $e->getMessage());
+            return back()->with('error', 'Error updating item: ' . $e->getMessage());
+        }
+    }
+
+    public function destroy(Item $item)
+    {
+        try {
+            $item->delete();
+            return redirect()->route('items.index')
+                ->with('success', 'Item deleted successfully!');
+        } catch (\Exception $e) {
+            return redirect()->route('items.index')
+                ->with('error', 'Failed to delete item. ' . $e->getMessage());
+        }
     }
 
     public function show($id)
@@ -302,7 +351,7 @@ class ItemController extends BaseController
         return response()->json($items);
     }
 
-    public function ItemsExport(Request $request)
+    public function itemsExport(Request $request)
     {
         $brandId = $request->input('brand_id');
         $items = Item::when($brandId, function ($query) use ($brandId) {
@@ -332,13 +381,36 @@ class ItemController extends BaseController
                 'barcodePath' => $barcodePath,
             ]);
 
+            // Convert mm to points (1mm = 2.83465 points)
+            $width = 36.5 * 2.83465;  // 103.46 points
+            $height = 25 * 2.83465;   // 70.87 points
+            $pdf->setPaper([0, 0, $width, $height], 'landscape');
+
             // Save PDF temporarily
             $tempPath = storage_path('app/temp/label_' . uniqid() . '.pdf');
             $pdf->save($tempPath);
 
             if ($this->isWindows()) {
-                // Windows printing using direct command with copies parameter
-                shell_exec('print /d:"' . $printerName . '" /n:' . $quantity . ' "' . $tempPath . '"');
+                // Path to SumatraPDF
+                $sumatraPath = '"C:\Program Files\SumatraPDF\SumatraPDF.exe"';
+
+                // Define custom paper size in mm
+                $printSettings = "-print-settings \"$quantity"
+                             . ",paper=Custom.36.5x25mm"  // Exact dimensions in mm
+                             . ",fit=NoScaling"           // Prevent auto-scaling
+                             . ",offset-x=0,offset-y=0\""; // No margin offset
+
+                // Build and execute the print command
+                $command = "$sumatraPath $printSettings -print-to \"$printerName\" \"$tempPath\"";
+
+                $process = Process::fromShellCommandline($command);
+                $process->setTimeout(60);
+                $process->run();
+
+                if (!$process->isSuccessful()) {
+                    Log::error('Windows print error: ' . $process->getErrorOutput());
+                    throw new \Exception('Printing failed on Windows: ' . $process->getErrorOutput());
+                }
             } else {
                 // Mac/Linux printing using lp command
                 exec("lp -d $printerName -n $quantity $tempPath");
@@ -367,24 +439,25 @@ class ItemController extends BaseController
         $brandNameSlug = str_replace(' ', '_', strtolower($brandName));
 
         $items = DB::table('items')
-        ->join('brands', 'items.brand_id', '=', 'brands.id')
-        ->leftJoin('sale_items', function ($join) use ($startDate, $endDate) {
-            $join->on('items.id', '=', 'sale_items.item_id');
-            if ($startDate && $endDate) {
-                $join->whereBetween('sale_items.created_at', [$startDate, $endDate]);
-            }
-        })
-        ->select(
-            'items.id',
-            'brands.name as brand_name',
-            'items.name as item_name',
-            'items.quantity as stock_quantity',
-            'items.selling_price',
-            DB::raw('SUM(sale_items.quantity) as quantity_sold'),
-        )
-        ->where('items.brand_id', $brandId)
-        ->groupBy('items.id', 'brands.name', 'items.name', 'items.quantity', 'items.selling_price')
-        ->get();
+            ->join('brands', 'items.brand_id', '=', 'brands.id')
+            ->leftJoin('sale_items', function ($join) use ($startDate, $endDate) {
+                $join->on('items.id', '=', 'sale_items.item_id');
+                if ($startDate && $endDate) {
+                    $join->whereBetween('sale_items.created_at', [$startDate, $endDate]);
+                }
+            })
+            ->select(
+                'items.id',
+                'brands.name as brand_name',
+                'items.name as item_name',
+                'items.quantity as stock_quantity',
+                'items.selling_price',
+                DB::raw('COALESCE(SUM(sale_items.quantity), 0) as quantity_sold')
+            )
+            ->where('items.brand_id', $brandId)
+            ->where('items.is_parent', false) // Exclude parent items
+            ->groupBy('items.id', 'brands.name', 'items.name', 'items.quantity', 'items.selling_price')
+            ->get();
 
         // Add sale price
         $items = $items->map(function ($itemData) {
@@ -412,6 +485,7 @@ class ItemController extends BaseController
             'Content-Disposition' => "attachment; filename=\"$fileName\"",
         ]);
     }
+
     public function bulkUpload(Request $request)
     {
         $request->validate([
@@ -423,6 +497,48 @@ class ItemController extends BaseController
             return redirect()->back()->with('success', 'Items imported successfully!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'There was an error importing the file: ' . $e->getMessage());
+        }
+    }
+
+    // Add this new method to ItemController
+    public function updateVariantsQuantity(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $totalQuantity = 0;
+            $parentId = null;
+
+            foreach ($request->updates as $update) {
+                $variant = Item::findOrFail($update['id']);
+                $variant->quantity = (int)$update['quantity'];
+                $variant->save();
+
+                $parentId = $variant->parent_id;
+                $totalQuantity += $variant->quantity;
+            }
+
+            // Update parent's quantity
+            if ($parentId) {
+                $parent = Item::findOrFail($parentId);
+                $parent->quantity = $totalQuantity;
+                $parent->save();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'totalQuantity' => $totalQuantity,
+                'message' => 'Quantities updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Quantity update error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 }

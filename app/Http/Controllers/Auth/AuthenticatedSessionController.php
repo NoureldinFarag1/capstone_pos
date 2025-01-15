@@ -26,6 +26,9 @@ class AuthenticatedSessionController extends Controller
     {
         // Authenticate the user
         $request->authenticate();
+        $request->user()->update([
+            'last_login' => now()
+        ]);
 
         // Regenerate the session to prevent session fixation attacks
         $request->session()->regenerate();

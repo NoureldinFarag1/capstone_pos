@@ -22,6 +22,8 @@ class Item extends Model
         'tax',
         'discount_type',
         'discount_value',
+        'parent_id',
+        'is_parent',
     ];
 
     public function category()
@@ -72,6 +74,13 @@ class Item extends Model
         // Calculate selling price including tax
         return $sellingPriceAfterDiscount + ($sellingPriceAfterDiscount * ($this->tax / 100));
     }
+    public function getFormattedDiscountAttribute()
+    {
+        if ($this->discount_type === 'percentage') {
+            return number_format($this->discount_value * ($this->selling_price / 100), 2);
+        }
+        return number_format($this->discount_value, 2);
+    }
 
     public function netProfit()
     {
@@ -86,6 +95,16 @@ class Item extends Model
     public function colors()
     {
         return $this->belongsToMany(Color::class);
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Item::class, 'parent_id');
+    }
+
+    public function variants()
+    {
+        return $this->hasMany(Item::class, 'parent_id');
     }
 
 }

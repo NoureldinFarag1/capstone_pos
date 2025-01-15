@@ -1,123 +1,253 @@
 @extends('layouts.dashboard')
 
 @section('content')
-<br>
 <div class="container">
-    <h2 class="mb-4 text-center">Edit Item</h2>
-
-    <form action="{{ route('items.update', $item->id) }}" method="POST" enctype="multipart/form-data">
-        @csrf
-        @method('PUT')
-
-        <div class="row">
-            <!-- Left Column -->
-            <div class="col-md-6">
-                <div class="form-group mb-4">
-                    <label for="name" class="form-label">Item Name</label>
-                    <input type="text" name="name" id="name" class="form-control" value="{{ $item->name }}" required>
-                </div>
-
-                <div class="form-group mb-4">
-                    <label for="category_id" class="form-label">Category</label>
-                    <select name="category_id" id="category_id" class="form-select">
-                        @foreach($categories as $category)
-                            <option value="{{ $category->id }}" {{ $item->category_id == $category->id ? 'selected' : '' }}>
-                                {{ $category->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="form-group mb-4">
-                    <label for="brand_id" class="form-label">Brand</label>
-                    <select name="brand_id" id="brand_id" class="form-select">
-                        @foreach($brands as $brand)
-                            <option value="{{ $brand->id }}" {{ $item->brand_id == $brand->id ? 'selected' : '' }}>
-                                {{ $brand->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-
-            <!-- Right Column -->
-            <div class="col-md-6">
-                <div class="form-group mb-4">
-                    <label for="selling_price" class="form-label">Price</label>
-                    <input type="number" name="selling_price" id="selling_price" class="form-control" value="{{ $item->selling_price }}" required>
-                </div>
-
-                <div class="form-group mb-4">
-                    <label for="quantity" class="form-label">Quantity</label>
-                    <input type="number" name="quantity" id="quantity" class="form-control" value="{{ $item->quantity }}" required>
-                </div>
-
-                <!-- Discount Type and Value -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="discount_type" class="form-label">Discount Type</label>
-                        <select id="discount_type" name="discount_type" class="form-select">
-                            <option value="percentage" {{ old('discount_type', $item->discount_type) === 'percentage' ? 'selected' : '' }}>Percentage</option>
-                            <option value="fixed" {{ old('discount_type', $item->discount_type) === 'fixed' ? 'selected' : '' }}>Fixed Amount</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="discount_value" class="form-label">Discount Value</label>
-                        <input type="number" id="discount_value" name="discount_value" class="form-control" value="{{ old('discount_value', $item->discount_value) }}" min="0" required>
-                    </div>
-                </div>
-            </div>
+    <div class="card">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Edit {{ $item->is_parent ? 'Item' : 'Variant' }}</h2>
+            <a href="{{ route('items.index') }}" class="btn btn-light">← Back to Items</a>
         </div>
+        <div class="card-body">
+            <!-- Common Fields -->
+            <form action="{{ route('items.update', $item->id) }}" method="POST" enctype="multipart/form-data" id="editItemForm">
+                @csrf
+                @method('PUT')
 
-        <!-- Picture Upload -->
-        <div class="form-group mb-4">
-            <label for="picture" class="form-label">Item Picture (optional)</label>
-            <input type="file" name="picture" id="picture" class="form-control">
-            @if($item->picture)
-                <div class="mt-3">
-                    <img src="{{ asset('storage/' . $item->picture) }}" alt="{{ $item->name }}" class="img-thumbnail" style="max-width: 200px;">
-                </div>
-            @endif
-        </div>
+                <!-- Basic Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Basic Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Item Name</label>
+                                    <input type="text" name="name" class="form-control" value="{{ $item->name }}" {{ !$item->is_parent ? 'readonly' : '' }}>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Category</label>
+                                    <select name="category_id" class="form-select" {{ !$item->is_parent ? 'disabled' : '' }}>
+                                        @foreach($categories as $category)
+                                            <option value="{{ $category->id }}" {{ $item->category_id == $category->id ? 'selected' : '' }}>
+                                                {{ $category->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Brand</label>
+                                    <select name="brand_id" class="form-select" {{ !$item->is_parent ? 'disabled' : '' }}>
+                                        @foreach($brands as $brand)
+                                            <option value="{{ $brand->id }}" {{ $item->brand_id == $brand->id ? 'selected' : '' }}>
+                                                {{ $brand->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
 
-        <!-- Sizes -->
-        <div class="form-group mb-4">
-            <label class="form-label">Sizes</label>
-            <div class="row">
-                @foreach($sizes as $size)
-                    <div class="col-md-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="sizes[]" id="size-{{ $size->id }}" value="{{ $size->id }}"
-                                {{ $item->sizes->contains($size->id) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="size-{{ $size->id }}">
-                                {{ $size->name }}
-                            </label>
+                        <!-- Picture -->
+                        <div class="mb-3">
+                            <label class="form-label">Item Picture</label>
+                            <input type="file" name="picture" class="form-control">
+                            @if($item->picture)
+                                <div class="mt-2">
+                                    <img src="{{ asset('storage/' . $item->picture) }}" alt="Current Image" class="img-thumbnail" style="max-height: 100px">
+                                </div>
+                            @endif
                         </div>
                     </div>
-                @endforeach
-            </div>
-        </div>
+                </div>
 
-        <!-- Buttons -->
-        <div class="d-flex justify-content-between">
-            <a href="{{ route('items.index') }}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Back
-            </a>
-            <button type="submit" class="btn btn-success">
-                <i class="bi bi-save"></i> Update Item
-            </button>
-        </div>
-    </form>
+                <!-- Pricing Details -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Pricing Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Selling Price</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">EGP</span>
+                                        <input type="number" name="selling_price" class="form-control" value="{{ $item->selling_price }}" {{ !$item->is_parent ? 'readonly' : '' }}>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Tax Rate</label>
+                                    <div class="input-group">
+                                        <input type="number" name="tax" class="form-control" value="{{ $item->tax }}" {{ !$item->is_parent ? 'readonly' : '' }}>
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Discount Type</label>
+                                    <select name="discount_type" class="form-select" {{ !$item->is_parent ? 'disabled' : '' }}>
+                                        <option value="percentage" {{ $item->discount_type == 'percentage' ? 'selected' : '' }}>Percentage</option>
+                                        <option value="fixed" {{ $item->discount_type == 'fixed' ? 'selected' : '' }}>Fixed Amount</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Discount Value</label>
+                                    <input type="number" name="discount_value" class="form-control" value="{{ $item->discount_value }}" {{ !$item->is_parent ? 'readonly' : '' }}>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Error Messages -->
-    @if ($errors->any())
-        <div class="alert alert-danger mt-4">
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
+                @if($item->is_parent)
+                    <!-- Variants Table -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Variants</h5>
+                            <button type="button" class="btn btn-primary btn-sm" id="saveAllQuantities">
+                                Save All Changes
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Variant</th>
+                                            <th>Size</th>
+                                            <th>Color</th>
+                                            <th>Quantity</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($item->variants as $variant)
+                                            <tr data-variant-id="{{ $variant->id }}">
+                                                <td>{{ $variant->name }}</td>
+                                                <td>{{ $variant->sizes->first()->name ?? '-' }}</td>
+                                                <td>
+                                                    @if($variant->colors->first())
+                                                        <span class="d-flex align-items-center gap-2">
+                                                            <span class="color-preview rounded-circle"
+                                                                  style="width: 15px; height: 15px; background-color: {{ $variant->colors->first()->hex_code }};"></span>
+                                                            {{ $variant->colors->first()->name }}
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control form-control-sm quantity-input"
+                                                           value="{{ $variant->quantity }}" min="0" style="width: 100px">
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    <!-- Single Variant Quantity -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Stock Quantity</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Quantity</label>
+                                <input type="number" name="quantity" class="form-control" value="{{ $item->quantity }}" min="0">
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Submit Buttons -->
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{{ route('items.index') }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Update {{ $item->is_parent ? 'Item' : 'Variant' }}</button>
+                </div>
+            </form>
         </div>
-    @endif
+    </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const saveAllBtn = document.getElementById('saveAllQuantities');
+    if (saveAllBtn) {
+        saveAllBtn.addEventListener('click', function() {
+            saveAllBtn.disabled = true;
+            saveAllBtn.textContent = 'Saving...';
+
+            const updates = [];
+            document.querySelectorAll('tr[data-variant-id]').forEach(row => {
+                updates.push({
+                    id: row.dataset.variantId,
+                    quantity: parseInt(row.querySelector('.quantity-input').value) || 0
+                });
+            });
+
+            fetch('/items/update-variants-quantity', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ updates: updates })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert('Quantities updated successfully!');
+                    location.reload();
+                } else {
+                    throw new Error(data.error || 'Failed to update quantities');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating quantities: ' + error.message);
+            })
+            .finally(() => {
+                saveAllBtn.disabled = false;
+                saveAllBtn.textContent = 'Save All Changes';
+            });
+        });
+    }
+
+    const form = document.getElementById('editItemForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!confirm('Are you sure you want to update this item?')) {
+                e.preventDefault();
+            }
+        });
+    }
+});
+</script>
+@endpush
+
+<style>
+.color-preview {
+    display: inline-block;
+    border: 1px solid #dee2e6;
+}
+</style>
 @endsection

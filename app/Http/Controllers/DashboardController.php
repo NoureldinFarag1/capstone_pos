@@ -6,6 +6,7 @@ use App\Models\Item;
 use App\Models\Sale;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Refund;
 use App\Models\SaleItem;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -39,7 +40,7 @@ class DashboardController extends Controller
 
 
         // Low Stock Items
-        $lowStockItems = Item::where('quantity', '<=', 5)->get();
+        $lowStockItems = Item::where('quantity', '<=', 5)->where('is_parent', false)->get();
 
         // Sales Metrics
         $currentMonth = Carbon::now();
@@ -70,7 +71,7 @@ class DashboardController extends Controller
                                   ->sum('total_amount');
 
         // Inventory Metrics
-        $totalItems = Item::count();
+        $totalItems = Item::where('is_parent', false)->count();
         $totalBrands = Brand::count();
         $totalCategories = Category::count();
 
@@ -102,9 +103,9 @@ class DashboardController extends Controller
 
         // Stock Level Summary
         $stockLevels = [
-                'critical' => Item::where('quantity', '<=', 5)->count(),
-                'low' => Item::where('quantity', '>', 5)->where('quantity', '<=', 20)->count(),
-                'healthy' => Item::where('quantity', '>', 20)->count()
+                'critical' => Item::where('quantity', '<=', 5)->where('is_parent', false)->count(),
+                'low' => Item::where('quantity', '>', 5)->where('quantity', '<=', 20)->where('is_parent', false)->count(),
+                'healthy' => Item::where('quantity', '>', 20)->where('is_parent', false)->count()
             ];
 
         $topPaymentMethod = Sale::select('payment_method', DB::raw('count(*) as count'))
@@ -115,7 +116,7 @@ class DashboardController extends Controller
         $topPaymentMethodCount = (Sale::where('payment_method', $topPaymentMethod)->count());
         $AllSalesCount = Sale::count();
 
-        $recentItems = Item::latest()->take(5)->get();
+        $recentItems = Item::where('is_parent', false)->latest()->take(5)->get();
 
         // Add new metrics
         $salesAnalytics = [
@@ -125,18 +126,41 @@ class DashboardController extends Controller
         ];
 
         $inventoryMetrics = [
-            'total_value' => Item::sum(DB::raw('quantity * selling_price')),
-            'avg_item_price' => Item::avg('selling_price'),
-            'out_of_stock' => Item::where('quantity', 0)->count(),
+            'total_value' => Item::where('is_parent', false)->sum(DB::raw('quantity * selling_price')),
+            'avg_item_price' => Item::where('is_parent', false)->avg('selling_price'),
+            'out_of_stock' => Item::where('quantity', 0)->where('is_parent', false)->count(),
             'inventory_turnover' => $this->calculateInventoryTurnover()
         ];
 
-        $categoryPerformance = Category::withCount('items')
-            ->withSum('items', 'quantity')
-            ->withAvg('items', 'selling_price')
-            ->get();
+        // Category Performance
+        $categoryPerformance = Category::with(['items' => function ($query) {
+            $query->where('is_parent', false);
+        }])
+        ->withCount(['items' => function ($query) {
+            $query->where('is_parent', false);
+        }])
+        ->withSum(['items' => function ($query) {
+            $query->where('is_parent', false);
+        }], 'quantity')
+        ->withAvg(['items' => function ($query) {
+            $query->where('is_parent', false);
+        }], 'selling_price')
+        ->get();
 
         $salesForecasting = $this->calculateSalesForecasting();
+
+        // Add refund metrics
+        $refundMetrics = [
+            'today_refunds' => Refund::whereDate('created_at', Carbon::today())->sum('refund_amount'),
+            'month_refunds' => Refund::whereMonth('created_at', Carbon::now()->month)
+                ->whereYear('created_at', Carbon::now()->year)
+                ->sum('refund_amount'),
+            'refund_rate' => $this->calculateRefundRate(),
+            'recent_refunds' => Refund::with(['sale', 'item'])
+                ->latest()
+                ->take(5)
+                ->get()
+        ];
 
         return view('layouts.dashboard', [
             'lowStockItems' => $lowStockItems,
@@ -169,6 +193,7 @@ class DashboardController extends Controller
             'bestSellingDays' => $this->getBestSellingDays(),
             'peakHours' => $this->getPeakHours(),
             'customerMetrics' => $this->getCustomerMetrics(),
+            'refundMetrics' => $refundMetrics,
         ]);
     }
 
@@ -273,5 +298,15 @@ class DashboardController extends Controller
             'next_day_forecast' => $movingAverage,
             'historical_trend' => $historicalSales
         ];
+    }
+
+    private function calculateRefundRate()
+    {
+        $totalSales = Sale::whereMonth('created_at', Carbon::now()->month)->count();
+        $refundedSales = Sale::whereMonth('created_at', Carbon::now()->month)
+            ->whereIn('refund_status', ['partial_refund', 'full_refund'])
+            ->count();
+
+        return $totalSales > 0 ? ($refundedSales / $totalSales) * 100 : 0;
     }
 }

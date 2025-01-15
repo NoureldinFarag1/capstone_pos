@@ -114,6 +114,10 @@ Route::resource('colors', ColorController::class);
 Route::post('/sales/print-gift-receipt', [SaleController::class, 'printGiftReceipt'])->name('sales.print-gift-receipt');
 Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
 
+// Add this route
+Route::post('/items/update-variants-quantity', [ItemController::class, 'updateVariantsQuantity'])
+    ->name('items.updateVariantsQuantity')
+    ->middleware('auth');
 
 // Default homepage
 Route::get('/', function () {

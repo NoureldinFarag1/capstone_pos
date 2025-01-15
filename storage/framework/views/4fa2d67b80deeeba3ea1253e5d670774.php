@@ -1,126 +1,256 @@
 <?php $__env->startSection('content'); ?>
-<br>
 <div class="container">
-    <h2 class="mb-4 text-center">Edit Item</h2>
-
-    <form action="<?php echo e(route('items.update', $item->id)); ?>" method="POST" enctype="multipart/form-data">
-        <?php echo csrf_field(); ?>
-        <?php echo method_field('PUT'); ?>
-
-        <div class="row">
-            <!-- Left Column -->
-            <div class="col-md-6">
-                <div class="form-group mb-4">
-                    <label for="name" class="form-label">Item Name</label>
-                    <input type="text" name="name" id="name" class="form-control" value="<?php echo e($item->name); ?>" required>
-                </div>
-
-                <div class="form-group mb-4">
-                    <label for="category_id" class="form-label">Category</label>
-                    <select name="category_id" id="category_id" class="form-select">
-                        <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                            <option value="<?php echo e($category->id); ?>" <?php echo e($item->category_id == $category->id ? 'selected' : ''); ?>>
-                                <?php echo e($category->name); ?>
-
-                            </option>
-                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                    </select>
-                </div>
-
-                <div class="form-group mb-4">
-                    <label for="brand_id" class="form-label">Brand</label>
-                    <select name="brand_id" id="brand_id" class="form-select">
-                        <?php $__currentLoopData = $brands; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $brand): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                            <option value="<?php echo e($brand->id); ?>" <?php echo e($item->brand_id == $brand->id ? 'selected' : ''); ?>>
-                                <?php echo e($brand->name); ?>
-
-                            </option>
-                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Right Column -->
-            <div class="col-md-6">
-                <div class="form-group mb-4">
-                    <label for="selling_price" class="form-label">Price</label>
-                    <input type="number" name="selling_price" id="selling_price" class="form-control" value="<?php echo e($item->selling_price); ?>" required>
-                </div>
-
-                <div class="form-group mb-4">
-                    <label for="quantity" class="form-label">Quantity</label>
-                    <input type="number" name="quantity" id="quantity" class="form-control" value="<?php echo e($item->quantity); ?>" required>
-                </div>
-
-                <!-- Discount Type and Value -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="discount_type" class="form-label">Discount Type</label>
-                        <select id="discount_type" name="discount_type" class="form-select">
-                            <option value="percentage" <?php echo e(old('discount_type', $item->discount_type) === 'percentage' ? 'selected' : ''); ?>>Percentage</option>
-                            <option value="fixed" <?php echo e(old('discount_type', $item->discount_type) === 'fixed' ? 'selected' : ''); ?>>Fixed Amount</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="discount_value" class="form-label">Discount Value</label>
-                        <input type="number" id="discount_value" name="discount_value" class="form-control" value="<?php echo e(old('discount_value', $item->discount_value)); ?>" min="0" required>
-                    </div>
-                </div>
-            </div>
+    <div class="card">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Edit <?php echo e($item->is_parent ? 'Item' : 'Variant'); ?></h2>
+            <a href="<?php echo e(route('items.index')); ?>" class="btn btn-light">← Back to Items</a>
         </div>
+        <div class="card-body">
+            <!-- Common Fields -->
+            <form action="<?php echo e(route('items.update', $item->id)); ?>" method="POST" enctype="multipart/form-data" id="editItemForm">
+                <?php echo csrf_field(); ?>
+                <?php echo method_field('PUT'); ?>
 
-        <!-- Picture Upload -->
-        <div class="form-group mb-4">
-            <label for="picture" class="form-label">Item Picture (optional)</label>
-            <input type="file" name="picture" id="picture" class="form-control">
-            <?php if($item->picture): ?>
-                <div class="mt-3">
-                    <img src="<?php echo e(asset('storage/' . $item->picture)); ?>" alt="<?php echo e($item->name); ?>" class="img-thumbnail" style="max-width: 200px;">
-                </div>
-            <?php endif; ?>
-        </div>
+                <!-- Basic Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Basic Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Item Name</label>
+                                    <input type="text" name="name" class="form-control" value="<?php echo e($item->name); ?>" <?php echo e(!$item->is_parent ? 'readonly' : ''); ?>>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Category</label>
+                                    <select name="category_id" class="form-select" <?php echo e(!$item->is_parent ? 'disabled' : ''); ?>>
+                                        <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <option value="<?php echo e($category->id); ?>" <?php echo e($item->category_id == $category->id ? 'selected' : ''); ?>>
+                                                <?php echo e($category->name); ?>
 
-        <!-- Sizes -->
-        <div class="form-group mb-4">
-            <label class="form-label">Sizes</label>
-            <div class="row">
-                <?php $__currentLoopData = $sizes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <div class="col-md-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="sizes[]" id="size-<?php echo e($size->id); ?>" value="<?php echo e($size->id); ?>"
-                                <?php echo e($item->sizes->contains($size->id) ? 'checked' : ''); ?>>
-                            <label class="form-check-label" for="size-<?php echo e($size->id); ?>">
-                                <?php echo e($size->name); ?>
+                                            </option>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Brand</label>
+                                    <select name="brand_id" class="form-select" <?php echo e(!$item->is_parent ? 'disabled' : ''); ?>>
+                                        <?php $__currentLoopData = $brands; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $brand): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <option value="<?php echo e($brand->id); ?>" <?php echo e($item->brand_id == $brand->id ? 'selected' : ''); ?>>
+                                                <?php echo e($brand->name); ?>
 
-                            </label>
+                                            </option>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Picture -->
+                        <div class="mb-3">
+                            <label class="form-label">Item Picture</label>
+                            <input type="file" name="picture" class="form-control">
+                            <?php if($item->picture): ?>
+                                <div class="mt-2">
+                                    <img src="<?php echo e(asset('storage/' . $item->picture)); ?>" alt="Current Image" class="img-thumbnail" style="max-height: 100px">
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
-                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-            </div>
-        </div>
+                </div>
 
-        <!-- Buttons -->
-        <div class="d-flex justify-content-between">
-            <a href="<?php echo e(route('items.index')); ?>" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Back
-            </a>
-            <button type="submit" class="btn btn-success">
-                <i class="bi bi-save"></i> Update Item
-            </button>
-        </div>
-    </form>
+                <!-- Pricing Details -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Pricing Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Selling Price</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">EGP</span>
+                                        <input type="number" name="selling_price" class="form-control" value="<?php echo e($item->selling_price); ?>" <?php echo e(!$item->is_parent ? 'readonly' : ''); ?>>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Tax Rate</label>
+                                    <div class="input-group">
+                                        <input type="number" name="tax" class="form-control" value="<?php echo e($item->tax); ?>" <?php echo e(!$item->is_parent ? 'readonly' : ''); ?>>
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Discount Type</label>
+                                    <select name="discount_type" class="form-select" <?php echo e(!$item->is_parent ? 'disabled' : ''); ?>>
+                                        <option value="percentage" <?php echo e($item->discount_type == 'percentage' ? 'selected' : ''); ?>>Percentage</option>
+                                        <option value="fixed" <?php echo e($item->discount_type == 'fixed' ? 'selected' : ''); ?>>Fixed Amount</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Discount Value</label>
+                                    <input type="number" name="discount_value" class="form-control" value="<?php echo e($item->discount_value); ?>" <?php echo e(!$item->is_parent ? 'readonly' : ''); ?>>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Error Messages -->
-    <?php if($errors->any()): ?>
-        <div class="alert alert-danger mt-4">
-            <ul>
-                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <li><?php echo e($error); ?></li>
-                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-            </ul>
+                <?php if($item->is_parent): ?>
+                    <!-- Variants Table -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Variants</h5>
+                            <button type="button" class="btn btn-primary btn-sm" id="saveAllQuantities">
+                                Save All Changes
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Variant</th>
+                                            <th>Size</th>
+                                            <th>Color</th>
+                                            <th>Quantity</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php $__currentLoopData = $item->variants; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $variant): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <tr data-variant-id="<?php echo e($variant->id); ?>">
+                                                <td><?php echo e($variant->name); ?></td>
+                                                <td><?php echo e($variant->sizes->first()->name ?? '-'); ?></td>
+                                                <td>
+                                                    <?php if($variant->colors->first()): ?>
+                                                        <span class="d-flex align-items-center gap-2">
+                                                            <span class="color-preview rounded-circle"
+                                                                  style="width: 15px; height: 15px; background-color: <?php echo e($variant->colors->first()->hex_code); ?>;"></span>
+                                                            <?php echo e($variant->colors->first()->name); ?>
+
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control form-control-sm quantity-input"
+                                                           value="<?php echo e($variant->quantity); ?>" min="0" style="width: 100px">
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <!-- Single Variant Quantity -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Stock Quantity</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Quantity</label>
+                                <input type="number" name="quantity" class="form-control" value="<?php echo e($item->quantity); ?>" min="0">
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Submit Buttons -->
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="<?php echo e(route('items.index')); ?>" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Update <?php echo e($item->is_parent ? 'Item' : 'Variant'); ?></button>
+                </div>
+            </form>
         </div>
-    <?php endif; ?>
+    </div>
 </div>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const saveAllBtn = document.getElementById('saveAllQuantities');
+    if (saveAllBtn) {
+        saveAllBtn.addEventListener('click', function() {
+            saveAllBtn.disabled = true;
+            saveAllBtn.textContent = 'Saving...';
+
+            const updates = [];
+            document.querySelectorAll('tr[data-variant-id]').forEach(row => {
+                updates.push({
+                    id: row.dataset.variantId,
+                    quantity: parseInt(row.querySelector('.quantity-input').value) || 0
+                });
+            });
+
+            fetch('/items/update-variants-quantity', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ updates: updates })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert('Quantities updated successfully!');
+                    location.reload();
+                } else {
+                    throw new Error(data.error || 'Failed to update quantities');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating quantities: ' + error.message);
+            })
+            .finally(() => {
+                saveAllBtn.disabled = false;
+                saveAllBtn.textContent = 'Save All Changes';
+            });
+        });
+    }
+
+    const form = document.getElementById('editItemForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!confirm('Are you sure you want to update this item?')) {
+                e.preventDefault();
+            }
+        });
+    }
+});
+</script>
+<?php $__env->stopPush(); ?>
+
+<style>
+.color-preview {
+    display: inline-block;
+    border: 1px solid #dee2e6;
+}
+</style>
 <?php $__env->stopSection(); ?>
 
 <?php echo $__env->make('layouts.dashboard', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH /Users/noureldinfarag/capstone_pos/resources/views/items/edit.blade.php ENDPATH**/ ?>

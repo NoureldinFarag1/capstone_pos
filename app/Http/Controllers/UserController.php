@@ -14,8 +14,12 @@ class UserController extends Controller
     // List all users
     public function index()
     {
-        $users = User::all(); // Get all users
-        return view('users.index', compact('users'));
+        $users = User::with('roles')->get(); // Get all users with their roles
+        $adminCount = User::role('Admin')->count();
+        $moderatorCount = User::role('Moderator')->count();
+        $cashierCount = User::role('Cashier')->count();
+
+        return view('users.index', compact('users', 'adminCount', 'moderatorCount', 'cashierCount'));
     }
 
     // Create user view
