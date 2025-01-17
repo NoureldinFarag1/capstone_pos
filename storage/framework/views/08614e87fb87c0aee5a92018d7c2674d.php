@@ -441,44 +441,6 @@ function handlePrintGiftReceipt() {
     });
 }
 
-    // Test scenarios for admin, moderator, and cashier creating a big sale
-    function testCreateBigSale(role) {
-        console.log(`Testing big sale creation for role: ${role}`);
-
-        // Set customer details
-        customerNameInput.value = 'Nour';
-        customerPhoneInput.value = '01113207752';
-
-        // Add multiple items to the sale by selecting from the dropdown
-        for (let i = 0; i < 10; i++) {
-            const itemOption = itemSelect.options[i + 1]; // Assuming the first option is a placeholder
-            if (itemOption) {
-                itemSelect.value = itemOption.value;
-                const item = {
-                    id: itemOption.value,
-                    name: itemOption.text,
-                    price: parseFloat(itemOption.getAttribute('data-price')),
-                    originalPrice: parseFloat(itemOption.getAttribute('data-original-price'))
-                };
-                addItemToList(item, 5);
-            }
-        }
-
-        // Set discount
-        discountTypeSelect.value = 'percentage';
-        discountValueInput.value = 10;
-
-        // Set payment method
-        document.getElementById('paymentMethod').value = 'cash';
-        document.getElementById('paymentReference').value = 'TestTransaction123';
-
-        // Submit the form
-        saleForm.submit();
-    }
-
-    // Run test scenarios
-    const roles = ['admin', 'moderator', 'cashier'];
-    roles.forEach(role => testCreateBigSale(role));
 });
 </script>
 <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
