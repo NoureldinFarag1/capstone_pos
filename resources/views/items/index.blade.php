@@ -54,16 +54,16 @@
     <!-- Pagination -->
     <div class="d-flex justify-content-center mt-4">
         <nav aria-label="Page navigation">
-            <ul class="pagination">
+            <ul class="pagination pagination-sm">
                 <!-- Previous Page Link -->
                 @if ($items->onFirstPage())
                     <li class="page-item disabled">
-                        <span class="page-link">Previous</span>
+                        <span class="page-link">&laquo; Previous</span>
                     </li>
                 @else
                     <li class="page-item">
                         <a class="page-link" href="{{ $items->previousPageUrl() }}" aria-label="Previous">
-                            <span aria-hidden="true">&laquo;</span>
+                            <span aria-hidden="true">&laquo; Previous</span>
                         </a>
                     </li>
                 @endif
@@ -79,12 +79,12 @@
                 @if ($items->hasMorePages())
                     <li class="page-item">
                         <a class="page-link" href="{{ $items->nextPageUrl() }}" aria-label="Next">
-                            <span aria-hidden="true">&raquo;</span>
+                            <span aria-hidden="true">Next &raquo;</span>
                         </a>
                     </li>
                 @else
                     <li class="page-item disabled">
-                        <span class="page-link">Next</span>
+                        <span class="page-link">Next &raquo;</span>
                     </li>
                 @endif
             </ul>
@@ -104,55 +104,14 @@
 
                             <!-- Parent Item Details -->
                             <div class="mb-2">
-                                <p class="mb-1">Base Price: <span class="fw-bold">EGP{{ number_format($item->priceAfterSale(), 2) }}</span></p>
+                                <p class="mb-1">Base Price: <span class="fw-bold">EGP{{ number_format($item->selling_price, 2) }}</span></p>
                                 @if($item->discount_type === 'percentage')
                                     <p class="mb-1 text-muted">Sale: <span class="fw-bold">{{ $item->discount_value }}%</span></p>
                                 @else
                                     <p class="mb-1 text-muted">Sale: <span class="fw-bold">EGP{{ $item->discount_value }}</span></p>
                                 @endif
+                                <p class="mb-1">Selling Price: <span class="fw-bold">EGP{{ number_format($item->priceAfterSale(), 2) }}</span></p>
                                 <p class="mb-1">Total Stock: <span class="fw-bold">{{ $item->quantity }}</span></p>
-                            </div>
-
-                            <!-- Variants Summary -->
-                            <div class="mt-3">
-                                <h6 class="fw-bold">Available Variations:</h6>
-                                <div class="table-responsive">
-                                    <table class="table table-sm">
-                                        <thead>
-                                            <tr>
-                                                <th>Size</th>
-                                                <th>Color</th>
-                                                <th>Stock</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($item->variants as $variant)
-                                                <tr>
-                                                    <td>{{ $variant->sizes->first()->name ?? '-' }}</td>
-                                                    <td>
-                                                        @if($variant->colors->first())
-                                                            <span class="d-flex align-items-center gap-2">
-                                                                <span class="color-preview rounded-circle"
-                                                                      style="width: 15px; height: 15px; background-color: {{ $variant->colors->first()->hex_code }};"></span>
-                                                                {{ $variant->colors->first()->name }}
-                                                            </span>
-                                                        @else
-                                                            -
-                                                        @endif
-                                                    </td>
-                                                    <td>
-                                                        @if($variant->quantity == 0)
-                                                            <span class="text-danger">{{ $variant->quantity }}</span>
-                                                            <span class="badge bg-danger ms-2">Out of stock</span>
-                                                        @else
-                                                            {{ $variant->quantity }}
-                                                        @endif
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
                             </div>
 
                             <!-- Action Buttons -->
@@ -180,16 +139,16 @@
     <!-- Bottom Pagination -->
     <div class="d-flex justify-content-center mt-4">
         <nav aria-label="Page navigation">
-            <ul class="pagination">
+            <ul class="pagination pagination-sm">
                 <!-- Previous Page Link -->
                 @if ($items->onFirstPage())
                     <li class="page-item disabled">
-                        <span class="page-link">Previous</span>
+                        <span class="page-link">&laquo; Previous</span>
                     </li>
                 @else
                     <li class="page-item">
                         <a class="page-link" href="{{ $items->previousPageUrl() }}" aria-label="Previous">
-                            <span aria-hidden="true">&laquo;</span>
+                            <span aria-hidden="true">&laquo; Previous</span>
                         </a>
                     </li>
                 @endif
@@ -205,12 +164,12 @@
                 @if ($items->hasMorePages())
                     <li class="page-item">
                         <a class="page-link" href="{{ $items->nextPageUrl() }}" aria-label="Next">
-                            <span aria-hidden="true">&raquo;</span>
+                            <span aria-hidden="true">Next &raquo;</span>
                         </a>
                     </li>
                 @else
                     <li class="page-item disabled">
-                        <span class="page-link">Next</span>
+                        <span class="page-link">Next &raquo;</span>
                     </li>
                 @endif
             </ul>
@@ -220,56 +179,58 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Search functionality
-        const searchInput = document.getElementById('itemSearch');
-        if (searchInput) {
-            searchInput.addEventListener('keyup', function() {
-                const searchText = this.value.toLowerCase();
-                const itemCards = document.querySelectorAll('.col-lg-4');
+document.addEventListener('DOMContentLoaded', function() {
+    // Existing search functionality
+    const searchInput = document.getElementById('itemSearch');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            const itemCards = document.querySelectorAll('.col-lg-4');
 
-                itemCards.forEach(card => {
-                    const itemName = card.querySelector('.card-title').textContent.toLowerCase();
-                    const itemDetails = card.querySelector('.card-body').textContent.toLowerCase();
+            itemCards.forEach(card => {
+                const itemName = card.querySelector('.card-title').textContent.toLowerCase();
+                const itemDetails = card.querySelector('.card-body').textContent.toLowerCase();
 
-                    if (itemName.includes(searchText) || itemDetails.includes(searchText)) {
-                        card.style.display = '';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
+                if (itemName.includes(searchText) || itemDetails.includes(searchText)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
             });
-        }
+        });
+    }
 
-        // Delete confirmation using SweetAlert2
-        document.querySelectorAll('.delete-item-form').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
+    // Existing delete confirmation
+    document.querySelectorAll('.delete-item-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
 
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: "This will delete the item and all its variants. You won't be able to revert this!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Yes, delete it!',
-                    cancelButtonText: 'Cancel'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
-                });
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This will delete the item and all its variants. You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
             });
         });
     });
+});
 </script>
 @endpush
 
+@push('styles')
 <style>
 .color-preview {
     display: inline-block;
     border: 1px solid #dee2e6;
 }
 </style>
+@endpush
 @endsection

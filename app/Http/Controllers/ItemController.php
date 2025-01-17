@@ -44,10 +44,10 @@ class ItemController extends BaseController
             'category_id' => 'required|exists:categories,id',
             'brand_id' => 'required|integer',
             'picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'quantity' => 'required|integer|min:0',
             'sizes' => 'required|array',
             'colors' => 'array',
-            'colors.*' => 'exists:colors,id'
+            'colors.*' => 'exists:colors,id',
+            'variant_quantities' => 'required|array'
         ]);
 
         $category = Category::findOrFail($request->input('category_id'));
@@ -87,9 +87,22 @@ class ItemController extends BaseController
         $sizes = Size::whereIn('id', $request->input('sizes'))->get();
         $colors = Color::whereIn('id', $request->input('colors'))->get();
 
+        // Initialize total quantity
+        $totalQuantity = 0;
+
         // Create variants (child items)
         foreach ($colors as $color) {
             foreach ($sizes as $size) {
+                // Get variant quantity from request
+                $variantQuantity = $request->input("variant_quantities.{$size->id}.{$color->id}", 0);
+
+                // Skip variants with zero quantity
+                if ($variantQuantity == 0) {
+                    continue;
+                }
+
+                $totalQuantity += $variantQuantity;
+
                 // Create variant name
                 $variantName = $request->input('name') . ' - ' . $size->name . ' - ' . $color->name;
 
@@ -99,7 +112,7 @@ class ItemController extends BaseController
                     'category_id' => $request->input('category_id'),
                     'brand_id' => $request->input('brand_id'),
                     'picture' => $picturePath,
-                    'quantity' => $request->input('quantity'),
+                    'quantity' => $variantQuantity, // Use the specific variant quantity
                     'buying_price' => $request->input('buying_price'),
                     'selling_price' => $request->input('selling_price'),
                     'tax' => $request->input('tax'),
@@ -135,12 +148,96 @@ class ItemController extends BaseController
         }
 
         // Update parent item's total quantity
-        $totalQuantity = $parentItem->variants()->sum('quantity');
         $parentItem->quantity = $totalQuantity;
         $parentItem->save();
 
         return redirect()->route('items.index')->with('success', 'Item and variants created successfully.');
     }
+
+    public function addVariant(Request $request)
+    {
+        $request->validate([
+            'parent_id' => 'required|exists:items,id',
+            'size_id' => 'required|exists:sizes,id',
+            'color_id' => 'required|exists:colors,id',
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        $parentItem = Item::findOrFail($request->input('parent_id'));
+        $size = Size::findOrFail($request->input('size_id'));
+        $color = Color::findOrFail($request->input('color_id'));
+
+        // Check if the variant already exists
+        $existingVariant = Item::where('parent_id', $parentItem->id)
+            ->whereHas('sizes', function ($query) use ($size) {
+                $query->where('sizes.id', $size->id);
+            })
+            ->whereHas('colors', function ($query) use ($color) {
+                $query->where('colors.id', $color->id);
+            })
+            ->first();
+
+        if ($existingVariant) {
+            // Update the existing variant's quantity
+            $existingVariant->quantity += $request->input('quantity');
+            $existingVariant->save();
+
+            // Update parent item's total quantity
+            $parentItem->quantity += $request->input('quantity');
+            $parentItem->save();
+
+            return response()->json(['success' => true, 'message' => 'Variant updated successfully']);
+        } else {
+            // Create variant name
+            $variantName = $parentItem->name . ' - ' . $size->name . ' - ' . $color->name;
+
+            // Create the variant
+            $variant = Item::create([
+                'name' => $variantName,
+                'category_id' => $parentItem->category_id,
+                'brand_id' => $parentItem->brand_id,
+                'picture' => $parentItem->picture,
+                'quantity' => $request->input('quantity'),
+                'buying_price' => $parentItem->buying_price,
+                'selling_price' => $parentItem->selling_price,
+                'tax' => $parentItem->tax,
+                'discount_type' => $parentItem->discount_type,
+                'discount_value' => $parentItem->discount_value,
+                'parent_id' => $parentItem->id,
+                'is_parent' => false,
+            ]);
+
+            // Generate variant barcode
+            $variantBarcode = $parentItem->code .
+                             Str::padLeft($color->id, 2, '0') .
+                             Str::padLeft($size->id, 2, '0');
+
+            // Generate barcode image
+            $barcodeGenerator = new BarcodeGeneratorPNG();
+            $barcodePath = 'barcodes/' . $variantBarcode . '.png';
+            file_put_contents(
+                storage_path('app/public/' . $barcodePath),
+                $barcodeGenerator->getBarcode($variantBarcode, $barcodeGenerator::TYPE_CODE_128)
+            );
+
+            // Update variant with barcode
+            $variant->barcode = $barcodePath;
+            $variant->code = $variantBarcode;
+
+            // Attach size and color
+            $variant->sizes()->attach([$size->id]);
+            $variant->colors()->attach([$color->id]);
+
+            $variant->save();
+
+            // Update parent item's total quantity
+            $parentItem->quantity += $request->input('quantity');
+            $parentItem->save();
+
+            return response()->json(['success' => true, 'message' => 'Variant added successfully']);
+        }
+    }
+
     public function getRelatedItems($name)
     {
         // Remove size and color information to get base name
@@ -165,7 +262,7 @@ class ItemController extends BaseController
             ->when($categoryId, function ($query) use ($categoryId) {
                 return $query->where('category_id', $categoryId);
             })
-            ->paginate(21); // Paginate n items per page
+            ->paginate(60); // Paginate n items per page
 
         $lowStockItems = $this->getLowStockItems();
         return view('items.index', compact('items', 'categories', 'brands', 'lowStockItems'));
@@ -435,10 +532,7 @@ class ItemController extends BaseController
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        $brandName = DB::table('brands')->where('id', $brandId)->value('name');
-        $brandNameSlug = str_replace(' ', '_', strtolower($brandName));
-
-        $items = DB::table('items')
+        $query = DB::table('items')
             ->join('brands', 'items.brand_id', '=', 'brands.id')
             ->leftJoin('sale_items', function ($join) use ($startDate, $endDate) {
                 $join->on('items.id', '=', 'sale_items.item_id');
@@ -454,9 +548,17 @@ class ItemController extends BaseController
                 'items.selling_price',
                 DB::raw('COALESCE(SUM(sale_items.quantity), 0) as quantity_sold')
             )
-            ->where('items.brand_id', $brandId)
-            ->where('items.is_parent', false) // Exclude parent items
-            ->groupBy('items.id', 'brands.name', 'items.name', 'items.quantity', 'items.selling_price')
+            ->where('items.is_parent', false); // Exclude parent items
+
+        // Only apply brand filter if a specific brand is selected
+        if ($brandId) {
+            $query->where('items.brand_id', $brandId);
+            $fileName = str_replace(' ', '_', strtolower(DB::table('brands')->where('id', $brandId)->value('name')));
+        } else {
+            $fileName = 'all_brands';
+        }
+
+        $items = $query->groupBy('items.id', 'brands.name', 'items.name', 'items.quantity', 'items.selling_price')
             ->get();
 
         // Add sale price
@@ -473,7 +575,7 @@ class ItemController extends BaseController
         }
 
         // Dynamic file name with date range if provided
-        $fileName = $brandNameSlug . '_items_report';
+        $fileName .= '_items_report';
         if ($startDate && $endDate) {
             $fileName .= "_{$startDate}_to_{$endDate}";
         }

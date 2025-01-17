@@ -13,6 +13,7 @@ use App\Http\Controllers\CashDrawerController;
 use App\Http\Controllers\ColorController;
 use App\Http\Controllers\CustomerController;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\BackupController;
 
 Route::get('/connection-test', function() {
     try {
@@ -80,7 +81,7 @@ Route::delete('/sales/{id}', [SaleController::class, 'destroy'])->name('sales.de
 Route::delete('/sales/{sale}/delete-all-items', [SaleController::class, 'deleteAllItems'])->name('sales.deleteAllItems');
 Route::put('/items/{id}', [ItemController::class, 'update'])->name('items.update');
 
-
+Route::post('/items/add-variant', [ItemController::class, 'addVariant'])->name('items.addVariant');
 
 // Additional item-related routes
 Route::get('/categories-by-brand/{brand_id}', [CategoryController::class, 'getCategoriesByBrand'])->name('categories.byBrand');
@@ -118,6 +119,21 @@ Route::get('/customers', [CustomerController::class, 'index'])->name('customers.
 Route::post('/items/update-variants-quantity', [ItemController::class, 'updateVariantsQuantity'])
     ->name('items.updateVariantsQuantity')
     ->middleware('auth');
+
+Route::get('/loyal-customers', [SaleController::class, 'loyalCustomers'])->name('sales.loyal-customers');
+Route::get('/sales/{period}/{method}', [SaleController::class, 'paymentMethodSales'])
+    ->name('sales.by-payment-method')
+    ->where('period', 'daily|monthly')
+    ->where('method', 'cash|credit_card|mobile_pay');
+
+// Add this route
+Route::get('/brands/most-selling', [DashboardController::class, 'mostSellingBrands'])->name('brands.most-selling');
+
+// Add this route
+Route::get('/customers/fetch-name', [CustomerController::class, 'fetchName']);
+
+// Add this route
+Route::post('/backup/download', [BackupController::class, 'download'])->name('backup.download');
 
 // Default homepage
 Route::get('/', function () {

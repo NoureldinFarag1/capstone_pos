@@ -18,12 +18,13 @@
                         <div class="col-6">
                             <p class="card-text"><strong>Brand:</strong> {{ $item->brand->name }}</p>
                             <p class="card-text"><strong>Category:</strong> {{ $item->category->name }}</p>
-                            <p class="card-text"><strong>Base Price:</strong> EGP{{ $item->priceAfterSale() }}</p>
+                            <p class="card-text"><strong>Base Price:</strong> EGP{{ $item->selling_price }}</p>
                             @if($item->discount_type === 'percentage')
                                 <p class="mb-1 text-muted">Sale: <span class="fw-bold">{{ $item->discount_value }}%</span></p>
                             @else
                                 <p class="mb-1 text-muted">Sale: <span class="fw-bold">EGP{{ $item->discount_value }}</span></p>
                             @endif
+                            <p class="card-text"><strong>Selling Price:</strong> EGP{{ $item->priceAfterSale() }}</p>
                             <p class="card-text"><strong>Total Stock:</strong> {{ $item->quantity }}</p>
                         </div>
                     </div>
@@ -75,6 +76,9 @@
                                                    value="{{ $variant->quantity }}"
                                                    min="0"
                                                    style="width: 80px;">
+                                            @if($variant->quantity == 0)
+                                                <span class="badge bg-danger ms-2">Out of Stock</span>
+                                            @endif
                                         </td>
                                         <td>
                                             @if($variant->barcode)
@@ -100,101 +104,67 @@
     </div>
 </div>
 
-<!-- Print Quantity Modal -->
-<div class="modal" id="printQuantityModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Print Labels</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="labelQuantity">Number of Labels to Print:</label>
-                    <input type="number" class="form-control" id="labelQuantity" min="1" value="1">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="confirmPrint">Print</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Get all print buttons
     const printBtns = document.querySelectorAll('.print-label');
-    const modal = document.getElementById('printQuantityModal');
 
     // Add click event to all print buttons
     printBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             const variantId = this.dataset.variantId;
-            const confirmPrint = document.getElementById('confirmPrint');
 
-            // Update the confirm button to know which variant to print
-            confirmPrint.dataset.variantId = variantId;
-
-            // Show the modal
-            $('#printQuantityModal').modal('show');
-        });
-    });
-
-    // Handle the confirm print button
-    document.getElementById('confirmPrint').addEventListener('click', function() {
-        const quantity = document.getElementById('labelQuantity').value;
-        const variantId = this.dataset.variantId;
-
-        // Show loading state
-        this.disabled = true;
-        this.textContent = 'Printing...';
-
-        // Make the AJAX request
-        fetch(`/items/${variantId}/print-label`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({
-                quantity: quantity
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: 'Labels sent to printer successfully!'
-                });
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Failed to print labels: ' + data.error
-                });
-            }
-            $('#printQuantityModal').modal('hide');
-        })
-        .catch(error => {
+            // Show SweetAlert input for quantity
             Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Error printing labels: ' + error
+                title: 'Print Labels',
+                input: 'number',
+                inputLabel: 'Number of Labels to Print:',
+                inputAttributes: {
+                    min: 1,
+                    value: 1
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Print',
+                showLoaderOnConfirm: true,
+                preConfirm: (quantity) => {
+                    return fetch(`/items/${variantId}/print-label`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ quantity: quantity })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(response.statusText);
+                        }
+                        return response.json();
+                    })
+                    .catch(error => {
+                        Swal.showValidationMessage(`Request failed: ${error}`);
+                    });
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    if (result.value.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: 'Labels sent to printer successfully!'
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to print labels: ' + result.value.error
+                        });
+                    }
+                }
             });
-        })
-        .finally(() => {
-            // Reset button state
-            this.disabled = false;
-            this.textContent = 'Print';
         });
     });
 

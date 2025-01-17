@@ -12,6 +12,8 @@ use Mike42\Escpos\Printer;
 use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
 use Mike42\Escpos\PrintConnectors\CupsPrintConnector;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Mike42\Escpos\EscposImage;
 
@@ -503,5 +505,45 @@ class SaleController extends Controller
     {
         $sale->saleItems()->delete(); // Delete all sale items associated with the sale
         return response()->json(['success' => true]);
+    }
+
+    public function loyalCustomers()
+    {
+        $customers = Sale::select(
+            'customer_name',
+            'customer_phone',
+            DB::raw('COUNT(*) as visit_count'),
+            DB::raw('SUM(total_amount) as total_spent'),
+            DB::raw('MAX(created_at) as last_visit')
+        )
+        ->whereNotNull('customer_phone')
+        ->groupBy('customer_name', 'customer_phone')
+        ->havingRaw('COUNT(*) > 1')
+        ->orderByDesc('visit_count')
+        ->paginate(15);
+
+        return view('sales.loyal-customers', compact('customers'));
+    }
+
+    public function paymentMethodSales(Request $request, $period, $method)
+    {
+        $query = Sale::query();
+
+        if ($period === 'daily') {
+            $query->whereDate('created_at', Carbon::today());
+            $periodLabel = "Today's";
+        } else {
+            $query->whereMonth('created_at', Carbon::now()->month)
+                  ->whereYear('created_at', Carbon::now()->year);
+            $periodLabel = "This Month's";
+        }
+
+        $sales = $query->where('payment_method', $method)
+                      ->orderBy('created_at', 'desc')
+                      ->paginate(15);
+
+        $methodLabel = str_replace('_', ' ', ucfirst($method));
+
+        return view('sales.payment-method', compact('sales', 'periodLabel', 'methodLabel'));
     }
 }

@@ -153,6 +153,25 @@
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
                         </div>
+
+                        <!-- Variant Quantities Preview -->
+                        <div id="variantQuantities" class="mt-4 d-none">
+                            <h6>Set Quantities for Each Variant</h6>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Variant</th>
+                                            <th>Size</th>
+                                            <th>Color</th>
+                                            <th>Quantity</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="variantQuantitiesBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -207,6 +226,65 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Please select at least one size');
         }
     });
+
+    // Handle variant quantity preview
+    function updateVariantQuantities() {
+        const selectedSizes = Array.from(document.querySelectorAll('input[name="sizes[]"]:checked')).map(input => ({
+            id: input.value,
+            name: input.nextElementSibling.textContent.trim()
+        }));
+
+        const selectedColors = Array.from(document.querySelectorAll('input[name="colors[]"]:checked')).map(input => ({
+            id: input.value,
+            name: input.nextElementSibling.textContent.trim(),
+            hex: input.nextElementSibling.querySelector('.color-preview').style.backgroundColor
+        }));
+
+        const variantQuantitiesDiv = document.getElementById('variantQuantities');
+        const tbody = document.getElementById('variantQuantitiesBody');
+        tbody.innerHTML = '';
+
+        if (selectedSizes.length && selectedColors.length) {
+            variantQuantitiesDiv.classList.remove('d-none');
+
+            selectedColors.forEach(color => {
+                selectedSizes.forEach(size => {
+                    const tr = document.createElement('tr');
+                    const variantName = document.querySelector('input[name="name"]').value;
+
+                    tr.innerHTML = `
+                        <td>${variantName}</td>
+                        <td>${size.name}</td>
+                        <td>
+                            <span class="d-flex align-items-center gap-2">
+                                <span class="color-preview rounded-circle" style="width: 15px; height: 15px; background-color: ${color.hex}"></span>
+                                ${color.name}
+                            </span>
+                        </td>
+                        <td>
+                            <input type="number"
+                                   name="variant_quantities[${size.id}][${color.id}]"
+                                   class="form-control form-control-sm variant-quantity"
+                                   style="width: 100px"
+                                   min="0"
+                                   value="0">
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        } else {
+            variantQuantitiesDiv.classList.add('d-none');
+        }
+    }
+
+    // Add event listeners for size and color checkboxes
+    document.querySelectorAll('input[name="sizes[]"], input[name="colors[]"]').forEach(input => {
+        input.addEventListener('change', updateVariantQuantities);
+    });
+
+    // Remove the original quantity input field since we're using variant quantities
+    document.querySelector('input[name="quantity"]').closest('.col-md-3').remove();
 });
 </script>
 <?php $__env->stopPush(); ?>

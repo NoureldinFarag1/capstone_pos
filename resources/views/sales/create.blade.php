@@ -145,8 +145,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const discountValueInput = document.getElementById('discountValue');
     const saleForm = document.getElementById('saleForm');
     const printGiftReceiptBtn = document.getElementById('printGiftReceiptBtn');
+    const customerPhoneInput = document.getElementById('customerPhone');
+    const customerNameInput = document.getElementById('customerName');
 
-
+    customerPhoneInput.addEventListener('blur', function() {
+        const phoneNumber = customerPhoneInput.value.trim();
+        if (phoneNumber) {
+            fetch(`/customers/fetch-name?phone=${phoneNumber}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.name) {
+                        customerNameInput.value = data.name;
+                    }
+                })
+                .catch(error => console.error('Error fetching customer name:', error));
+        }
+    });
 
     // Store items in a map to consolidate quantities
     const addedItems = new Map();
@@ -365,7 +379,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const barcode = e.target.value.trim();
 
         // Trigger barcode search immediately after input
-        if (barcode.length > 0) {
+        if (barcode.length >= 14) {
             handleBarcodeScanning(barcode);
             setTimeout(() => {
                 barcodeInput.focus(); // Refocus after scanning

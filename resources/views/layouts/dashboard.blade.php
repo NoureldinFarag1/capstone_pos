@@ -29,8 +29,8 @@
                     <a href="#" class="flex items-center">
                         <img src="{{ asset('images/logo.png') }}" alt="LocalHUB Logo" class="h-10 w-auto">
                         <span class="ml-3 text-xl font-bold text-gray-800">
-                            <span class="text-black no-underline">LOCAL</span>
-                            <span class="text-red-600 no-underline">HUB</span>
+                            <span class="text-black">LOCAL</span>
+                            <span class="text-red-600">HUB</span>
                         </span>
                     </a>
                 </div>
@@ -134,6 +134,13 @@
                     <a href="{{ route('users.index') }}" class="{{ request()->is('users*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-users-cog mr-2"></i>Manage Users
                     </a>
+                    <!-- Backup Button -->
+                    <form action="{{ route('backup.download') }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" class="{{ request()->is('backup*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors">
+                            <i class="fas fa-download mr-2"></i>Backup
+                        </button>
+                    </form>
                     @endcan
                 </div>
                 <!-- Notification and Logout aligned to the right -->
@@ -150,8 +157,6 @@
                                 </span>
                             @endif
                         </button>
-
-
                         <div x-show="open"
                              @click.away="open = false"
                              x-transition:enter="transition ease-out duration-100"
@@ -160,12 +165,12 @@
                              x-transition:leave="transition ease-in duration-75"
                              x-transition:leave-start="transform opacity-100 scale-100"
                              x-transition:leave-end="transform opacity-0 scale-95"
-                             class="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                             class="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 max-h-64 overflow-y-auto">
                             <div class="py-1">
                                 <div class="px-4 py-2 font-medium text-gray-700 border-b">Low Stock Alerts</div>
-                                @foreach($lowStockItems as $item)
+                                @foreach($lowStockItems->sortBy('quantity') as $item)
                                     <a href="{{ route('items.edit', $item->id) }}"
-                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex justify-between items-center">
                                         <span class="font-medium">{{ $item->name }}</span>
                                         <span class="text-red-500 ml-1">(Stock: {{ $item->quantity }})</span>
                                     </a>
@@ -199,6 +204,7 @@
         @if(Request::routeIs('dashboard')) <!-- Show only on the dashboard page -->
         <!-- Dashboard Widgets -->
         <div class="container mx-auto p-6">
+
             <div class="mb-8">
                 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="border-b border-gray-100 p-6">
@@ -267,18 +273,21 @@
                             </div>
                         @endif
                         <div class="mt-6 space-y-3">
-                            <div class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm">
+                            <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'cash']) }}"
+                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
                                 <span>Cash</span>
                                 <span class="font-bold">{{ number_format($cashPayments, 2) }} EGP</span>
-                            </div>
-                            <div class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm">
+                            </a>
+                            <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'credit_card']) }}"
+                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
                                 <span>Visa</span>
                                 <span class="font-bold">{{ number_format($creditPayments, 2) }} EGP</span>
-                            </div>
-                            <div class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm">
+                            </a>
+                            <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'mobile_pay']) }}"
+                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
                                 <span>Mobile Payment</span>
                                 <span class="font-bold">{{ number_format($mobilePayments, 2) }} EGP</span>
-                            </div>
+                            </a>
                         </div>
                     </div>
                     <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-16 -mt-16"></div>
@@ -297,18 +306,21 @@
                             {{ $salesGrowthPercentage >= 0 ? '+' : '' }}{{ number_format($salesGrowthPercentage, 2) }}% from last month
                         </div>
                         <div class="mt-6 space-y-3">
-                            <div class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm">
+                            <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'cash']) }}"
+                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
                                 <span>Cash</span>
                                 <span class="font-bold">{{ number_format($cashPaymentsMonthly, 2) }} EGP</span>
-                            </div>
-                            <div class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm">
+                            </a>
+                            <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'credit_card']) }}"
+                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
                                 <span>Visa</span>
                                 <span class="font-bold">{{ number_format($creditPaymentsMonthly, 2) }} EGP</span>
-                            </div>
-                            <div class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm">
+                            </a>
+                            <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'mobile_pay']) }}"
+                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
                                 <span>Mobile Payment</span>
                                 <span class="font-bold">{{ number_format($mobilePaymentsMonthly, 2) }} EGP</span>
-                            </div>
+                            </a>
                         </div>
                     </div>
                     <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-16 -mt-16"></div>
@@ -387,10 +399,12 @@
                     <h3 class="text-xl font-bold mb-4">Customer Insights</h3>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="p-4 bg-purple-50 rounded-lg">
-                            <div class="text-sm text-purple-600">Loyal Customers</div>
-                            <div class="text-2xl font-bold text-purple-700">
-                                {{ $customerMetrics['repeat_customers'] }}
-                            </div>
+                            <a href="{{ route('sales.loyal-customers') }}" class="block">
+                                <div class="text-sm text-purple-600">Loyal Customers</div>
+                                <div class="text-2xl font-bold text-purple-700">
+                                    {{ $customerMetrics['repeat_customers'] }}
+                                </div>
+                            </a>
                         </div>
                          <!-- All Customers -->
                         <a href="{{ route('customers.index') }}" class="p-4 bg-blue-50 rounded-lg hover:bg-blue-100">

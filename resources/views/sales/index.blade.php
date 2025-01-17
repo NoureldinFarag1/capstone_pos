@@ -193,4 +193,29 @@
     }
 </style>
 @endpush
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.querySelectorAll('form[onsubmit]').forEach(form => {
+        form.onsubmit = function(event) {
+            event.preventDefault();
+            Swal.fire({
+                title: 'Are you absolutely sure?',
+                text: "This action is cannot be undone and will permanently delete the sale!",
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'No, cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        };
+    });
+</script>
+@endpush
 @endsection

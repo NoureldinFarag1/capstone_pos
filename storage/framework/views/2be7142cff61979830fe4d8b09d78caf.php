@@ -117,7 +117,7 @@
                     <tr>
                         <td><?php echo e($saleItem->item->name); ?></td>
                         <td class="quantity"><?php echo e($saleItem->quantity); ?></td>
-                        <td class="price">$<?php echo e(number_format($saleItem->item->selling_price, 2)); ?></td>
+                        <td class="price">$<?php echo e(number_format($saleItem->item->selling_price * $saleItem->quantity, 2)); ?></td>
                         <td class="discount">$<?php echo e($saleItem->item->formatted_discount); ?></td>
                         <td class="price">$<?php echo e(number_format($saleItem->quantity * $saleItem->price, 2)); ?></td>
                     </tr>

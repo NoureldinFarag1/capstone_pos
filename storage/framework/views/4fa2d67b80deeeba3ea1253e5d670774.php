@@ -157,6 +157,40 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Add New Variant Section -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Add New Variant</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="new_variant_size" class="form-label">Size</label>
+                                    <select id="new_variant_size" class="form-select">
+                                        <option value="" selected disabled>Select Size</option>
+                                        <?php $__currentLoopData = $sizes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <option value="<?php echo e($size->id); ?>"><?php echo e($size->name); ?></option>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="new_variant_color" class="form-label">Color</label>
+                                    <select id="new_variant_color" class="form-select">
+                                        <option value="" selected disabled>Select Color</option>
+                                        <?php $__currentLoopData = $colors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $color): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <option value="<?php echo e($color->id); ?>"><?php echo e($color->name); ?></option>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="new_variant_quantity" class="form-label">Quantity</label>
+                                    <input type="number" id="new_variant_quantity" class="form-control" min="0">
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-primary" id="addVariantBtn">Add Variant</button>
+                        </div>
+                    </div>
                 <?php else: ?>
                     <!-- Single Variant Quantity -->
                     <div class="card mb-4">
@@ -183,6 +217,7 @@
 </div>
 
 <?php $__env->startPush('scripts'); ?>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const saveAllBtn = document.getElementById('saveAllQuantities');
@@ -216,15 +251,26 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 if (data.success) {
-                    alert('Quantities updated successfully!');
-                    location.reload();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Quantities updated successfully!'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            location.reload();
+                        }
+                    });
                 } else {
                     throw new Error(data.error || 'Failed to update quantities');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error updating quantities: ' + error.message);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error updating quantities: ' + error.message
+                });
             })
             .finally(() => {
                 saveAllBtn.disabled = false;
@@ -233,12 +279,81 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    const addVariantBtn = document.getElementById('addVariantBtn');
+    addVariantBtn.addEventListener('click', function() {
+        const sizeId = document.getElementById('new_variant_size').value;
+        const colorId = document.getElementById('new_variant_color').value;
+        const quantity = document.getElementById('new_variant_quantity').value;
+
+        if (!sizeId || !colorId || quantity <= 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Please select size, color, and enter a valid quantity.'
+            });
+            return;
+        }
+
+        // Make AJAX request to add the new variant
+        fetch('/items/add-variant', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
+            },
+            body: JSON.stringify({
+                parent_id: <?php echo e($item->id); ?>,
+                size_id: sizeId,
+                color_id: colorId,
+                quantity: quantity
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Variant added successfully!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        location.reload();
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to add variant: ' + data.error
+                });
+            }
+        })
+        .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error adding variant: ' + error
+            });
+        });
+    });
+
     const form = document.getElementById('editItemForm');
     if (form) {
         form.addEventListener('submit', function(e) {
-            if (!confirm('Are you sure you want to update this item?')) {
-                e.preventDefault();
-            }
+            e.preventDefault();
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, update it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
         });
     }
 });

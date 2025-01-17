@@ -21,7 +21,7 @@
                 <label for="picture">Category Picture</label>
                 <input type="file" name="picture" class="form-control" accept="image/*">
             </div>
-            <button type="submit" class="btn btn-primary">Add Category</button>
+            <button type="submit" class="btn btn-primary mt-2">Add Category</button>
         </form>
     </div>
 </div>

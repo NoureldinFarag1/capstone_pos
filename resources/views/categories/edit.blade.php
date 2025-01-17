@@ -25,14 +25,39 @@
             </div>
 
             <div class="form-group">
-                <label for="picture">Category Picture:</label>
+                <label for="picture" class="mt-3">Category Picture:</label>
                 <input type="file" name="picture" id="picture" class="form-control-file">
                 @if($category->picture)
                     <img src="{{ asset('storage/'.$category->picture) }}" alt="{{ $category->name }}" class="img-thumbnail" width="500">
                 @endif
             </div>
 
-            <button type="submit" class="btn btn-primary">Update Category</button>
+            <button type="submit" class="btn btn-primary mt-2">Update Category</button>
         </form>
     </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, update it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+});
+</script>
+@endpush

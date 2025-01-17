@@ -62,7 +62,7 @@ class DashboardController extends Controller
                             ->sum('total_amount');
         $creditPaymentsMonthly = Sale::whereMonth('created_at', now()->month)
                                       ->whereYear('created_at', now()->year)
-                                      ->where('payment_method', 'visa')
+                                      ->where('payment_method', 'credit_card')
                                       ->sum('total_amount');
 
         $mobilePaymentsMonthly = Sale::whereMonth('created_at', now()->month)
