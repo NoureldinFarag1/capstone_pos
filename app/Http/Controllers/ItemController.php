@@ -561,17 +561,18 @@ class ItemController extends BaseController
         $items = $query->groupBy('items.id', 'brands.name', 'items.name', 'items.quantity', 'items.selling_price')
             ->get();
 
-        // Add sale price
+        // Including sale price and selling price
         $items = $items->map(function ($itemData) {
             $item = Item::find($itemData->id);
             $itemData->sale_price = $item->priceAfterSale();
+            $itemData->selling_price = $item->selling_price;
             return $itemData;
         });
 
         // Create CSV data
-        $csvData = "Brand,Item,Quantity Sold,Stock Quantity,Price\n";
+        $csvData = "Brand,Item,Quantity Sold,Stock Quantity,Price Before Sale,Price After Sale\n";
         foreach ($items as $item) {
-            $csvData .= "{$item->brand_name},{$item->item_name},{$item->quantity_sold},{$item->stock_quantity},{$item->sale_price}EGP\n";
+            $csvData .= "{$item->brand_name},{$item->item_name},{$item->quantity_sold},{$item->stock_quantity},{$item->selling_price}EGP,{$item->sale_price}EGP\n";
         }
 
         // Dynamic file name with date range if provided
