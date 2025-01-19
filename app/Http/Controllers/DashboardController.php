@@ -70,6 +70,11 @@ class DashboardController extends Controller
                                   ->where('payment_method', 'mobile_pay')
                                   ->sum('total_amount');
 
+        $codPaymentsMonthly = Sale::whereMonth('created_at', now()->month)
+                          ->whereYear('created_at', now()->year)
+                          ->where('payment_method', 'cod')
+                          ->sum('total_amount');
+
         // Inventory Metrics
         $totalItems = Item::where('is_parent', false)->count();
         $totalBrands = Brand::count();
@@ -100,6 +105,7 @@ class DashboardController extends Controller
         $cashPayments = Sale::whereDate('created_at', Carbon::today())->where('payment_method', 'cash')->sum('total_amount');
         $creditPayments = Sale::whereDate('created_at', Carbon::today())->where('payment_method', 'credit_card')->sum('total_amount');
         $mobilePayments = Sale::whereDate('created_at', Carbon::today())->where('payment_method', 'mobile_pay')->sum('total_amount');
+        $codPayments = Sale::whereDate('created_at', Carbon::today())->where('payment_method', 'cod')->sum('total_amount');
 
         // Stock Level Summary
         $stockLevels = [
@@ -185,6 +191,8 @@ class DashboardController extends Controller
             'cashPaymentsMonthly' => $cashPaymentsMonthly,
             'creditPaymentsMonthly' => $creditPaymentsMonthly,
             'mobilePaymentsMonthly' => $mobilePaymentsMonthly,
+            'codPayments' => $codPayments,
+            'codPaymentsMonthly' => $codPaymentsMonthly,
             'topSellingBrandDetails' => $topSellingBrandDetails,
             'salesAnalytics' => $salesAnalytics,
             'inventoryMetrics' => $inventoryMetrics,

@@ -32,8 +32,8 @@
                                     <tr>
                                         <td class="px-4">{{ $saleItem->item->name }}</td>
                                         <td class="text-center">{{ $saleItem->quantity }}</td>
-                                        <td class="text-end">${{ number_format($saleItem->price, 2) }}</td>
-                                        <td class="text-end px-4">${{ number_format($saleItem->price * $saleItem->quantity, 2) }}</td>
+                                        <td class="text-end">EGP    {{ number_format($saleItem->price, 2) }}</td>
+                                        <td class="text-end px-4">EGP {{ number_format($saleItem->price * $saleItem->quantity, 2) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -44,13 +44,25 @@
                         <div class="col-md-6">
                             <div class="card bg-light">
                                 <div class="card-body p-3">
+                                    @if($sale->shipping_fees)
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Shipping Fees:</span>
+                                        <span>+ EGP{{ number_format($sale->shipping_fees, 2) }}</span>
+                                    </div>
+                                    @endif
+                                    @if($sale->address)
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Address:</span>
+                                        <span>{{ $sale->address }}</span>
+                                    </div>
+                                    @endif
                                     <div class="d-flex justify-content-between mb-2">
                                         <span class="text-danger">Discount:</span>
-                                        <span class="text-danger">${{ number_format($sale->discount, 2) }}</span>
+                                        <span class="text-danger">- EGP{{ number_format($sale->discount, 2) }}</span>
                                     </div>
                                     <div class="d-flex justify-content-between">
                                         <h4 class="mb-0">Total Amount:</h4>
-                                        <h4 class="mb-0">${{ number_format($sale->total_amount, 2) }}</h4>
+                                        <h4 class="mb-0">EGP    {{ number_format($sale->total_amount, 2) }}</h4>
                                     </div>
                                 </div>
                             </div>

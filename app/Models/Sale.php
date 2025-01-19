@@ -16,7 +16,9 @@ class Sale extends Model
         'discount_value',
         'payment_method',
         'subtotal',
-        'discount'
+        'discount',
+        'shipping_fees',
+        'address'
     ];
     public $timestamps = true;
 

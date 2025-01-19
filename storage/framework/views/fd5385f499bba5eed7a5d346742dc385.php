@@ -32,8 +32,8 @@
                                     <tr>
                                         <td class="px-4"><?php echo e($saleItem->item->name); ?></td>
                                         <td class="text-center"><?php echo e($saleItem->quantity); ?></td>
-                                        <td class="text-end">$<?php echo e(number_format($saleItem->price, 2)); ?></td>
-                                        <td class="text-end px-4">$<?php echo e(number_format($saleItem->price * $saleItem->quantity, 2)); ?></td>
+                                        <td class="text-end">EGP    <?php echo e(number_format($saleItem->price, 2)); ?></td>
+                                        <td class="text-end px-4">EGP <?php echo e(number_format($saleItem->price * $saleItem->quantity, 2)); ?></td>
                                     </tr>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </tbody>
@@ -44,13 +44,25 @@
                         <div class="col-md-6">
                             <div class="card bg-light">
                                 <div class="card-body p-3">
+                                    <?php if($sale->shipping_fees): ?>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Shipping Fees:</span>
+                                        <span>+ EGP<?php echo e(number_format($sale->shipping_fees, 2)); ?></span>
+                                    </div>
+                                    <?php endif; ?>
+                                    <?php if($sale->address): ?>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Address:</span>
+                                        <span><?php echo e($sale->address); ?></span>
+                                    </div>
+                                    <?php endif; ?>
                                     <div class="d-flex justify-content-between mb-2">
                                         <span class="text-danger">Discount:</span>
-                                        <span class="text-danger">$<?php echo e(number_format($sale->discount, 2)); ?></span>
+                                        <span class="text-danger">- EGP<?php echo e(number_format($sale->discount, 2)); ?></span>
                                     </div>
                                     <div class="d-flex justify-content-between">
                                         <h4 class="mb-0">Total Amount:</h4>
-                                        <h4 class="mb-0">$<?php echo e(number_format($sale->total_amount, 2)); ?></h4>
+                                        <h4 class="mb-0">EGP    <?php echo e(number_format($sale->total_amount, 2)); ?></h4>
                                     </div>
                                 </div>
                             </div>

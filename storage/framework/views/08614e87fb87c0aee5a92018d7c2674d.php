@@ -100,11 +100,23 @@
                     <option value="cash">Cash</option>
                     <option value="credit_card">Visa</option>
                     <option value="mobile_pay">Mobile Payment</option>
+                    <option value="cod">Cash On Delivery (COD)</option>
                 </select>
             </div>
             <div class="col-md-6">
                 <label for="paymentReference" class="form-label">Payment Reference</label>
                 <input type="text" id="paymentReference" name="payment_reference" class="form-control" placeholder="Transaction ID, etc.">
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6" id="shippingFeesContainer" style="display: none;">
+                <label for="shippingFees" class="form-label">Shipping Fees</label>
+                <input type="number" id="shippingFees" name="shipping_fees" class="form-control" min="0" value="0">
+            </div>
+            <div class="col-md-6" id="addressContainer" style="display: none;">
+                <label for="address" class="form-label">Address</label>
+                <input type="text" id="address" name="address" class="form-control">
             </div>
         </div>
 
@@ -146,6 +158,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const printGiftReceiptBtn = document.getElementById('printGiftReceiptBtn');
     const customerPhoneInput = document.getElementById('customerPhone');
     const customerNameInput = document.getElementById('customerName');
+    const paymentMethodSelect = document.getElementById('paymentMethod');
+    const shippingFeesContainer = document.getElementById('shippingFeesContainer');
+    const addressContainer = document.getElementById('addressContainer');
 
     customerPhoneInput.addEventListener('blur', function() {
         const phoneNumber = customerPhoneInput.value.trim();
@@ -440,6 +455,16 @@ function handlePrintGiftReceipt() {
         alert('Error printing gift receipt: ' + error.message);
     });
 }
+
+    paymentMethodSelect.addEventListener('change', function() {
+        if (paymentMethodSelect.value === 'cod') {
+            shippingFeesContainer.style.display = 'block';
+            addressContainer.style.display = 'block';
+        } else {
+            shippingFeesContainer.style.display = 'none';
+            addressContainer.style.display = 'none';
+        }
+    });
 
 });
 </script>

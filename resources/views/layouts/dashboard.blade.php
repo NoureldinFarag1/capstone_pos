@@ -288,6 +288,11 @@
                                 <span>Mobile Payment</span>
                                 <span class="font-bold">{{ number_format($mobilePayments, 2) }} EGP</span>
                             </a>
+                            <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'cod']) }}"
+                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                <span>COD</span>
+                                <span class="font-bold">{{ number_format($codPayments, 2) }} EGP</span>
+                            </a>
                         </div>
                     </div>
                     <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-16 -mt-16"></div>
@@ -320,6 +325,11 @@
                                class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
                                 <span>Mobile Payment</span>
                                 <span class="font-bold">{{ number_format($mobilePaymentsMonthly, 2) }} EGP</span>
+                            </a>
+                            <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'cod']) }}"
+                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                <span>COD</span>
+                                <span class="font-bold">{{ number_format($codPaymentsMonthly, 2) }} EGP</span>
                             </a>
                         </div>
                     </div>

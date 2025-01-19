@@ -39,6 +39,8 @@ class SaleController extends Controller
             'customer_phone' => 'nullable|string|max:20',
             'payment_method' => 'required|string',
             'payment_reference' => 'nullable|string',
+            'shipping_fees' => 'nullable|numeric|min:0',
+            'address' => 'nullable|string|max:255',
         ]);
 
         // Validate stock availability for all items before proceeding
@@ -64,10 +66,16 @@ class SaleController extends Controller
             }
         }
 
+        // Calculate the total amount including shipping fees if applicable
+        $totalAmount = $request->total;
+        if ($request->shipping_fees) {
+            $totalAmount += $request->shipping_fees;
+        }
+
         // Create sale with pre-calculated total
         $sale = Sale::create([
             'user_id' => \Illuminate\Support\Facades\Auth::user()->id, // Attach the currently authenticated user
-            'total_amount' => $request->total, // Use the calculated total from frontend
+            'total_amount' => $totalAmount, // Use the calculated total including shipping fees
             'subtotal' => $request->subtotal,
             'customer_name' => $request->customer_name,
             'customer_phone' => $request->customer_phone,
@@ -75,6 +83,8 @@ class SaleController extends Controller
             'payment_reference' => $request->payment_reference,
             'discount_type' => $request->discount_type,
             'discount_value' => $request->discount_value,
+            'shipping_fees' => $request->shipping_fees,
+            'address' => $request->address,
         ]);
 
         foreach ($request->items as $itemData) {
@@ -344,6 +354,18 @@ class SaleController extends Controller
                 $printer->text(
                     str_pad("Total Discounts:", 37, ' ', STR_PAD_LEFT) .
                     str_pad("-" . number_format($sale->discount, 2), 11, ' ', STR_PAD_LEFT) . "\n"
+                );
+            }
+
+            // Add shipping fees and address if COD
+            if ($sale->payment_method === 'cod') {
+                $printer->text(
+                    str_pad("Shipping Fees:", 37, ' ', STR_PAD_LEFT) .
+                    str_pad(number_format($sale->shipping_fees, 2), 11, ' ', STR_PAD_LEFT) . "\n"
+                );
+                $printer->text(
+                    str_pad("Address:", 37, ' ', STR_PAD_LEFT) .
+                    str_pad($sale->address, 11, ' ', STR_PAD_LEFT) . "\n"
                 );
             }
 

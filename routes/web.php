@@ -124,7 +124,7 @@ Route::get('/loyal-customers', [SaleController::class, 'loyalCustomers'])->name(
 Route::get('/sales/{period}/{method}', [SaleController::class, 'paymentMethodSales'])
     ->name('sales.by-payment-method')
     ->where('period', 'daily|monthly')
-    ->where('method', 'cash|credit_card|mobile_pay');
+    ->where('method', 'cash|credit_card|mobile_pay|cod');
 
 // Add this route
 Route::get('/brands/most-selling', [DashboardController::class, 'mostSellingBrands'])->name('brands.most-selling');

@@ -537,7 +537,7 @@ class ItemController extends BaseController
             ->leftJoin('sale_items', function ($join) use ($startDate, $endDate) {
                 $join->on('items.id', '=', 'sale_items.item_id');
                 if ($startDate && $endDate) {
-                    $join->whereBetween('sale_items.created_at', [$startDate, $endDate]);
+                    $join->whereBetween('sale_items.created_at', [$startDate, date('Y-m-d 23:59:59', strtotime($endDate))]);
                 }
             })
             ->select(

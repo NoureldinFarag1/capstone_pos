@@ -117,24 +117,36 @@
                     <tr>
                         <td><?php echo e($saleItem->item->name); ?></td>
                         <td class="quantity"><?php echo e($saleItem->quantity); ?></td>
-                        <td class="price">$<?php echo e(number_format($saleItem->item->selling_price * $saleItem->quantity, 2)); ?></td>
-                        <td class="discount">$<?php echo e($saleItem->item->formatted_discount); ?></td>
-                        <td class="price">$<?php echo e(number_format($saleItem->quantity * $saleItem->price, 2)); ?></td>
+                        <td class="price">EGP<?php echo e(number_format($saleItem->item->selling_price * $saleItem->quantity, 2)); ?></td>
+                        <td class="discount">EGP<?php echo e($saleItem->item->formatted_discount); ?></td>
+                        <td class="price">EGP<?php echo e(number_format($saleItem->quantity * $saleItem->price, 2)); ?></td>
                     </tr>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </tbody>
                 <tfoot>
                     <tr class="subtotal-row">
                         <td colspan="3" class="text-right">Subtotal:</td>
-                        <td class="price">$<?php echo e(number_format($sale->total_amount + ($sale->discount), 2)); ?></td>
+                        <td class="price">EGP<?php echo e(number_format($sale->total_amount + ($sale->discount), 2)); ?></td>
                     </tr>
+                    <?php if($sale->shipping_fees): ?>
+                    <tr class="subtotal-row">
+                        <td colspan="3" class="text-right">Shipping Fees:</td>
+                        <td class="price">EGP<?php echo e(number_format($sale->shipping_fees, 2)); ?></td>
+                    </tr>
+                    <?php endif; ?>
+                    <?php if($sale->address): ?>
+                    <tr class="subtotal-row">
+                        <td colspan="3" class="text-right">Address:</td>
+                        <td class="price"><?php echo e($sale->address); ?></td>
+                    </tr>
+                    <?php endif; ?>
                     <tr class="discount-row">
                         <td colspan="3" class="text-right">Discount:</td>
-                        <td class="price">-$<?php echo e(number_format($sale->discount ?? 0, 2)); ?></td>
+                        <td class="price">-EGP<?php echo e(number_format($sale->discount ?? 0, 2)); ?></td>
                     </tr>
                     <tr class="total-row">
                         <td colspan="3" class="text-right">Total Amount:</td>
-                        <td class="price">$<?php echo e(number_format($sale->total_amount, 2)); ?></td>
+                        <td class="price">EGP<?php echo e(number_format($sale->total_amount, 2)); ?></td>
                     </tr>
                 </tfoot>
             </table>
