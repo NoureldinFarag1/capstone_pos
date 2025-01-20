@@ -16,31 +16,33 @@ class DashboardController extends Controller
 
     public function index()
     {
-        // Get the top 5 most selling brands
+        // Get brands with sales
         $topSellingBrands = SaleItem::select('items.brand_id', DB::raw('SUM(sale_items.quantity) as total_sales'))
-        ->join('items', 'sale_items.item_id', '=', 'items.id')
-        ->groupBy('items.brand_id')
-        ->orderByDesc('total_sales')
-        ->take(3)
-        ->get();
+            ->join('items', 'sale_items.item_id', '=', 'items.id')
+            ->groupBy('items.brand_id')
+            ->having('total_sales', '>', 0)
+            ->orderByDesc('total_sales')
+            ->get();
 
-        // Now, fetch the brand details for each of the top 5 brands
+        // Now, fetch the brand details for each of the brands with sales
         $topSellingBrandDetails = [];
-
         foreach ($topSellingBrands as $brand) {
             $brandDetails = Brand::find($brand->brand_id);
             if ($brandDetails) {
-            $topSellingBrandDetails[] = [
-            'name' => $brandDetails->name,
-            'image' => $brandDetails->picture,
-            'total_sales' => $brand->total_sales
-            ];
+                $topSellingBrandDetails[] = [
+                    'name' => $brandDetails->name,
+                    'image' => $brandDetails->picture,
+                    'total_sales' => $brand->total_sales
+                ];
             }
         }
 
-
         // Low Stock Items
-        $lowStockItems = Item::where('quantity', '<=', 5)->where('is_parent', false)->get();
+        $lowStockItems = Item::where('quantity', '<=', 2)
+            ->where('is_parent', false)
+            ->orderBy('quantity', 'asc')
+            ->orderBy('name', 'asc')  // Secondary sort by name
+            ->get();
 
         // Sales Metrics
         $currentMonth = Carbon::now();
@@ -109,9 +111,18 @@ class DashboardController extends Controller
 
         // Stock Level Summary
         $stockLevels = [
-                'critical' => Item::where('quantity', '<=', 5)->where('is_parent', false)->count(),
-                'low' => Item::where('quantity', '>', 5)->where('quantity', '<=', 20)->where('is_parent', false)->count(),
-                'healthy' => Item::where('quantity', '>', 20)->where('is_parent', false)->count()
+                'critical' => Item::where('quantity', '<=', 2)
+                     ->where('is_parent', false)
+                     ->count(),
+
+    'low' => Item::where('quantity', '>', 2)
+                 ->where('quantity', '<=', 5)
+                 ->where('is_parent', false)
+                 ->count(),
+
+    'healthy' => Item::where('quantity', '>', 5)
+                     ->where('is_parent', false)
+                     ->count()
             ];
 
         $topPaymentMethod = Sale::select('payment_method', DB::raw('count(*) as count'))

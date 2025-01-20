@@ -72,7 +72,14 @@ class SaleController extends Controller
             $totalAmount += $request->shipping_fees;
         }
 
-        // Create sale with pre-calculated total
+        // Get today's date
+        $today = now()->toDateString();
+
+        // Get the last display_id for today
+        $lastSale = Sale::where('sale_date', $today)->orderBy('display_id', 'desc')->first();
+        $displayId = $lastSale ? $lastSale->display_id + 1 : 1;
+
+        // Create sale with display_id and sale_date
         $sale = Sale::create([
             'user_id' => \Illuminate\Support\Facades\Auth::user()->id, // Attach the currently authenticated user
             'total_amount' => $totalAmount, // Use the calculated total including shipping fees
@@ -85,6 +92,8 @@ class SaleController extends Controller
             'discount_value' => $request->discount_value,
             'shipping_fees' => $request->shipping_fees,
             'address' => $request->address,
+            'display_id' => $displayId,
+            'sale_date' => $today,
         ]);
 
         foreach ($request->items as $itemData) {
@@ -275,7 +284,7 @@ class SaleController extends Controller
             $printer->setJustification(Printer::JUSTIFY_LEFT);
             $printer->text(str_repeat("·", 48) . "\n");
             $printer->setEmphasis(true);
-            $printer->text("RECEIPT #" . str_pad($sale->id, 4, '0', STR_PAD_LEFT) . "\n");
+            $printer->text("RECEIPT " . $sale->sale_date->format('d/m') . " - #" . str_pad($sale->display_id, 4, '0', STR_PAD_LEFT) . "\n");
             $printer->setEmphasis(false);
             $printer->text("Date: " . $sale->created_at->format('d M Y') . "\n");
             $printer->text("Time: " . $sale->created_at->format('H:i:s') . "\n");
@@ -288,93 +297,146 @@ class SaleController extends Controller
             $printer->setEmphasis(false);
             $printer->text(str_repeat("-", 48) . "\n");
 
-            // Table Header with clean spacing
+            // Table Header with clean spacing - adjusted for 48 characters width
             $printer->setJustification(Printer::JUSTIFY_LEFT);
             $printer->text(
-                str_pad("Item", 22) .
-                str_pad("Qty", 6, ' ', STR_PAD_LEFT) .
-                str_pad("Price", 10, ' ', STR_PAD_LEFT) .
-                str_pad("Total", 10, ' ', STR_PAD_LEFT) . "\n"
+                str_pad("Item", 20) .
+                str_pad("Qty", 3, ' ', STR_PAD_LEFT) .
+                str_pad("Price", 12, ' ', STR_PAD_LEFT) .
+                str_pad("Total", 13, ' ', STR_PAD_LEFT) . "\n"
             );
             $printer->text(str_repeat("-", 48) . "\n");
 
-            // Print items with improved spacing
+            // Print items with improved spacing for better fit
             $subtotal = 0;
             $totalDiscount = 0;
 
             foreach ($sale->saleItems as $saleItem) {
                 $itemName = $saleItem->item->name;
                 $quantity = $saleItem->quantity;
-                $price = $saleItem->item->selling_price;
+                $price = $saleItem->price;
                 $itemDiscount = $saleItem->item->discount_value;
 
-                $lineTotal = $quantity * $price - ($itemDiscount * $quantity);
+                // Calculate line totals
+                $lineTotal = $quantity * $price;
+                $lineDiscount = ($itemDiscount / 100) * ($quantity * $saleItem->item->selling_price);
                 $subtotal += $lineTotal;
+                $totalDiscount += $lineDiscount;
 
-                // Item details with better formatting
-                $printer->text(str_pad(substr($itemName, 0, 21), 22));
-                $printer->text(
-                    str_pad($quantity, 6, ' ', STR_PAD_LEFT) .
-                    str_pad(number_format($price, 2), 10, ' ', STR_PAD_LEFT) .
-                    str_pad(number_format($lineTotal, 2), 10, ' ', STR_PAD_LEFT) . "\n"
-                );
+                // Print item name with word wrap if needed
+                $itemNameLen = 19; // Maximum length for item name
+                $itemNameParts = str_split($itemName, $itemNameLen);
+                $firstLine = true;
 
-                // Discount display with modern styling
+                foreach ($itemNameParts as $part) {
+                    if ($firstLine) {
+                        // First line includes quantity and prices
+                        $printer->text(
+                            str_pad(substr($part, 0, $itemNameLen), 20) .
+                            str_pad($quantity, 3, ' ', STR_PAD_LEFT) .
+                            str_pad(number_format($price, 2), 12, ' ', STR_PAD_LEFT) .
+                            str_pad(number_format($lineTotal, 2), 13, ' ', STR_PAD_LEFT) . "\n"
+                        );
+                        $firstLine = false;
+                    } else {
+                        // Continuation lines only show the rest of the item name
+                        $printer->text(str_pad($part, 20) . "\n");
+                    }
+                }
+
+                // Show discount if any
                 if ($itemDiscount > 0) {
-                    $printer->text("|_");
+                    $printer->text(str_pad("", 3) . "L");
                     $printer->setEmphasis(true);
-                    $printer->text("SAVE ");
+                    $printer->text(number_format($itemDiscount, 0) . "% OFF: ");
                     $printer->setEmphasis(false);
-                    $printer->text(str_pad(number_format($itemDiscount * $quantity, 2), 8, ' ', STR_PAD_LEFT) . "\n");
-                    $totalDiscount += ($itemDiscount * $quantity);
+                    $printer->text("-" . number_format($lineDiscount, 2) . "\n");
                 }
             }
 
-            // Summary section with modern separators
+            // Summary section
             $printer->feed(1);
             $printer->text(str_repeat("-", 48) . "\n");
 
-            // Amount Summary with right alignment
-            $printer->setJustification(Printer::JUSTIFY_RIGHT);
+            // Print subtotal
             $printer->text(
-                str_pad("Subtotal:", 37, ' ', STR_PAD_LEFT) .
+                str_pad("Subtotal:", 37, ' ', STR_PAD_RIGHT) .
                 str_pad(number_format($subtotal, 2), 11, ' ', STR_PAD_LEFT) . "\n"
             );
 
+            // Print item discounts if any
             if ($totalDiscount > 0) {
                 $printer->setEmphasis(true);
                 $printer->text(
-                    str_pad("Total Savings:", 37, ' ', STR_PAD_LEFT) .
+                    str_pad("Item Discounts:", 37, ' ', STR_PAD_RIGHT) .
                     str_pad("-" . number_format($totalDiscount, 2), 11, ' ', STR_PAD_LEFT) . "\n"
                 );
                 $printer->setEmphasis(false);
             }
 
-            if ($sale->discount > 0) {
+            // Calculate and print additional discount if any
+            if ($sale->discount_type !== 'none' && $sale->discount_value > 0) {
+                $additionalDiscount = 0;
+                $afterItemDiscounts = $subtotal - $totalDiscount;
+
+                if ($sale->discount_type === 'percentage') {
+                    $additionalDiscount = $afterItemDiscounts * ($sale->discount_value / 100);
+                } else if ($sale->discount_type === 'fixed') {
+                    $additionalDiscount = $sale->discount_value;
+                }
+
                 $printer->text(
-                    str_pad("Total Discounts:", 37, ' ', STR_PAD_LEFT) .
-                    str_pad("-" . number_format($sale->discount, 2), 11, ' ', STR_PAD_LEFT) . "\n"
+                    str_pad("Additional Discount:", 37, ' ', STR_PAD_RIGHT) .
+                    str_pad("-" . number_format($additionalDiscount, 2), 11, ' ', STR_PAD_LEFT) . "\n"
                 );
             }
 
-            // Add shipping fees and address if COD
+            // Add shipping fees and address for COD
             if ($sale->payment_method === 'cod') {
-                $printer->text(
-                    str_pad("Shipping Fees:", 37, ' ', STR_PAD_LEFT) .
-                    str_pad(number_format($sale->shipping_fees, 2), 11, ' ', STR_PAD_LEFT) . "\n"
-                );
-                $printer->text(
-                    str_pad("Address:", 37, ' ', STR_PAD_LEFT) .
-                    str_pad($sale->address, 11, ' ', STR_PAD_LEFT) . "\n"
-                );
+                if ($sale->shipping_fees > 0) {
+                    $printer->text(
+                        str_pad("Shipping Fees:", 37, ' ', STR_PAD_RIGHT) .
+                        str_pad(number_format($sale->shipping_fees, 2), 11, ' ', STR_PAD_LEFT) . "\n"
+                    );
+                }
+
+                // Print address with word wrapping
+                if ($sale->address) {
+                    $printer->text(str_repeat("-", 48) . "\n");
+                    $printer->text("Delivery Address:\n");
+
+                    // Word wrap the address to fit within 48 characters
+                    $words = explode(' ', $sale->address);
+                    $line = '';
+
+                    foreach ($words as $word) {
+                        if (mb_strlen($line . ' ' . $word) <= 48) {
+                            $line .= ($line === '' ? '' : ' ') . $word;
+                        } else {
+                            $printer->text($line . "\n");
+                            $line = $word;
+                        }
+                    }
+                    // Print any remaining text
+                    if ($line !== '') {
+                        $printer->text($line . "\n");
+                    }
+
+                    // Print phone number if available
+                    if ($sale->customer_phone) {
+                        $printer->text("Phone: " . $sale->customer_phone . "\n");
+                    }
+
+                    $printer->text(str_repeat("-", 48) . "\n");
+                }
             }
 
-            // Final total with bold border
+            // Print final total
             $printer->text(str_repeat("=", 48) . "\n");
             $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
             $printer->setEmphasis(true);
             $printer->text(
-                str_pad("TOTAL ",8, ' ', STR_PAD_LEFT) .
+                str_pad("TOTAL ", 8, ' ', STR_PAD_LEFT) .
                 str_pad(number_format($sale->total_amount, 2), 5, ' ', STR_PAD_LEFT) . "\n"
             );
             $printer->setEmphasis(false);
@@ -385,7 +447,6 @@ class SaleController extends Controller
             $printer->feed(1);
             $printer->setJustification(Printer::JUSTIFY_CENTER);
             $printer->setEmphasis(true);
-            $printer->text("طلب استبدال أو استرداد قيمة المنتج خلال ١٤ يوم\n");
             $printer->text("Exchanges and Refunds are only applicable for 14 days\n");
             $printer->text("Thank You For Shopping With Us!\n");
             $printer->setEmphasis(false);
@@ -444,15 +505,31 @@ class SaleController extends Controller
 
     public function index(Request $request)
     {
-        $sort = $request->get('sort', 'desc'); // Default to 'desc' if no sort parameter is provided
-        $search = $request->query('search'); // Get the search query
+        $sort = $request->get('sort', 'desc');
+        $search = $request->query('search');
 
         $sales = Sale::when($search, function ($query, $search) {
-            $query->where('id', $search); // Search by transaction ID
-        })
-        ->orderBy('created_at', $sort)
-        ->paginate(15);
-        return view('sales.index', compact('sales', 'sort','search'));
+                // If search is numeric, look for ID or display_id
+                if (is_numeric($search)) {
+                    $query->where('id', $search)
+                          ->orWhere('display_id', $search);
+                } else {
+                    // If search contains a date format (e.g., "23/12 - #0001")
+                    if (preg_match('/(\d{2})\/(\d{2})\s*-\s*#(\d+)/', $search, $matches)) {
+                        $day = $matches[1];
+                        $month = $matches[2];
+                        $displayId = ltrim($matches[3], '0');
+
+                        $query->whereDay('sale_date', $day)
+                              ->whereMonth('sale_date', $month)
+                              ->where('display_id', $displayId);
+                    }
+                }
+            })
+            ->orderBy('created_at', $sort)
+            ->paginate(15);
+
+        return view('sales.index', compact('sales', 'sort', 'search'));
     }
 
     public function show($id)

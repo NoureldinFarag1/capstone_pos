@@ -18,7 +18,9 @@ class Sale extends Model
         'subtotal',
         'discount',
         'shipping_fees',
-        'address'
+        'address',
+        'display_id',
+        'sale_date'
     ];
     public $timestamps = true;
 
@@ -33,7 +35,8 @@ class Sale extends Model
     }
 
     protected $casts = [
-        'refund_status' => 'string'
+        'refund_status' => 'string',
+        'sale_date' => 'date'  // Add this line to cast sale_date as date
     ];
 
     public function size()

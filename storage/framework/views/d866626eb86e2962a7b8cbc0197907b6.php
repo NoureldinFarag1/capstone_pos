@@ -3,41 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Local HUB - Connect Your Community</title>
+    <title>Local HUB</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+            position: relative;
+        }
+
+        .card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 1rem;
+            opacity: 0;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            transition: all 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card:hover::after {
+            opacity: 1;
+        }
+
+        .btn {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #dc2626 0%, #1e3a8a 100%);
+            color: white;
+            padding: 0.75rem 2.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1e3a8a 0%, #dc2626 100%);
+            border-radius: 0.5rem;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 38, 38, 0.3);
+        }
+
+        .btn:hover::after {
+            opacity: 1;
+        }
+
+        .btn:active {
+            transform: translateY(1px) scale(0.98);
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+            transition: all 0.1s ease;
+        }
+
+        h1 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 2.75rem;
+        }
+
+        p {
+            letter-spacing: 0.03em;
+            line-height: 1.6;
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen flex items-center justify-center">
-    <div class="container mx-auto px-4 py-16">
-        <div class="max-w-4xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
-            <div class="p-8 md:p-16 text-center">
-                <h1 class="text-4xl md:text-5xl font-bold text-blue-800 mb-6">Welcome to Local HUB</h1>
-                <p class="text-xl text-gray-600 mb-10">
-                    Connect, Collaborate, and Grow with Your Local Community
-                </p>
-
-                <div class="flex justify-center space-x-4">
-                    <?php if(auth()->guard()->check()): ?>
-                        <a href="<?php echo e(url('/dashboard')); ?>" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition duration-300 shadow-md">
-                            Go to Dashboard
-                        </a>
-                    <?php else: ?>
-                        <a href="<?php echo e(route('login')); ?>" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition duration-300 shadow-md">
-                            Log In
-                        </a>
-                    <?php endif; ?>
-                </div>
-            </div>
-            <div class="bg-blue-50 p-4 text-center text-gray-500">
-                © <?php echo e(date('Y')); ?> Local HUB. Connecting Communities.
-            </div>
+<body class="min-h-screen flex flex-col justify-center items-center p-6">
+    <div class="card max-w-lg w-full mx-auto p-8">
+        <h1 class="text-3xl md:text-4xl font-semibold mb-4 text-center text-gray-800">
+            Welcome to Local HUB
+        </h1>
+        <p class="text-lg mb-8 text-center text-gray-600">
+            Connect, Collaborate, and Grow with Your Local Community.
+        </p>
+        <div class="flex justify-center">
+            <?php if(auth()->guard()->check()): ?>
+                <a href="<?php echo e(url('/dashboard')); ?>" class="btn">
+                    Control the HUB
+                </a>
+            <?php else: ?>
+                <a href="<?php echo e(route('login')); ?>" class="btn">
+                    Login the HUB
+                </a>
+            <?php endif; ?>
         </div>
     </div>
+    <footer class="mt-8 text-center text-gray-500">
+        © <?php echo e(date('Y')); ?> Local HUB
+    </footer>
 </body>
 </html>
 <?php /**PATH /Users/noureldinfarag/capstone_pos/resources/views/welcome.blade.php ENDPATH**/ ?>

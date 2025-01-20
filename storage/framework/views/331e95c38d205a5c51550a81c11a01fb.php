@@ -38,7 +38,7 @@
                                 type="text"
                                 name="search"
                                 value="<?php echo e(request('search')); ?>"
-                                placeholder="Enter Transaction ID..."
+                                placeholder="Enter Transaction ID or Daily ID..."
                                 class="w-full border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -100,8 +100,14 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200 bg-white">
                     <?php $__empty_1 = true; $__currentLoopData = $sales; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sale): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                    <tr class="hover:bg-gray-50 <?php echo e(request('search') == $sale->id ? 'bg-yellow-50' : ''); ?>">
-                        <td class="px-6 py-4 text-gray-800"><?php echo e($sale->id); ?></td>
+                    <tr class="hover:bg-gray-50 <?php echo e(request('search') == $sale->id || request('search') == $sale->display_id ? 'bg-yellow-50' : ''); ?>">
+                        <td class="px-6 py-4 text-gray-800">
+                            #<?php echo e($sale->id); ?>
+
+                            <span class="text-sm text-gray-500">
+                                (<?php echo e($sale->sale_date->format('d/m')); ?> - #<?php echo e(str_pad($sale->display_id, 4, '0', STR_PAD_LEFT)); ?>)
+                            </span>
+                        </td>
                         <td class="px-6 py-4 text-gray-800">$<?php echo e(number_format($sale->total_amount, 2)); ?></td>
                         <td class="px-6 py-4 text-gray-800"><?php echo e($sale->created_at->format('Y-m-d H:i')); ?></td>
                         <td class="px-6 py-4"><?php echo e($sale->user ? $sale->user->name : 'Unknown User'); ?></td>

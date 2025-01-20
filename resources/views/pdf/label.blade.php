@@ -22,42 +22,50 @@
         }
         .item-name {
             font-weight: bold;
-            font-size: 8px; /* Increased font size */
+            font-size: 7px; /* Slightly reduced font size */
             margin: 0;
             padding-bottom: 2px; /* Space between name and barcode */
+            max-height: 14px; /* Allow for 2 lines of text */
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2; /* Limit to 2 lines */
+            -webkit-box-orient: vertical;
+            line-height: 1;
+            word-wrap: break-word;
         }
         .barcode {
             width: 1.2in;   /* Adjusted barcode width */
-            height: 0.4in;  /* Adjusted barcode height */
+            height: 0.35in;  /* Slightly reduced height */
             object-fit: cover; /* Adjust to cover and avoid empty spaces */
             margin: 0;
         }
         .item-code {
-            font-size: 8px; /* Increased font size for item code */
+            font-size: 7px; /* Slightly reduced */
             margin: 0;
-            padding-top: 2px; /* Space between barcode and item code */
+            padding-top: 1px; /* Space between barcode and item code */
         }
         .pricing {
-            font-size: 10px; /* Increased font size for pricing */
+            font-size: 9px; /* Slightly reduced */
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 0.05in; /* Space between prices */
             padding-top: 2px; /* Space between item code and pricing */
+            margin-top: 1px;
         }
         .original-price {
-            font-size: 10px;
+            font-size: 9px;
             text-decoration: line-through;
             color: black;
         }
         .sale-price {
-            font-size: 10px;
+            font-size: 9px;
             color: black; /* Sale price color */
         }
         .brand-name {
-            font-size: 8px; /* Font size for brand name */
+            font-size: 7px; /* Slightly reduced */
             margin: 0;
-            padding-top: 2px; /* Space between brand name and item name */
+            padding-top: 1px; /* Space between brand name and item name */
         }
     </style>
 </head>

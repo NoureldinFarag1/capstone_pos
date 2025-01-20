@@ -555,40 +555,42 @@
                         </div>
                     </div>
                     <div class="p-6">
-                        @foreach($topSellingBrandDetails as $index => $brand)
-                            <div class="group flex items-center justify-between mb-4 last:mb-0 p-4 rounded-xl transition-all duration-300 hover:bg-gray-50/80 hover:shadow-sm">
-                                <div class="flex items-center space-x-4">
-                                    <div class="relative">
-                                        @if($index == 0)
-                                            <i class="fas fa-trophy text-2xl transition-all duration-300 group-hover:scale-110 text-yellow-400"></i>
-                                        @elseif ($index == 1)
-                                            <i class="fas fa-trophy text-2xl transition-all duration-300 group-hover:scale-110 text-gray-400"></i>
-                                        @elseif ($index == 2)
-                                            <i class="fas fa-trophy text-2xl transition-all duration-300 group-hover:scale-110 text-orange-600"></i>
-                                        @endif
-                                    </div>
-                                    @if($brand['image'])
-                                        <img src="{{ asset('storage/' . $brand['image']) }}"
-                                             alt="{{ $brand['name'] }}"
-                                             class="w-12 h-12 rounded-lg object-cover border-2 border-gray-100">
-                                    @else
-                                        <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                                            <span class="text-xl font-bold text-gray-400">
-                                                {{ substr($brand['name'], 0, 1) }}
-                                            </span>
+                        <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                            @foreach($topSellingBrandDetails as $index => $brand)
+                                <div class="group flex items-center justify-between p-4 rounded-lg transition-all duration-300 hover:bg-gray-50/80 hover:shadow-sm">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="relative">
+                                            @if($index == 0)
+                                                <i class="fas fa-trophy text-2xl transition-all duration-300 group-hover:scale-110 text-yellow-400"></i>
+                                            @elseif ($index == 1)
+                                                <i class="fas fa-trophy text-2xl transition-all duration-300 group-hover:scale-110 text-gray-400"></i>
+                                            @elseif ($index == 2)
+                                                <i class="fas fa-trophy text-2xl transition-all duration-300 group-hover:scale-110 text-orange-600"></i>
+                                            @endif
                                         </div>
-                                    @endif
-                                    <div class="flex flex-col">
-                                        <span class="text-lg font-semibold text-gray-900">{{ $brand['name'] }}</span>
-                                        <span class="text-sm text-gray-500">Rank #{{ $index + 1 }}</span>
+                                        @if($brand['image'])
+                                            <img src="{{ asset('storage/' . $brand['image']) }}"
+                                                 alt="{{ $brand['name'] }}"
+                                                 class="w-12 h-12 rounded-lg object-cover border-2 border-gray-100">
+                                        @else
+                                            <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                                                <span class="text-xl font-bold text-gray-400">
+                                                    {{ substr($brand['name'], 0, 1) }}
+                                                </span>
+                                            </div>
+                                        @endif
+                                        <div class="flex flex-col">
+                                            <span class="text-lg font-semibold text-gray-900">{{ $brand['name'] }}</span>
+                                            <span class="text-sm text-gray-500">Rank #{{ $index + 1 }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-end">
+                                        <span class="text-xl font-bold text-gray-900">{{ number_format($brand['total_sales'], 0) }}</span>
+                                        <span class="text-sm text-gray-500">Sales</span>
                                     </div>
                                 </div>
-                                <div class="flex flex-col items-end">
-                                    <span class="text-xl font-bold text-gray-900">{{ number_format($brand['total_sales'], 0) }}</span>
-                                    <span class="text-sm text-gray-500">Sales</span>
-                                </div>
-                            </div>
-                        @endforeach
+                            @endforeach
+                        </div>
                     </div>
                 </div>
                 <!-- Inventory Status Widget -->
@@ -654,7 +656,7 @@
                 </div>
             </div>
             <!-- Bottom Row -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 <!-- Top Selling Items -->
                 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="border-b border-gray-100 p-6">
@@ -696,8 +698,8 @@
                     </div>
                     <div class="p-6">
                         @if($lowStockItems->isNotEmpty())
-                            <div class="space-y-3">
-                                @foreach($lowStockItems->take(5) as $item)
+                            <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                                @foreach($lowStockItems->sortBy('quantity') as $item)
                                     <div class="group flex justify-between items-center p-4 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
                                         <div class="flex flex-col">
                                             <span class="font-medium text-gray-900">{{ $item->name }}</span>
