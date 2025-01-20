@@ -11,6 +11,6 @@ export default defineConfig({
             ],
             refresh: true,
         }),
-        vue(), // Add the Vue plugin
+        vue(), 
     ],
 });
