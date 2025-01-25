@@ -60,6 +60,11 @@ class Item extends Model
         return $this->hasMany(SaleItem::class);
     }
 
+    public function salesItems()
+    {
+        return $this->hasMany(SaleItem::class);
+    }
+
     public function sellingPriceWithTax()
     {
         // Calculate discount amount if applied sale exists

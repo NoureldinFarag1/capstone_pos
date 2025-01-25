@@ -509,12 +509,10 @@ class SaleController extends Controller
         $search = $request->query('search');
 
         $sales = Sale::when($search, function ($query, $search) {
-                // If search is numeric, look for ID or display_id
                 if (is_numeric($search)) {
                     $query->where('id', $search)
                           ->orWhere('display_id', $search);
                 } else {
-                    // If search contains a date format (e.g., "23/12 - #0001")
                     if (preg_match('/(\d{2})\/(\d{2})\s*-\s*#(\d+)/', $search, $matches)) {
                         $day = $matches[1];
                         $month = $matches[2];
@@ -526,10 +524,17 @@ class SaleController extends Controller
                     }
                 }
             })
-            ->orderBy('created_at', $sort)
+            ->orderBy('sale_date', 'desc')
+            ->orderBy('display_id', 'desc')
             ->paginate(15);
 
         return view('sales.index', compact('sales', 'sort', 'search'));
+    }
+
+    public function deleteAllSales()
+    {
+        Sale::truncate(); // Delete all sales
+        return redirect()->route('sales.index')->with('success', 'All sales deleted successfully.');
     }
 
     public function show($id)

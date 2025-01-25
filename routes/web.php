@@ -125,14 +125,8 @@ Route::get('/sales/{period}/{method}', [SaleController::class, 'paymentMethodSal
     ->name('sales.by-payment-method')
     ->where('period', 'daily|monthly')
     ->where('method', 'cash|credit_card|mobile_pay|cod');
-
-// Add this route
 Route::get('/brands/most-selling', [DashboardController::class, 'mostSellingBrands'])->name('brands.most-selling');
-
-// Add this route
 Route::get('/customers/fetch-name', [CustomerController::class, 'fetchName']);
-
-// Add this route
 Route::post('/backup/download', [BackupController::class, 'download'])->name('backup.download');
 
 // Default homepage
