@@ -147,39 +147,30 @@
                 <div class="hidden sm:flex sm:items-center">
                     <!-- Low Stock Notification Dropdown -->
                     <?php if(isset($lowStockItems) && $lowStockItems->isNotEmpty()): ?>
-                    <div x-data="{ open: false }" class="relative">
-                        <button @click="open = !open"
-                                class="relative p-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors">
-                            <i class="fas fa-bell"></i>
-                            <?php if(count($lowStockItems) > 0): ?>
-                                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                                    <?php echo e(count($lowStockItems)); ?>
-
-                                </span>
-                            <?php endif; ?>
+                    <div x-data="{ open: false, dotVisible: true }" class="relative mr-4">
+                        <button @click="open = !open; dotVisible = false"
+                                class="notification-btn">
+                            <i :class="open ? 'far fa-bell' : 'fas fa-bell'"></i>
+                            <div x-show="dotVisible" class="notification-dot"></div>
                         </button>
                         <div x-show="open"
                              @click.away="open = false"
-                             x-transition:enter="transition ease-out duration-100"
-                             x-transition:enter-start="transform opacity-0 scale-95"
-                             x-transition:enter-end="transform opacity-100 scale-100"
-                             x-transition:leave="transition ease-in duration-75"
-                             x-transition:leave-start="transform opacity-100 scale-100"
-                             x-transition:leave-end="transform opacity-0 scale-95"
-                             class="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 max-h-64 overflow-y-auto">
-                            <div class="py-1">
-                                <div class="px-4 py-2 font-medium text-gray-700 border-b">Low Stock Alerts</div>
+                             class="notification-dropdown">
+                            <div class="px-4 py-2 border-b border-gray-100">
+                                <h6 class="text-sm font-semibold">Stock Alerts</h6>
+                            </div>
+                            <div class="max-h-64 overflow-y-auto">
                                 <?php $__currentLoopData = $lowStockItems->sortBy('quantity'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <a href="<?php echo e(route('items.edit', $item->id)); ?>"
-                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex justify-between items-center">
+                                       class="notification-item">
                                         <span class="font-medium"><?php echo e($item->name); ?></span>
-                                        <span class="text-red-500 ml-1">(Stock: <?php echo e($item->quantity); ?>)</span>
+                                        <span class="text-red-500"><?php echo e($item->quantity); ?> left</span>
                                     </a>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
                         </div>
                     </div>
-                <?php endif; ?>
+                    <?php endif; ?>
 
                 <div class="flex items-center space-x-4">
                         <div>
@@ -200,6 +191,21 @@
     </nav>
     <!-- Content Area -->
     <div class="container mx-auto p-6">
+        <div class="mb-4 flex justify-end">
+            <button
+                x-data="{ loading: false }"
+                @click="loading = true; window.location.reload()"
+                class="group bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2.5 rounded-lg flex items-center transition-all duration-300 relative tooltip-trigger"
+                title="Refresh Page">
+                <i class="fas fa-sync-alt"
+                   :class="{ 'animate-spin': loading }"
+                   class="mr-2 text-lg group-hover:rotate-180 transition-transform duration-500"></i>
+                <!-- Tooltip -->
+                <span class="tooltip absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    Refresh page
+                </span>
+            </button>
+        </div>
         <?php echo $__env->yieldContent('content'); ?>
         <br>
         <?php if(Request::routeIs('dashboard')): ?> <!-- Show only on the dashboard page -->
@@ -563,21 +569,20 @@
                             <?php $__currentLoopData = $topSellingBrandDetails; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $brand): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <div class="group flex items-center justify-between p-4 rounded-lg transition-all duration-300 hover:bg-gray-50/80 hover:shadow-sm">
                                     <div class="flex items-center space-x-4">
-                                        <div class="relative">
-                                            <?php if($index == 0): ?>
-                                                <i class="fas fa-trophy text-2xl transition-all duration-300 group-hover:scale-110 text-yellow-400"></i>
-                                            <?php elseif($index == 1): ?>
-                                                <i class="fas fa-trophy text-2xl transition-all duration-300 group-hover:scale-110 text-gray-400"></i>
-                                            <?php elseif($index == 2): ?>
-                                                <i class="fas fa-trophy text-2xl transition-all duration-300 group-hover:scale-110 text-orange-600"></i>
-                                            <?php endif; ?>
-                                        </div>
                                         <?php if($brand['image']): ?>
                                             <img src="<?php echo e(asset('storage/' . $brand['image'])); ?>"
                                                  alt="<?php echo e($brand['name']); ?>"
-                                                 class="w-12 h-12 rounded-lg object-cover border-2 border-gray-100">
+                                                 class="w-12 h-12 rounded-lg object-cover border-2
+                                                 <?php if($index == 0): ?> border-yellow-400
+                                                 <?php elseif($index == 1): ?> border-gray-400
+                                                 <?php elseif($index == 2): ?> border-orange-600
+                                                 <?php else: ?> border-gray-100 <?php endif; ?>">
                                         <?php else: ?>
-                                            <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                                            <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center border-2
+                                                 <?php if($index == 0): ?> border-yellow-400
+                                                 <?php elseif($index == 1): ?> border-gray-400
+                                                 <?php elseif($index == 2): ?> border-orange-600
+                                                 <?php else: ?> border-gray-100 <?php endif; ?>">
                                                 <span class="text-xl font-bold text-gray-400">
                                                     <?php echo e(substr($brand['name'], 0, 1)); ?>
 

@@ -97,24 +97,45 @@
                 <div class="col-lg-4 col-md-6 col-sm-12">
                     <div class="card shadow-sm border-0 h-100">
                         <div class="card-body d-flex flex-column">
-                            <a href="<?php echo e(route('items.show', $item->id)); ?>" class="text-decoration-none text-dark">
-                                <h5 class="card-title fw-bold mb-3"><?php echo e($item->name); ?></h5>
-                            </a>
-
-                            <!-- Parent Item Details -->
-                            <div class="mb-2">
-                                <p class="mb-1">Base Price: <span class="fw-bold">EGP<?php echo e(number_format($item->selling_price, 2)); ?></span></p>
-                                <?php if($item->discount_type === 'percentage'): ?>
-                                    <p class="mb-1 text-muted">Sale: <span class="fw-bold"><?php echo e($item->discount_value); ?>%</span></p>
-                                <?php else: ?>
-                                    <p class="mb-1 text-muted">Sale: <span class="fw-bold">EGP<?php echo e($item->discount_value); ?></span></p>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <a href="<?php echo e(route('items.show', $item->id)); ?>" class="text-decoration-none text-reset">
+                                    <h5 class="card-title fw-bold m-0"><?php echo e($item->name); ?></h5>
+                                </a>
+                                <?php if($item->quantity <= 0): ?>
+                                    <div class="stock-badge">
+                                        <span class="badge bg-danger">Out of Stock</span>
+                                    </div>
                                 <?php endif; ?>
-                                <p class="mb-1">Selling Price: <span class="fw-bold">EGP<?php echo e(number_format($item->priceAfterSale(), 2)); ?></span></p>
-                                <p class="mb-1">Total Stock: <span class="fw-bold"><?php echo e($item->quantity); ?></span></p>
                             </div>
 
-                            <!-- Action Buttons -->
-                            <div class="mt-auto d-flex justify-content-between">
+                            <div class="item-details">
+                                <div class="price-info mb-3">
+                                    <p class="mb-1 d-flex justify-content-between">
+                                        <span class="text-muted">Base Price:</span>
+                                        <span class="fw-bold">EGP<?php echo e(number_format($item->selling_price, 2)); ?></span>
+                                    </p>
+                                    <?php if($item->discount_type === 'percentage'): ?>
+                                        <p class="mb-1 d-flex justify-content-between">
+                                            <span class="text-muted">Discount:</span>
+                                            <span class='text-danger'><?php echo e($item->discount_value); ?>% OFF</span>
+                                        </p>
+                                    <?php elseif($item->discount_type === 'fixed'): ?>
+                                        <p class="mb-1 d-flex justify-content-between">
+                                            <span class="text-muted">Discount:</span>
+                                            <span class='text-danger'>EGP<?php echo e(number_format($item->discount_value, 2)); ?> OFF</span>
+                                    <?php endif; ?>
+                                    <p class="mb-1 d-flex justify-content-between">
+                                        <span class="text-muted">Final Price:</span>
+                                        <span class="fw-bold">EGP<?php echo e(number_format($item->priceAfterSale(), 2)); ?></span>
+                                    </p>
+                                </div>
+                                <p class="mb-0 d-flex justify-content-between align-items-center">
+                                    <span class="text-muted">Stock:</span>
+                                    <span class="fw-medium"><?php echo e($item->quantity); ?> units</span>
+                                </p>
+                            </div>
+
+                            <div class="mt-auto pt-3 border-top d-flex justify-content-between">
                                 <a href="<?php echo e(route('items.edit', $item->id)); ?>" class="btn btn-outline-primary btn-sm">
                                     <i class="fas fa-edit"></i> Edit
                                 </a>

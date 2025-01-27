@@ -1,13 +1,31 @@
 <?php $__env->startSection('content'); ?>
-<div class="container">
+<div class="container py-4">
+    <!-- Back Button -->
+    <div class="mb-3">
+        <a href="<?php echo e(route('items.index')); ?>" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i> Back to Items
+        </a>
+    </div>
+
     <div class="row">
         <!-- Parent Item Details -->
         <div class="col-md-4">
-            <div class="card mb-3">
-                <img src="<?php echo e(asset('storage/' . $item->picture)); ?>" alt="<?php echo e($item->name); ?>" class="card-img-top">
+            <div class="card mb-3 shadow-sm">
+                <div class="d-flex justify-content-between p-3 border-bottom">
+                    <h5 class="card-header-title mb-0">Item Details</h5>
+                    <a href="<?php echo e(route('items.edit', $item->id)); ?>" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                </div>
+                <div class="item-image-container">
+                    <img src="<?php echo e(asset('storage/' . $item->picture)); ?>" alt="<?php echo e($item->name); ?>" class="card-img-top item-image">
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title"><?php echo e($item->name); ?></h5>
-                    <div class="row">
+                    <h4 class="card-title text-center mb-3"><?php echo e($item->name); ?></h4>
+                    <div class="item-metadata mb-3">
+                        <span class="badge bg-secondary">ID: <?php echo e($item->id); ?></span>
+                    </div>
+                    <div class="row g-3">
                         <div class="col-6">
                             <?php if($item->barcode): ?>
                                 <img src="<?php echo e(asset('storage/' .$item->barcode)); ?>" alt="Barcode" class="img-fluid">
@@ -28,34 +46,45 @@
                         </div>
                     </div>
                 </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge <?php echo e($item->quantity > 0 ? 'bg-success' : 'bg-danger'); ?> badge-lg">
+                            <?php echo e($item->quantity > 0 ? 'In Stock' : 'Out of Stock'); ?>
+
+                        </span>
+                        <span class="text-muted small">Last updated: <?php echo e($item->updated_at->diffForHumans()); ?></span>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Variants Table -->
         <div class="col-md-8">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Item Variants</h5>
-                    <button type="button" class="btn btn-primary btn-sm" id="saveAllQuantities">
-                        Save All Changes
-                    </button>
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Item Variants</h5>
+                        <button type="button" class="btn btn-primary btn-sm" id="saveAllQuantities">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover table-striped mb-0">
                             <thead>
                                 <tr>
                                     <th>Variant</th>
                                     <th>Size</th>
                                     <th>Color</th>
-                                    <th>Stock</th>
+                                    <th class="text-center">Stock</th>
                                     <th>Barcode</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php $__currentLoopData = $item->variants; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $variant): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <tr data-variant-id="<?php echo e($variant->id); ?>">
+                                    <tr data-variant-id="<?php echo e($variant->id); ?>" class="variant-row">
                                         <td><?php echo e($variant->name); ?></td>
                                         <td><?php echo e($variant->sizes->first()->name ?? '-'); ?></td>
                                         <td>
@@ -70,15 +99,21 @@
                                                 -
                                             <?php endif; ?>
                                         </td>
-                                        <td>
-                                            <input type="number"
-                                                   class="form-control form-control-sm quantity-input"
-                                                   value="<?php echo e($variant->quantity); ?>"
-                                                   min="0"
-                                                   style="width: 80px;">
-                                            <?php if($variant->quantity == 0): ?>
-                                                <span class="badge bg-danger ms-2">Out of Stock</span>
-                                            <?php endif; ?>
+                                        <td class="text-center">
+                                            <div class="d-flex align-items-center justify-content-center gap-2">
+                                                <input type="number"
+                                                       class="form-control form-control-sm quantity-input"
+                                                       value="<?php echo e($variant->quantity); ?>"
+                                                       min="0"
+                                                       style="width: 80px;">
+                                                <span class="stock-status">
+                                                    <?php if($variant->quantity == 0): ?>
+                                                        <span class="badge bg-danger">Out of Stock</span>
+                                                    <?php elseif($variant->quantity <= 5): ?>
+                                                        <span class="badge bg-warning">Low Stock</span>
+                                                    <?php endif; ?>
+                                                </span>
+                                            </div>
                                         </td>
                                         <td>
                                             <?php if($variant->barcode): ?>
@@ -103,6 +138,27 @@
         </div>
     </div>
 </div>
+
+<?php $__env->startPush('styles'); ?>
+<style>
+.item-metadata {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+    }
+}
+</style>
+<?php $__env->stopPush(); ?>
 
 <?php $__env->startPush('scripts'); ?>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -229,7 +285,18 @@ document.addEventListener('DOMContentLoaded', function() {
             saveAllBtn.textContent = 'Save All Changes';
         });
     });
+
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
 });
+
+function exportVariants() {
+    // Add export functionality here
+    alert('Export feature coming soon!');
+}
 </script>
 <?php $__env->stopPush(); ?>
 
@@ -237,6 +304,22 @@ document.addEventListener('DOMContentLoaded', function() {
 .color-preview {
     display: inline-block;
     border: 1px solid #dee2e6;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.quantity-input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    border-color: #80bdff;
+}
+
+@media print {
+    .btn-group, .print-label {
+        display: none;
+    }
 }
 </style>
 <?php $__env->stopSection(); ?>

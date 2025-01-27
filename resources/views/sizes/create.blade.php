@@ -15,6 +15,6 @@
                 <option value="shoes">Shoes</option>
             </select>
         </div>
-        <button type="submit" class="btn btn-success">Create</button>
+        <button type="submit" class="btn btn-success mt-2">Create</button>
     </form>
 @endsection
