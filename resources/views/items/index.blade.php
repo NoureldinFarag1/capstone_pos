@@ -22,13 +22,15 @@
 
         <!-- Export Dropdown -->
         <div class="dropdown me-3">
-            <button class="btn btn-success dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <button class="btn btn-success dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown"
+                aria-expanded="false">
                 <i class="fas fa-file-export"></i> Export Items
             </button>
             <ul class="dropdown-menu" aria-labelledby="exportDropdown">
                 <li><a class="dropdown-item" href="{{ route('items.export') }}">All Brands</a></li>
                 @foreach($brands as $brand)
-                    <li><a class="dropdown-item" href="{{ route('items.export', ['brand_id' => $brand->id]) }}">{{ $brand->name }}</a></li>
+                    <li><a class="dropdown-item"
+                            href="{{ route('items.export', ['brand_id' => $brand->id]) }}">{{ $brand->name }}</a></li>
                 @endforeach
             </ul>
         </div>
@@ -100,7 +102,7 @@
                         <div class="card-body d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <a href="{{ route('items.show', $item->id) }}" class="text-decoration-none text-reset">
-                                    <h5 class="card-title fw-bold m-0">{{ $item->name }}</h5>
+                                    <h5 class="card-title fw-bold m-0">{{ $item->name }} - {{ $item->brand->name }}</h5>
                                 </a>
                                 @if($item->quantity <= 0)
                                     <div class="stock-badge">
@@ -141,13 +143,13 @@
                                     <i class="fas fa-edit"></i> Edit
                                 </a>
                                 @can('admin')
-                                <form action="{{ route('items.destroy', $item->id) }}" method="POST" class="delete-item-form">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-outline-danger btn-sm">
-                                        <i class="fas fa-trash-alt"></i> Delete
-                                    </button>
-                                </form>
+                                    <form action="{{ route('items.destroy', $item->id) }}" method="POST" class="delete-item-form">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="fas fa-trash-alt"></i> Delete
+                                        </button>
+                                    </form>
                                 @endcan
                             </div>
                         </div>
@@ -199,59 +201,59 @@
 </div>
 
 @push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Existing search functionality
-    const searchInput = document.getElementById('itemSearch');
-    if (searchInput) {
-        searchInput.addEventListener('keyup', function() {
-            const searchText = this.value.toLowerCase();
-            const itemCards = document.querySelectorAll('.col-lg-4');
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Existing search functionality
+            const searchInput = document.getElementById('itemSearch');
+            if (searchInput) {
+                searchInput.addEventListener('keyup', function () {
+                    const searchText = this.value.toLowerCase();
+                    const itemCards = document.querySelectorAll('.col-lg-4');
 
-            itemCards.forEach(card => {
-                const itemName = card.querySelector('.card-title').textContent.toLowerCase();
-                const itemDetails = card.querySelector('.card-body').textContent.toLowerCase();
+                    itemCards.forEach(card => {
+                        const itemName = card.querySelector('.card-title').textContent.toLowerCase();
+                        const itemDetails = card.querySelector('.card-body').textContent.toLowerCase();
 
-                if (itemName.includes(searchText) || itemDetails.includes(searchText)) {
-                    card.style.display = '';
-                } else {
-                    card.style.display = 'none';
-                }
+                        if (itemName.includes(searchText) || itemDetails.includes(searchText)) {
+                            card.style.display = '';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            }
+
+            // Existing delete confirmation
+            document.querySelectorAll('.delete-item-form').forEach(form => {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        text: "This will delete the item and all its variants. You won't be able to revert this!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Yes, delete it!',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
             });
         });
-    }
-
-    // Existing delete confirmation
-    document.querySelectorAll('.delete-item-form').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "This will delete the item and all its variants. You won't be able to revert this!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Yes, delete it!',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
-                }
-            });
-        });
-    });
-});
-</script>
+    </script>
 @endpush
 
 @push('styles')
-<style>
-.color-preview {
-    display: inline-block;
-    border: 1px solid #dee2e6;
-}
-</style>
+    <style>
+        .color-preview {
+            display: inline-block;
+            border: 1px solid #dee2e6;
+        }
+    </style>
 @endpush
 @endsection

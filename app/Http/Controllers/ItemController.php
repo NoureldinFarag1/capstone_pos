@@ -28,7 +28,7 @@ class ItemController extends BaseController
         $brands = Brand::all(); // Fetch all brands
         $sizes = Size::all(); // Fetch all sizes, make sure the Size model exists
         $colors = Color::all();
-        return view('items.create', compact('categories', 'brands', 'sizes','colors'));
+        return view('items.create', compact('categories', 'brands', 'sizes', 'colors'));
     }
 
     public function store(Request $request)
@@ -77,8 +77,8 @@ class ItemController extends BaseController
 
         // Generate parent barcode
         $parentBarcode = Str::padLeft($brand->id, 3, '0') .
-                        Str::padLeft($category->id, 3, '0') .
-                        Str::padLeft($parentItem->id, 4, '0');
+            Str::padLeft($category->id, 3, '0') .
+            Str::padLeft($parentItem->id, 4, '0');
 
         $parentItem->code = $parentBarcode;
         $parentItem->save();
@@ -124,8 +124,8 @@ class ItemController extends BaseController
 
                 // Generate variant barcode
                 $variantBarcode = $parentBarcode .
-                                 Str::padLeft($color->id, 2, '0') .
-                                 Str::padLeft($size->id, 2, '0');
+                    Str::padLeft($color->id, 2, '0') .
+                    Str::padLeft($size->id, 2, '0');
 
                 // Generate barcode image
                 $barcodeGenerator = new BarcodeGeneratorPNG();
@@ -209,8 +209,8 @@ class ItemController extends BaseController
 
             // Generate variant barcode
             $variantBarcode = $parentItem->code .
-                             Str::padLeft($color->id, 2, '0') .
-                             Str::padLeft($size->id, 2, '0');
+                Str::padLeft($color->id, 2, '0') .
+                Str::padLeft($size->id, 2, '0');
 
             // Generate barcode image
             $barcodeGenerator = new BarcodeGeneratorPNG();
@@ -255,14 +255,16 @@ class ItemController extends BaseController
         $brandId = $request->input('brand_id'); // Capture the selected brand
         $categoryId = $request->input('category_id'); // Capture the selected category
 
-        // Query items with optional brand and category filtering, and paginate
-        $items = Item::when($brandId, function ($query) use ($brandId) {
+        // Query items with brand relationship
+        $items = Item::with('brand')  // Add this line to eager load brand
+            ->when($brandId, function ($query) use ($brandId) {
                 return $query->where('brand_id', $brandId);
             })
             ->when($categoryId, function ($query) use ($categoryId) {
                 return $query->where('category_id', $categoryId);
             })
-            ->paginate(60); // Paginate n items per page
+            ->paginate(75) // Changed from 60 to 9
+            ->appends($request->all()); // Add this line to maintain query parameters
 
         $lowStockItems = $this->getLowStockItems();
         return view('items.index', compact('items', 'categories', 'brands', 'lowStockItems'));
@@ -443,8 +445,8 @@ class ItemController extends BaseController
     public function getItemsByBrandAndCategory(Request $request)
     {
         $items = Item::where('brand_id', $request->brand_id)
-                    ->where('category_id', $request->category_id)
-                    ->get();
+            ->where('category_id', $request->category_id)
+            ->get();
         return response()->json($items);
     }
 
@@ -493,9 +495,9 @@ class ItemController extends BaseController
 
                 // Define custom paper size in mm
                 $printSettings = "-print-settings \"$quantity"
-                             . ",paper=Custom.36.5x25mm"  // Exact dimensions in mm
-                             . ",fit=NoScaling"           // Prevent auto-scaling
-                             . ",offset-x=0,offset-y=0\""; // No margin offset
+                    . ",paper=Custom.36.5x25mm"  // Exact dimensions in mm
+                    . ",fit=NoScaling"           // Prevent auto-scaling
+                    . ",offset-x=0,offset-y=0\""; // No margin offset
 
                 // Build and execute the print command
                 $command = "$sumatraPath $printSettings -print-to \"$printerName\" \"$tempPath\"";
@@ -614,7 +616,7 @@ class ItemController extends BaseController
 
             foreach ($request->updates as $update) {
                 $variant = Item::findOrFail($update['id']);
-                $variant->quantity = (int)$update['quantity'];
+                $variant->quantity = (int) $update['quantity'];
                 $variant->save();
 
                 $parentId = $variant->parent_id;
