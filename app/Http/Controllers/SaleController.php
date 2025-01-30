@@ -145,7 +145,7 @@ class SaleController extends Controller
             // Create a temporary receipt structure
             $items = collect($request->input('saleItems', []));
 
-            $printerName = 'Xprinter_XP_T361U';
+            $printerName = 'XP-80C';
             $connector = $this->getPrinterConnector($printerName);
             $printer = new Printer($connector);
 
@@ -244,7 +244,7 @@ class SaleController extends Controller
             Log::info('Starting thermal receipt print for sale #' . $id);
 
             $sale = Sale::with('saleItems.item')->findOrFail($id);
-            $printerName = 'Xprinter_XP_T361U';
+            $printerName = 'XP-80C';
 
             Log::info('Connecting to printer: ' . $printerName);
             $connector = $this->getPrinterConnector($printerName);
@@ -482,7 +482,7 @@ class SaleController extends Controller
         try {
             Log::info('Attempting to open cash drawer');
 
-            $printerName = 'Xprinter_XP_T361U';
+            $printerName = 'XP-80C';
             Log::info('Using printer: ' . $printerName);
 
             $connector = $this->getPrinterConnector($printerName);
@@ -509,21 +509,21 @@ class SaleController extends Controller
         $search = $request->query('search');
 
         $sales = Sale::when($search, function ($query, $search) {
-                if (is_numeric($search)) {
-                    $query->where('id', $search)
-                          ->orWhere('display_id', $search);
-                } else {
-                    if (preg_match('/(\d{2})\/(\d{2})\s*-\s*#(\d+)/', $search, $matches)) {
-                        $day = $matches[1];
-                        $month = $matches[2];
-                        $displayId = ltrim($matches[3], '0');
+            if (is_numeric($search)) {
+                $query->where('id', $search)
+                    ->orWhere('display_id', $search);
+            } else {
+                if (preg_match('/(\d{2})\/(\d{2})\s*-\s*#(\d+)/', $search, $matches)) {
+                    $day = $matches[1];
+                    $month = $matches[2];
+                    $displayId = ltrim($matches[3], '0');
 
-                        $query->whereDay('sale_date', $day)
-                              ->whereMonth('sale_date', $month)
-                              ->where('display_id', $displayId);
-                    }
+                    $query->whereDay('sale_date', $day)
+                        ->whereMonth('sale_date', $month)
+                        ->where('display_id', $displayId);
                 }
-            })
+            }
+        })
             ->orderBy('sale_date', 'desc')
             ->orderBy('display_id', 'desc')
             ->paginate(15);
@@ -620,11 +620,11 @@ class SaleController extends Controller
             DB::raw('SUM(total_amount) as total_spent'),
             DB::raw('MAX(created_at) as last_visit')
         )
-        ->whereNotNull('customer_phone')
-        ->groupBy('customer_name', 'customer_phone')
-        ->havingRaw('COUNT(*) > 1')
-        ->orderByDesc('visit_count')
-        ->paginate(15);
+            ->whereNotNull('customer_phone')
+            ->groupBy('customer_name', 'customer_phone')
+            ->havingRaw('COUNT(*) > 1')
+            ->orderByDesc('visit_count')
+            ->paginate(15);
 
         return view('sales.loyal-customers', compact('customers'));
     }
@@ -638,13 +638,13 @@ class SaleController extends Controller
             $periodLabel = "Today's";
         } else {
             $query->whereMonth('created_at', Carbon::now()->month)
-                  ->whereYear('created_at', Carbon::now()->year);
+                ->whereYear('created_at', Carbon::now()->year);
             $periodLabel = "This Month's";
         }
 
         $sales = $query->where('payment_method', $method)
-                      ->orderBy('created_at', 'desc')
-                      ->paginate(15);
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
 
         $methodLabel = str_replace('_', ' ', ucfirst($method));
 

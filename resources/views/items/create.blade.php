@@ -8,6 +8,22 @@
             <a href="{{ route('items.index') }}" class="btn btn-light">← Back to Items</a>
         </div>
         <div class="card-body">
+            @if(session('error'))
+            <div class="alert alert-danger">
+                {{ session('error') }}
+            </div>
+            @endif
+
+            @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+            @endif
+
             <form action="{{ route('items.store') }}" method="POST" enctype="multipart/form-data" id="createItemForm">
                 @csrf
 
@@ -19,27 +35,30 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="name" class="form-label">Item Name <span class="text-danger">*</span></label>
+                                <label for="name" class="form-label">Item Name <span
+                                        class="text-danger">*</span></label>
                                 <input type="text" name="name" class="form-control" required>
                                 <div class="form-text">Enter a descriptive name for the item</div>
                             </div>
 
                             <div class="col-md-3 mb-3">
-                                <label for="category_id" class="form-label">Category <span class="text-danger">*</span></label>
+                                <label for="category_id" class="form-label">Category <span
+                                        class="text-danger">*</span></label>
                                 <select name="category_id" class="form-select" required>
                                     <option value="" selected disabled>Select Category</option>
                                     @foreach($categories as $category)
-                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
 
                             <div class="col-md-3 mb-3">
-                                <label for="brand_id" class="form-label">Brand <span class="text-danger">*</span></label>
+                                <label for="brand_id" class="form-label">Brand <span
+                                        class="text-danger">*</span></label>
                                 <select name="brand_id" class="form-select" required>
                                     <option value="" selected disabled>Select Brand</option>
                                     @foreach($brands as $brand)
-                                        <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                                    <option value="{{ $brand->id }}">{{ $brand->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -48,7 +67,8 @@
                         <div class="mb-3">
                             <label for="picture" class="form-label">Item Picture</label>
                             <div class="input-group">
-                                <input type="file" name="picture" class="form-control" accept="image/*" id="pictureInput">
+                                <input type="file" name="picture" class="form-control" accept="image/*"
+                                    id="pictureInput">
                                 <label class="input-group-text" for="pictureInput">Browse</label>
                             </div>
                             <div id="imagePreview" class="mt-2 d-none">
@@ -66,18 +86,22 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-3 mb-3">
-                                <label for="buying_price" class="form-label">Buying Price <span class="text-danger">*</span></label>
+                                <label for="buying_price" class="form-label">Buying Price <span
+                                        class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <span class="input-group-text">EGP</span>
-                                    <input type="number" name="buying_price" class="form-control" min="0" step="0.01" required>
+                                    <input type="number" name="buying_price" class="form-control" min="0" step="0.01"
+                                        required>
                                 </div>
                             </div>
 
                             <div class="col-md-3 mb-3">
-                                <label for="selling_price" class="form-label">Selling Price <span class="text-danger">*</span></label>
+                                <label for="selling_price" class="form-label">Selling Price <span
+                                        class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <span class="input-group-text">EGP</span>
-                                    <input type="number" name="selling_price" class="form-control" min="0" step="0.01" required>
+                                    <input type="number" name="selling_price" class="form-control" min="0" step="0.01"
+                                        required>
                                 </div>
                             </div>
 
@@ -90,7 +114,8 @@
                             </div>
 
                             <div class="col-md-3 mb-3">
-                                <label for="quantity" class="form-label">Initial Stock <span class="text-danger">*</span></label>
+                                <label for="quantity" class="form-label">Initial Stock <span
+                                        class="text-danger">*</span></label>
                                 <input type="number" name="quantity" class="form-control" min="1" required>
                             </div>
                         </div>
@@ -105,7 +130,8 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="discount_value" class="form-label">Discount Value</label>
-                                <input type="number" id="discount_value" name="discount_value" class="form-control" min="0" required>
+                                <input type="number" id="discount_value" name="discount_value" class="form-control"
+                                    min="0" required>
                                 <div id="discountHelp" class="form-text"></div>
                             </div>
                         </div>
@@ -123,14 +149,14 @@
                             <label class="form-label">Available Sizes <span class="text-danger">*</span></label>
                             <div class="d-flex flex-wrap gap-2">
                                 @foreach ($sizes as $size)
-                                    <div class="form-check">
-                                        <input type="checkbox" name="sizes[]" value="{{ $size->id }}"
-                                               class="form-check-input" id="size{{ $size->id }}">
-                                        <label class="form-check-label px-3 py-2 border rounded-3"
-                                               for="size{{ $size->id }}">
-                                            {{ $size->name }}
-                                        </label>
-                                    </div>
+                                <div class="form-check">
+                                    <input type="checkbox" name="sizes[]" value="{{ $size->id }}"
+                                        class="form-check-input" id="size{{ $size->id }}">
+                                    <label class="form-check-label px-3 py-2 border rounded-3"
+                                        for="size{{ $size->id }}">
+                                        {{ $size->name }}
+                                    </label>
+                                </div>
                                 @endforeach
                             </div>
                         </div>
@@ -140,16 +166,16 @@
                             <label class="form-label">Available Colors</label>
                             <div class="d-flex flex-wrap gap-2">
                                 @foreach($colors as $color)
-                                    <div class="form-check">
-                                        <input type="checkbox" name="colors[]" value="{{ $color->id }}"
-                                               class="form-check-input" id="color{{ $color->id }}">
-                                        <label class="form-check-label d-flex align-items-center gap-2"
-                                               for="color{{ $color->id }}">
-                                            <span class="color-preview rounded-circle border"
-                                                  style="width: 20px; height: 20px; background-color: {{ $color->hex_code }};"></span>
-                                            {{ $color->name }}
-                                        </label>
-                                    </div>
+                                <div class="form-check">
+                                    <input type="checkbox" name="colors[]" value="{{ $color->id }}"
+                                        class="form-check-input" id="color{{ $color->id }}">
+                                    <label class="form-check-label d-flex align-items-center gap-2"
+                                        for="color{{ $color->id }}">
+                                        <span class="color-preview rounded-circle border"
+                                            style="width: 20px; height: 20px; background-color: {{ $color->hex_code }};"></span>
+                                        {{ $color->name }}
+                                    </label>
+                                </div>
                                 @endforeach
                             </div>
                         </div>
@@ -229,16 +255,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle variant quantity preview
     function updateVariantQuantities() {
-        const selectedSizes = Array.from(document.querySelectorAll('input[name="sizes[]"]:checked')).map(input => ({
-            id: input.value,
-            name: input.nextElementSibling.textContent.trim()
-        }));
+        const selectedSizes = Array.from(document.querySelectorAll('input[name="sizes[]"]:checked')).map(
+            input => ({
+                id: input.value,
+                name: input.nextElementSibling.textContent.trim()
+            }));
 
-        const selectedColors = Array.from(document.querySelectorAll('input[name="colors[]"]:checked')).map(input => ({
-            id: input.value,
-            name: input.nextElementSibling.textContent.trim(),
-            hex: input.nextElementSibling.querySelector('.color-preview').style.backgroundColor
-        }));
+        const selectedColors = Array.from(document.querySelectorAll('input[name="colors[]"]:checked')).map(
+            input => ({
+                id: input.value,
+                name: input.nextElementSibling.textContent.trim(),
+                hex: input.nextElementSibling.querySelector('.color-preview').style.backgroundColor
+            }));
 
         const variantQuantitiesDiv = document.getElementById('variantQuantities');
         const tbody = document.getElementById('variantQuantitiesBody');
@@ -253,23 +281,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     const variantName = document.querySelector('input[name="name"]').value;
 
                     tr.innerHTML = `
-                        <td>${variantName}</td>
-                        <td>${size.name}</td>
-                        <td>
-                            <span class="d-flex align-items-center gap-2">
-                                <span class="color-preview rounded-circle" style="width: 15px; height: 15px; background-color: ${color.hex}"></span>
-                                ${color.name}
-                            </span>
-                        </td>
-                        <td>
-                            <input type="number"
-                                   name="variant_quantities[${size.id}][${color.id}]"
-                                   class="form-control form-control-sm variant-quantity"
-                                   style="width: 100px"
-                                   min="0"
-                                   value="0">
-                        </td>
-                    `;
+                            <td>${variantName}</td>
+                            <td>${size.name}</td>
+                            <td>
+                                <span class="d-flex align-items-center gap-2">
+                                    <span class="color-preview rounded-circle" style="width: 15px; height: 15px; background-color: ${color.hex}"></span>
+                                    ${color.name}
+                                </span>
+                            </td>
+                            <td>
+                                <input type="number"
+                                       name="variant_quantities[${size.id}][${color.id}]"
+                                       class="form-control form-control-sm variant-quantity"
+                                       style="width: 100px"
+                                       min="0"
+                                       value="0">
+                            </td>
+                        `;
                     tbody.appendChild(tr);
                 });
             });
@@ -294,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
     cursor: pointer;
 }
 
-.form-check-input:checked + .form-check-label {
+.form-check-input:checked+.form-check-label {
     background-color: #e9ecef;
     border-color: #0d6efd;
 }

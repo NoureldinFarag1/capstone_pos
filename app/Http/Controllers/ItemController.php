@@ -33,125 +33,133 @@ class ItemController extends BaseController
 
     public function store(Request $request)
     {
-        // Validate incoming request
-        $request->validate([
-            'name' => 'required',
-            'buying_price' => 'required|numeric|min:0',
-            'selling_price' => 'required|numeric|min:0',
-            'tax' => 'required|numeric|min:0',
-            'discount_type' => 'required|in:percentage,fixed',
-            'discount_value' => 'required|numeric|min:0',
-            'category_id' => 'required|exists:categories,id',
-            'brand_id' => 'required|integer',
-            'picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'sizes' => 'required|array',
-            'colors' => 'array',
-            'colors.*' => 'exists:colors,id',
-            'variant_quantities' => 'required|array'
-        ]);
+        try {
+            DB::beginTransaction();
 
-        $category = Category::findOrFail($request->input('category_id'));
-        $brand = Brand::findOrFail($request->input('brand_id'));
+            // Validate incoming request
+            $validated = $request->validate([
+                'name' => 'required',
+                'buying_price' => 'required|numeric|min:0',
+                'selling_price' => 'required|numeric|min:0',
+                'tax' => 'required|numeric|min:0',
+                'discount_type' => 'required|in:percentage,fixed',
+                'discount_value' => 'required|numeric|min:0',
+                'category_id' => 'required|exists:categories,id',
+                'brand_id' => 'required|exists:brands,id',
+                'picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'sizes' => 'required|array',
+                'colors' => 'array',
+                'colors.*' => 'exists:colors,id',
+                'variant_quantities' => 'required|array'
+            ]);
 
-        // Store the item picture if uploaded
-        if ($request->hasFile('picture')) {
-            $picturePath = $request->file('picture')->store('items', 'public');
-        } else {
+            $category = Category::findOrFail($request->input('category_id'));
+            $brand = Brand::findOrFail($request->input('brand_id'));
+
+            // Store the item picture if uploaded
             $picturePath = null;
-        }
-
-        // Create parent item
-        $parentItem = Item::create([
-            'name' => $request->input('name'),
-            'category_id' => $request->input('category_id'),
-            'brand_id' => $request->input('brand_id'),
-            'picture' => $picturePath,
-            'quantity' => 0, // Parent item doesn't hold quantity
-            'buying_price' => $request->input('buying_price'),
-            'selling_price' => $request->input('selling_price'),
-            'tax' => $request->input('tax'),
-            'discount_type' => $request->input('discount_type'),
-            'discount_value' => $request->input('discount_value'),
-            'is_parent' => true,
-        ]);
-
-        // Generate parent barcode
-        $parentBarcode = Str::padLeft($brand->id, 3, '0') .
-            Str::padLeft($category->id, 3, '0') .
-            Str::padLeft($parentItem->id, 4, '0');
-
-        $parentItem->code = $parentBarcode;
-        $parentItem->save();
-
-        // Get the sizes and colors
-        $sizes = Size::whereIn('id', $request->input('sizes'))->get();
-        $colors = Color::whereIn('id', $request->input('colors'))->get();
-
-        // Initialize total quantity
-        $totalQuantity = 0;
-
-        // Create variants (child items)
-        foreach ($colors as $color) {
-            foreach ($sizes as $size) {
-                // Get variant quantity from request
-                $variantQuantity = $request->input("variant_quantities.{$size->id}.{$color->id}", 0);
-
-                // Skip variants with zero quantity
-                if ($variantQuantity == 0) {
-                    continue;
-                }
-
-                $totalQuantity += $variantQuantity;
-
-                // Create variant name
-                $variantName = $request->input('name') . ' - ' . $size->name . ' - ' . $color->name;
-
-                // Create the variant
-                $variant = Item::create([
-                    'name' => $variantName,
-                    'category_id' => $request->input('category_id'),
-                    'brand_id' => $request->input('brand_id'),
-                    'picture' => $picturePath,
-                    'quantity' => $variantQuantity, // Use the specific variant quantity
-                    'buying_price' => $request->input('buying_price'),
-                    'selling_price' => $request->input('selling_price'),
-                    'tax' => $request->input('tax'),
-                    'discount_type' => $request->input('discount_type'),
-                    'discount_value' => $request->input('discount_value'),
-                    'parent_id' => $parentItem->id,
-                    'is_parent' => false,
-                ]);
-
-                // Generate variant barcode
-                $variantBarcode = $parentBarcode .
-                    Str::padLeft($color->id, 2, '0') .
-                    Str::padLeft($size->id, 2, '0');
-
-                // Generate barcode image
-                $barcodeGenerator = new BarcodeGeneratorPNG();
-                $barcodePath = 'barcodes/' . $variantBarcode . '.png';
-                file_put_contents(
-                    storage_path('app/public/' . $barcodePath),
-                    $barcodeGenerator->getBarcode($variantBarcode, $barcodeGenerator::TYPE_CODE_128)
-                );
-
-                // Update variant with barcode
-                $variant->barcode = $barcodePath;
-                $variant->code = $variantBarcode;
-
-                // Attach size and color
-                $variant->sizes()->attach([$size->id]);
-                $variant->colors()->attach([$color->id]);
-
-                $variant->save();
+            if ($request->hasFile('picture')) {
+                $picturePath = $request->file('picture')->store('items', 'public');
             }
+
+            // Create parent item
+            $parentItem = Item::create([
+                'name' => $request->input('name'),
+                'category_id' => $request->input('category_id'),
+                'brand_id' => $request->input('brand_id'),
+                'picture' => $picturePath,
+                'quantity' => 0,
+                'buying_price' => $request->input('buying_price'),
+                'selling_price' => $request->input('selling_price'),
+                'tax' => $request->input('tax'),
+                'discount_type' => $request->input('discount_type'),
+                'discount_value' => $request->input('discount_value'),
+                'is_parent' => true,
+            ]);
+
+            // Generate parent barcode
+            $parentBarcode = Str::padLeft($brand->id, 3, '0') .
+                Str::padLeft($category->id, 3, '0') .
+                Str::padLeft($parentItem->id, 4, '0');
+
+            $parentItem->code = $parentBarcode;
+            $parentItem->save();
+
+            // Get the sizes and colors
+            $sizes = Size::whereIn('id', $request->input('sizes'))->get();
+            $colors = Color::whereIn('id', $request->input('colors', []))->get();
+
+            $totalQuantity = 0;
+
+            // Create variants
+            foreach ($colors as $color) {
+                foreach ($sizes as $size) {
+                    $variantQuantity = $request->input("variant_quantities.{$size->id}.{$color->id}", 0);
+
+                    if ($variantQuantity == 0) {
+                        continue;
+                    }
+
+                    $totalQuantity += $variantQuantity;
+                    $variantName = $request->input('name') . ' - ' . $size->name . ' - ' . $color->name;
+
+                    // Create the variant
+                    $variant = Item::create([
+                        'name' => $variantName,
+                        'category_id' => $request->input('category_id'),
+                        'brand_id' => $request->input('brand_id'),
+                        'picture' => $picturePath,
+                        'quantity' => $variantQuantity,
+                        'buying_price' => $request->input('buying_price'),
+                        'selling_price' => $request->input('selling_price'),
+                        'tax' => $request->input('tax'),
+                        'discount_type' => $request->input('discount_type'),
+                        'discount_value' => $request->input('discount_value'),
+                        'parent_id' => $parentItem->id,
+                        'is_parent' => false,
+                    ]);
+
+                    // Generate variant barcode
+                    $variantBarcode = $parentBarcode .
+                        Str::padLeft($color->id, 2, '0') .
+                        Str::padLeft($size->id, 2, '0');
+
+                    // Generate barcode image
+                    $barcodeGenerator = new BarcodeGeneratorPNG();
+                    $barcodePath = 'barcodes/' . $variantBarcode . '.png';
+                    $barcodeStorage = storage_path('app/public/' . $barcodePath);
+
+                    // Ensure directory exists
+                    if (!file_exists(dirname($barcodeStorage))) {
+                        mkdir(dirname($barcodeStorage), 0755, true);
+                    }
+
+                    file_put_contents(
+                        $barcodeStorage,
+                        $barcodeGenerator->getBarcode($variantBarcode, $barcodeGenerator::TYPE_CODE_128)
+                    );
+
+                    $variant->barcode = $barcodePath;
+                    $variant->code = $variantBarcode;
+                    $variant->sizes()->attach([$size->id]);
+                    $variant->colors()->attach([$color->id]);
+                    $variant->save();
+                }
+            }
+
+            $parentItem->quantity = $totalQuantity;
+            $parentItem->save();
+
+            DB::commit();
+            return redirect()->route('items.index')->with('success', 'Item and variants created successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Item creation failed: ' . $e->getMessage());
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Failed to create item: ' . $e->getMessage());
         }
-
-        // Update parent item's total quantity
-        $parentItem->quantity = $totalQuantity;
-        $parentItem->save();
-
-        return redirect()->route('items.index')->with('success', 'Item and variants created successfully.');
     }
 
     public function addVariant(Request $request)
