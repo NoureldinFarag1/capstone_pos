@@ -654,4 +654,35 @@ class ItemController extends BaseController
             ], 500);
         }
     }
+
+    public function generateBarcodes()
+    {
+        try {
+            $items = Item::all();
+            $barcodeGenerator = new BarcodeGeneratorPNG();
+
+            foreach ($items as $item) {
+                $barcodePath = 'barcodes/' . $item->code . '.png';
+                $barcodeStorage = storage_path('app/public/' . $barcodePath);
+
+                // Ensure directory exists
+                if (!file_exists(dirname($barcodeStorage))) {
+                    mkdir(dirname($barcodeStorage), 0755, true);
+                }
+
+                file_put_contents(
+                    $barcodeStorage,
+                    $barcodeGenerator->getBarcode($item->code, $barcodeGenerator::TYPE_CODE_128)
+                );
+
+                $item->barcode = $barcodePath;
+                $item->save();
+            }
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            Log::error('Barcode generation error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
 }

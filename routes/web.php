@@ -120,6 +120,8 @@ Route::post('/items/update-variants-quantity', [ItemController::class, 'updateVa
     ->name('items.updateVariantsQuantity')
     ->middleware('auth');
 
+Route::post('/items/generate-barcodes', [ItemController::class, 'generateBarcodes'])->name('items.generateBarcodes');
+
 Route::get('/loyal-customers', [SaleController::class, 'loyalCustomers'])->name('sales.loyal-customers');
 Route::get('/sales/{period}/{method}', [SaleController::class, 'paymentMethodSales'])
     ->name('sales.by-payment-method')

@@ -3,9 +3,14 @@
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center my-4">
         <h1 class="fw-bold">Items</h1>
-        <a href="<?php echo e(route('items.create')); ?>" class="btn btn-primary">
-            <i class="fas fa-plus-circle"></i> Add New Item
-        </a>
+        <div>
+            <a href="<?php echo e(route('items.create')); ?>" class="btn btn-primary">
+                <i class="fas fa-plus-circle"></i> Add New Item
+            </a>
+            <button id="generateBarcodes" class="btn btn-secondary">
+                <i class="fas fa-barcode"></i> Generate Barcodes
+            </button>
+        </div>
     </div>
 
     <!-- Filter and Export Section -->
@@ -242,6 +247,34 @@
                         }
                     });
                 });
+            });
+
+            // Generate barcodes
+            document.getElementById('generateBarcodes').addEventListener('click', function() {
+                fetch('<?php echo e(route('items.generateBarcodes')); ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
+                    }
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.success) {
+                          Swal.fire({
+                              title: 'Success!',
+                              text: 'Barcodes generated successfully!',
+                              icon: 'success',
+                              confirmButtonText: 'OK'
+                          });
+                      } else {
+                          Swal.fire({
+                              title: 'Error!',
+                              text: 'Failed to generate barcodes: ' + data.error,
+                              icon: 'error',
+                              confirmButtonText: 'OK'
+                          });
+                      }
+                  });
             });
         });
     </script>
