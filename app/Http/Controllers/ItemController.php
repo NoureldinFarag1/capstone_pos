@@ -479,7 +479,7 @@ class ItemController extends BaseController
         try {
             $item = Item::findOrFail($id);
             $quantity = $request->input('quantity', 1);
-            $printerName = 'Xprinter_XP_T361U';
+            $printerName = 'Xprinter_XP-T361U';
 
             // Generate PDF in memory
             $barcodePath = public_path('storage/' . $item->barcode);

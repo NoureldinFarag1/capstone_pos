@@ -1,0 +1,794 @@
+<?php
+    use Illuminate\Support\Facades\Request;
+    $user = auth()->user();
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>local HUB</title>
+    <?php echo app('Illuminate\Foundation\Vite')('resources/js/app.js'); ?>
+    <?php echo app('Illuminate\Foundation\Vite')('resources/css/app.css'); ?>
+    <link rel="stylesheet" href="<?php echo e(asset('css/custom.css')); ?>">
+    <link rel="icon" href="<?php echo e(asset('images/favicon.ico')); ?>" type="image/x-icon">
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <!-- Add SweetAlert2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-white shadow-lg sticky">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo Section -->
+                <div class="flex items-center">
+                    <a href="#" class="flex items-center">
+                        <img src="<?php echo e(asset('images/logo.png')); ?>" alt="LocalHUB Logo" class="h-10 w-auto">
+                        <span class="ml-3 text-xl font-bold text-gray-800">
+                            <span class="text-black">LOCAL</span>
+                            <span class="text-red-600">HUB</span>
+                        </span>
+                    </a>
+                </div>
+                <!-- Main Navigation -->
+                <div class="hidden sm:flex sm:items-center sm:space-x-4">
+                    <!-- Dashboard -->
+                    <?php if (\Illuminate\Support\Facades\Blade::check('role', 'admin|moderator')): ?>
+                    <a href="<?php echo e(route('dashboard')); ?>" class="<?php echo e(request()->is('dashboard*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600'); ?> hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                    <?php endif; ?>
+
+                    <!-- Inventory Dropdown -->
+                    <div x-data="{ isOpen: false }" class="relative">
+                        <button
+                            @click="isOpen = !isOpen"
+                            @keydown.escape.window="isOpen = false"
+                            class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors"
+                        >
+                            <i class="fas fa-box-open mr-2"></i>
+                            <span>Inventory</span>
+                            <svg
+                                class="ml-2 h-4 w-4 transform transition-transform duration-200"
+                                :class="{'rotate-180': isOpen}"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                            >
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+
+                        <div
+                            x-show="isOpen"
+                            @click.away="isOpen = false"
+                            class="absolute z-10 mt-2 w-48 rounded-md shadow-lg origin-top-right right-0"
+                        >
+                            <div class="py-1 bg-white rounded-md shadow-xs">
+                                <a href="<?php echo e(route('items.index')); ?>"
+                                    class="<?php echo e(request()->routeIs('items.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700'); ?> block px-4 py-2 text-sm hover:bg-gray-100">
+                                    <i class="fas fa-box mr-2"></i>Items
+                                </a>
+                                <a href="<?php echo e(route('brands.index')); ?>"
+                                    class="<?php echo e(request()->routeIs('brands.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700'); ?> block px-4 py-2 text-sm hover:bg-gray-100">
+                                    <i class="fas fa-tags mr-2"></i>Brands
+                                </a>
+                                <a href="<?php echo e(route('categories.index')); ?>"
+                                    class="<?php echo e(request()->routeIs('categories.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700'); ?> block px-4 py-2 text-sm hover:bg-gray-100">
+                                    <i class="fas fa-th-list mr-2"></i>Categories
+                                </a>
+                                <a href="<?php echo e(route('sizes.index')); ?>"
+                                    class="<?php echo e(request()->routeIs('sizes.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700'); ?> block px-4 py-2 text-sm hover:bg-gray-100">
+                                    <i class="fas fa-ruler mr-2"></i>Sizes
+                                </a>
+                                <a href="<?php echo e(route('colors.index')); ?>"
+                                    class="<?php echo e(request()->routeIs('colors.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700'); ?> block px-4 py-2 text-sm hover:bg-gray-100">
+                                    <i class="fas fa-tint mr-2"></i>Colors
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sales Dropdown -->
+                    <div x-data="{ isOpen: false }" class="relative">
+                        <button
+                            @click="isOpen = !isOpen"
+                            @keydown.escape.window="isOpen = false"
+                            class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors"
+                        >
+                            <i class="fas fa-chart-line mr-2"></i>
+                            <span>Sales</span>
+                            <svg
+                                class="ml-2 h-4 w-4 transform transition-transform duration-200"
+                                :class="{'rotate-180': isOpen}"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                            >
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+
+                        <div
+                            x-show="isOpen"
+                            @click.away="isOpen = false"
+                            class="absolute z-10 mt-2 w-48 rounded-md shadow-lg origin-top-right right-0"
+                        >
+                            <div class="py-1 bg-white rounded-md shadow-xs">
+                                <a href="<?php echo e(route('sales.index')); ?>"
+                                    class="<?php echo e(request()->routeIs('sales.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700'); ?> block px-4 py-2 text-sm hover:bg-gray-100">
+                                    <i class="fas fa-list mr-2"></i>Sales List
+                                </a>
+                                <a href="<?php echo e(route('sales.create')); ?>"
+                                    class="<?php echo e(request()->routeIs('sales.create') ? 'bg-gray-100 text-gray-900' : 'text-gray-700'); ?> block px-4 py-2 text-sm hover:bg-gray-100">
+                                    <i class="fas fa-plus-circle mr-2"></i>Create Sale
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Admin Section -->
+                    <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('admin')): ?>
+                    <a href="<?php echo e(route('users.index')); ?>" class="<?php echo e(request()->is('users*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600'); ?> hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-users-cog mr-2"></i>Manage Users
+                    </a>
+                    <!-- Backup Button -->
+                    <form action="<?php echo e(route('backup.download')); ?>" method="POST" class="inline">
+                        <?php echo csrf_field(); ?>
+                        <button type="submit" class="<?php echo e(request()->is('backup*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600'); ?> hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors">
+                            <i class="fas fa-download mr-2"></i>Backup
+                        </button>
+                    </form>
+                    <?php endif; ?>
+                </div>
+                <!-- Notification and Logout aligned to the right -->
+                <div class="hidden sm:flex sm:items-center">
+                    <!-- Low Stock Notification Dropdown -->
+                    <?php if(isset($lowStockItems) && $lowStockItems->isNotEmpty()): ?>
+                    <div x-data="{ open: false, dotVisible: true }" class="relative mr-4">
+                        <button @click="open = !open; dotVisible = false"
+                                class="notification-btn">
+                            <i :class="open ? 'far fa-bell' : 'fas fa-bell'"></i>
+                            <div x-show="dotVisible" class="notification-dot"></div>
+                        </button>
+                        <div x-show="open"
+                             @click.away="open = false"
+                             class="notification-dropdown">
+                            <div class="px-4 py-2 border-b border-gray-100">
+                                <h6 class="text-sm font-semibold">Stock Alerts</h6>
+                            </div>
+                            <div class="max-h-64 overflow-y-auto">
+                                <?php $__currentLoopData = $lowStockItems->sortBy('quantity'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <a href="<?php echo e(route('items.edit', $item->id)); ?>"
+                                       class="notification-item">
+                                        <span class="font-medium"><?php echo e($item->name); ?></span>
+                                        <span class="text-red-500"><?php echo e($item->quantity); ?> left</span>
+                                    </a>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                <div class="flex items-center space-x-4">
+                        <div>
+                            <span class="font-semibold"><?php echo e($user->name); ?></span>
+                            <span class="text-sm text-gray-500">(<?php echo e($user->getRoleNames()->first() ?? 'Role not assigned'); ?>)</span>
+                        </div>
+                        <!-- Logout Button -->
+                        <form action="<?php echo e(route('logout')); ?>" method="POST">
+                            <?php echo csrf_field(); ?>
+                            <button type="submit" class="bg-red-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-600 transition-colors">
+                                Logout
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- Content Area -->
+    <div class="container mx-auto p-6">
+        <div class="mb-4 flex justify-end">
+            <button
+                x-data="{ loading: false }"
+                @click="loading = true; window.location.reload()"
+                class="group bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2.5 rounded-lg flex items-center transition-all duration-300 relative tooltip-trigger"
+                title="Refresh Page">
+                <i class="fas fa-sync-alt"
+                   :class="{ 'animate-spin': loading }"
+                   class="mr-2 text-lg group-hover:rotate-180 transition-transform duration-500"></i>
+                <!-- Tooltip -->
+                <span class="tooltip absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    Refresh page
+                </span>
+            </button>
+        </div>
+        <?php echo $__env->yieldContent('content'); ?>
+        <br>
+        <?php if(Request::routeIs('dashboard')): ?> <!-- Show only on the dashboard page -->
+        <!-- Dashboard Widgets -->
+        <div class="container mx-auto p-6">
+
+            <div class="mb-8">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="border-b border-gray-100 p-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-2xl font-bold text-gray-900">Quick Actions</h3>
+                            <span class="px-3 py-1 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-full">
+                                Frequently Used
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                            <a href="/sales/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl hover:shadow-lg transition-all duration-300">
+                                <i class="fas fa-plus-circle text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-white font-medium">New Sale</span>
+                            </a>
+                            <a href="/sales" class="group flex items-center justify-center p-6 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl hover:shadow-lg transition-all duration-300">
+                                <i class="fas fa-chart-line text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-white font-medium">Sales Overview</span>
+                            </a>
+                            <a href="/items/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-green-500 to-green-700 rounded-xl hover:shadow-lg transition-all duration-300">
+                                <i class="fas fa-box-open text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-white font-medium">Add Item</span>
+                            </a>
+                            <a href="/items" class="group flex items-center justify-center p-6 bg-gradient-to-br from-gray-500 to-gray-700 rounded-xl hover:shadow-lg transition-all duration-300">
+                                <i class="fas fa-boxes text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-white font-medium">View Inventory</span>
+                            </a>
+                            <a href="/items/export" class="group flex items-center justify-center p-6 bg-gradient-to-br from-gray-400 to-gray-600 rounded-xl hover:shadow-lg transition-all duration-300">
+                                <i class="fas fa-file-download text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-white font-medium">Export Inventory</span>
+                            </a>
+
+                            <a href="/users/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl hover:shadow-lg transition-all duration-300">
+                                <i class="fas fa-users-cog text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-white font-medium">New User</span>
+                            </a>
+                            <a href="/brands/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl hover:shadow-lg transition-all duration-300">
+                                <i class="fas fa-tag text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-white font-medium">Add Brand</span>
+                            </a>
+                            <a href="/categories/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl hover:shadow-lg transition-all duration-300">
+                                <i class="fas fa-th-list text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-white font-medium">Add Category</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+
+                <div class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-medium">Today's Earnings</h3>
+                            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                <i class="fas fa-dollar-sign text-2xl"></i>
+                            </div>
+                        </div>
+                        <div class="text-3xl font-bold mb-2"><?php echo e(number_format($todayRevenue ?? 0, 2)); ?> EGP</div>
+                        <?php if(isset($revenueGrowth) && $revenueGrowth > 0): ?>
+                            <div class="text-sm bg-white/20 rounded-lg px-3 py-1.5 inline-block">
+                                <i class="fas fa-arrow-up mr-1"></i>
+                                <?php echo e(number_format($revenueGrowth, 1)); ?>% from yesterday
+                            </div>
+                        <?php endif; ?>
+                        <div class="mt-6 space-y-3">
+                            <a href="<?php echo e(route('sales.by-payment-method', ['period' => 'daily', 'method' => 'cash'])); ?>"
+                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                <span>Cash</span>
+                                <span class="font-bold"><?php echo e(number_format($cashPayments, 2)); ?> EGP</span>
+                            </a>
+                            <a href="<?php echo e(route('sales.by-payment-method', ['period' => 'daily', 'method' => 'credit_card'])); ?>"
+                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                <span>Visa</span>
+                                <span class="font-bold"><?php echo e(number_format($creditPayments, 2)); ?> EGP</span>
+                            </a>
+                            <a href="<?php echo e(route('sales.by-payment-method', ['period' => 'daily', 'method' => 'mobile_pay'])); ?>"
+                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                <span>Mobile Payment</span>
+                                <span class="font-bold"><?php echo e(number_format($mobilePayments, 2)); ?> EGP</span>
+                            </a>
+                            <a href="<?php echo e(route('sales.by-payment-method', ['period' => 'daily', 'method' => 'cod'])); ?>"
+                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                <span>COD</span>
+                                <span class="font-bold"><?php echo e(number_format($codPayments, 2)); ?> EGP</span>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-16 -mt-16"></div>
+                </div>
+
+                <div class="bg-gradient-to-br from-green-500 to-green-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-medium">Monthly Sales</h3>
+                            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                <i class="fas fa-chart-bar text-2xl"></i>
+                            </div>
+                        </div>
+                        <div class="text-3xl font-bold mb-2"><?php echo e(number_format($monthlySales, 2)); ?> EGP</div>
+                        <div class="text-sm bg-white/20 rounded-lg px-3 py-1.5 inline-block">
+                            <?php echo e($salesGrowthPercentage >= 0 ? '+' : ''); ?><?php echo e(number_format($salesGrowthPercentage, 2)); ?>% from last month
+                        </div>
+                        <div class="mt-6 space-y-3">
+                            <a href="<?php echo e(route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'cash'])); ?>"
+                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                <span>Cash</span>
+                                <span class="font-bold"><?php echo e(number_format($cashPaymentsMonthly, 2)); ?> EGP</span>
+                            </a>
+                            <a href="<?php echo e(route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'credit_card'])); ?>"
+                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                <span>Visa</span>
+                                <span class="font-bold"><?php echo e(number_format($creditPaymentsMonthly, 2)); ?> EGP</span>
+                            </a>
+                            <a href="<?php echo e(route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'mobile_pay'])); ?>"
+                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                <span>Mobile Payment</span>
+                                <span class="font-bold"><?php echo e(number_format($mobilePaymentsMonthly, 2)); ?> EGP</span>
+                            </a>
+                            <a href="<?php echo e(route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'cod'])); ?>"
+                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                <span>COD</span>
+                                <span class="font-bold"><?php echo e(number_format($codPaymentsMonthly, 2)); ?> EGP</span>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-16 -mt-16"></div>
+                </div>
+
+                <div class="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-medium">Top Payment Method</h3>
+                            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                <?php if($topPaymentMethod === 'cash'): ?>
+                                    <i class="fas fa-cash-register text-2xl"></i>
+                                <?php elseif($topPaymentMethod === 'credit_card'): ?>
+                                    <i class="fas fa-credit-card text-2xl"></i>
+                                <?php elseif($topPaymentMethod === 'mobile_pay'): ?>
+                                    <i class="fas fa-mobile-alt text-2xl"></i>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="text-3xl font-bold mb-4"><?php echo e(ucfirst($topPaymentMethod)); ?></div>
+                        <div class="bg-white/20 rounded-lg p-4 text-sm">
+                            <div class="mb-2 flex justify-between">
+                                <span>Top Payment Method</span>
+                                <span class="font-bold"><?php echo e(number_format($topPaymentMethodPercentage, 2)); ?>%</span>
+                            </div>
+                            <div class="w-full bg-white/30 rounded-full h-2 mb-4">
+                                <div class="bg-white h-2 rounded-full" style="width: <?php echo e($topPaymentMethodPercentage); ?>%"></div>
+                            </div>
+                            <div class="text-white/80">
+                                <?php echo e($topPaymentMethodCount); ?> out of <?php echo e($AllSalesCount); ?> transactions
+                            </div>
+                        </div>
+                    </div>
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-16 -mt-16"></div>
+                </div>
+
+            </div>
+            <!-- Add after existing metrics -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <!-- Sales Analytics -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold mb-4">Sales Performance</h3>
+                    <!-- Peak Hours -->
+                    <div class="mb-6">
+                        <h4 class="text-lg font-semibold mb-3">Peak Business Hours</h4>
+                        <div class="space-y-2">
+                            <?php $__currentLoopData = $peakHours; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $hour): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <div class="flex justify-between items-center">
+                                    <span><?php echo e(Carbon\Carbon::createFromFormat('H', $hour->hour)->format('g:i A')); ?></span>
+                                    <div class="flex-1 mx-4">
+                                        <div class="h-2 bg-blue-100 rounded-full">
+                                            <div class="h-2 bg-blue-500 rounded-full"
+                                                 style="width: <?php echo e(($hour->count / $peakHours->max('count')) * 100); ?>%"></div>
+                                        </div>
+                                    </div>
+                                    <span class="text-sm"><?php echo e($hour->count); ?> sales</span>
+                                </div>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </div>
+                    </div>
+                    <!-- Best Selling Days -->
+                    <div>
+                        <h4 class="text-lg font-semibold mb-3">Best Selling Days</h4>
+                        <div class="grid grid-cols-7 gap-2">
+                            <?php $__currentLoopData = $bestSellingDays; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $day): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <div class="text-center p-2 <?php echo e($day->count === $bestSellingDays->max('count') ? 'bg-green-100' : 'bg-gray-50'); ?> rounded">
+                                    <div class="text-sm font-medium"><?php echo e(substr($day->day, 0, 3)); ?></div>
+                                    <div class="text-xs"><?php echo e($day->count); ?></div>
+                                </div>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </div>
+                    </div>
+                </div>
+                <!-- Customer Insights -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold mb-4">Customer Insights</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-4 bg-purple-50 rounded-lg">
+                            <a href="<?php echo e(route('sales.loyal-customers')); ?>" class="block">
+                                <div class="text-sm text-purple-600">Loyal Customers</div>
+                                <div class="text-2xl font-bold text-purple-700">
+                                    <?php echo e($customerMetrics['repeat_customers']); ?>
+
+                                </div>
+                            </a>
+                        </div>
+                         <!-- All Customers -->
+                        <a href="<?php echo e(route('customers.index')); ?>" class="p-4 bg-blue-50 rounded-lg hover:bg-blue-100">
+                            <div class="text-sm text-blue-600">All Customers</div>
+                            <div class="text-2xl font-bold text-blue-700">
+                                <?php echo e($customerMetrics['total_customers']); ?>
+
+                            </div>
+                        </a>
+                        <div class="p-4 bg-blue-50 rounded-lg">
+                            <div class="text-sm text-blue-600">Avg Transaction</div>
+                            <div class="text-2xl font-bold text-blue-700">
+                                <?php echo e(number_format($customerMetrics['avg_transaction'], 2)); ?> EGP
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Inventory Status -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <h3 class="text-xl font-bold mb-4">Inventory Insights</h3>
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="p-4 bg-green-50 rounded-lg">
+                        <div class="text-sm text-green-600">Total Value</div>
+                        <div class="text-2xl font-bold text-green-700">
+                            <?php echo e(number_format($inventoryMetrics['total_value'], 2)); ?> EGP
+                        </div>
+                    </div>
+                    <div class="p-4 bg-yellow-50 rounded-lg">
+                        <div class="text-sm text-yellow-600">Avg Item Price</div>
+                        <div class="text-2xl font-bold text-yellow-700">
+                            <?php echo e(number_format($inventoryMetrics['avg_item_price'], 2)); ?> EGP
+                        </div>
+                    </div>
+                    <div class="p-4 bg-red-50 rounded-lg">
+                        <div class="text-sm text-red-600">Out of Stock</div>
+                        <div class="text-2xl font-bold text-red-700">
+                            <?php echo e($inventoryMetrics['out_of_stock']); ?>
+
+                        </div>
+                    </div>
+                    <div class="p-4 bg-blue-50 rounded-lg">
+                        <div class="text-sm text-blue-600">Inventory Turnover</div>
+                        <div class="text-2xl font-bold text-blue-700">
+                            <?php echo e(number_format($inventoryMetrics['inventory_turnover'], 2)); ?>x
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Category Performance -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <h3 class="text-xl font-bold mb-4">Category Performance</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Price</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <?php $__currentLoopData = $categoryPerformance; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap"><?php echo e($category->name); ?></td>
+                                <td class="px-6 py-4 whitespace-nowrap"><?php echo e($category->items_count); ?></td>
+                                <td class="px-6 py-4 whitespace-nowrap"><?php echo e($category->items_sum_quantity ?? 0); ?></td>
+                                <td class="px-6 py-4 whitespace-nowrap"><?php echo e(number_format($category->items_avg_selling_price ?? 0, 2)); ?> EGP</td>
+                            </tr>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Refund Metrics -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <div class="border-b border-gray-100 mb-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-2xl font-bold text-gray-900">Refund Analytics</h3>
+                        <span class="px-3 py-1 text-sm font-medium text-red-700 bg-red-50 rounded-full">
+                            Refund Overview
+                        </span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Today's Refunds -->
+                    <div class="p-4 bg-red-50 rounded-lg">
+                        <div class="text-sm text-red-600">Today's Refunds</div>
+                        <div class="text-2xl font-bold text-red-700">
+                            <?php echo e(number_format($refundMetrics['today_refunds'], 2)); ?> EGP
+                        </div>
+                    </div>
+                    <!-- Monthly Refunds -->
+                    <div class="p-4 bg-orange-50 rounded-lg">
+                        <div class="text-sm text-orange-600">Monthly Refunds</div>
+                        <div class="text-2xl font-bold text-orange-700">
+                            <?php echo e(number_format($refundMetrics['month_refunds'], 2)); ?> EGP
+                        </div>
+                    </div>
+                    <!-- Refund Rate -->
+                    <div class="p-4 bg-blue-50 rounded-lg">
+                        <div class="text-sm text-blue-600">Refund Rate</div>
+                        <div class="text-2xl font-bold text-blue-700">
+                            <?php echo e(number_format($refundMetrics['refund_rate'], 1)); ?>%
+                        </div>
+                    </div>
+                </div>
+                <!-- Recent Refunds -->
+                <?php if($refundMetrics['recent_refunds']->isNotEmpty()): ?>
+                <div class="mt-6">
+                    <h4 class="text-lg font-semibold mb-4">Recent Refunds</h4>
+                    <div class="space-y-3">
+                        <?php $__currentLoopData = $refundMetrics['recent_refunds']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $refund): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <div class="flex flex-col">
+                                <span class="font-medium">Sale #<?php echo e($refund->sale_id); ?></span>
+                                <span class="text-sm text-gray-500"><?php echo e($refund->item->name); ?></span>
+                            </div>
+                            <div class="text-right">
+                                <span class="font-bold text-red-600"><?php echo e(number_format($refund->refund_amount, 2)); ?> EGP</span>
+                                <div class="text-xs text-gray-500"><?php echo e($refund->created_at->diffForHumans()); ?></div>
+                            </div>
+                        </div>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+            </div>
+            <!-- Details Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <!-- Top Selling Brands Widget -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="border-b border-gray-100 p-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-2xl font-bold text-gray-900">GOATS</h3>
+                            <span class="px-3 py-1 text-sm font-medium text-purple-700 bg-purple-50 rounded-full">
+                                Top Performers
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                            <?php $__currentLoopData = $topSellingBrandDetails; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $brand): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <div class="group flex items-center justify-between p-4 rounded-lg transition-all duration-300 hover:bg-gray-50/80 hover:shadow-sm">
+                                    <div class="flex items-center space-x-4">
+                                        <?php if($brand['image']): ?>
+                                            <img src="<?php echo e(asset('storage/' . $brand['image'])); ?>"
+                                                 alt="<?php echo e($brand['name']); ?>"
+                                                 class="w-12 h-12 rounded-lg object-cover border-2
+                                                 <?php if($index == 0): ?> border-yellow-400
+                                                 <?php elseif($index == 1): ?> border-gray-400
+                                                 <?php elseif($index == 2): ?> border-orange-600
+                                                 <?php else: ?> border-gray-100 <?php endif; ?>">
+                                        <?php else: ?>
+                                            <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center border-2
+                                                 <?php if($index == 0): ?> border-yellow-400
+                                                 <?php elseif($index == 1): ?> border-gray-400
+                                                 <?php elseif($index == 2): ?> border-orange-600
+                                                 <?php else: ?> border-gray-100 <?php endif; ?>">
+                                                <span class="text-xl font-bold text-gray-400">
+                                                    <?php echo e(substr($brand['name'], 0, 1)); ?>
+
+                                                </span>
+                                            </div>
+                                        <?php endif; ?>
+                                        <div class="flex flex-col">
+                                            <span class="text-lg font-semibold text-gray-900"><?php echo e($brand['name']); ?></span>
+                                            <span class="text-sm text-gray-500">Rank #<?php echo e($index + 1); ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-end">
+                                        <span class="text-xl font-bold text-gray-900"><?php echo e(number_format($brand['total_sales'], 0)); ?></span>
+                                        <span class="text-sm text-gray-500">Sales</span>
+                                    </div>
+                                </div>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </div>
+                    </div>
+                </div>
+                <!-- Inventory Status Widget -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="border-b border-gray-100 p-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-2xl font-bold text-gray-900">Stock Overview</h3>
+                            <span class="px-3 py-1 text-sm font-medium text-blue-700 bg-blue-50 rounded-full">
+                                Stock Levels
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                            <span class="text-gray-600 font-medium">Total Items</span>
+                            <span class="text-xl font-bold text-gray-900"><?php echo e(number_format($totalItems)); ?></span>
+                        </div>
+                        <div class="space-y-6">
+                            <!-- Critical Stock -->
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                        <span class="text-gray-600 font-medium">Critical Stock</span>
+                                    </div>
+                                    <span class="text-lg font-bold text-red-500"><?php echo e(number_format($stockLevels['critical'])); ?></span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                                    <div class="bg-red-500 h-2.5 rounded-full transition-all duration-500"
+                                         style="width: <?php echo e(($stockLevels['critical'] / $totalItems) * 100); ?>%"></div>
+                                </div>
+                            </div>
+                            <!-- Low Stock -->
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                        <span class="text-gray-600 font-medium">Low Stock</span>
+                                    </div>
+                                    <span class="text-lg font-bold text-yellow-500"><?php echo e(number_format($stockLevels['low'])); ?></span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                                    <div class="bg-yellow-500 h-2.5 rounded-full transition-all duration-500"
+                                         style="width: <?php echo e(($stockLevels['low'] / $totalItems) * 100); ?>%"></div>
+                                </div>
+                            </div>
+                            <!-- Well Stocked -->
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                                        <span class="text-gray-600 font-medium">Well Stocked</span>
+                                    </div>
+                                    <span class="text-lg font-bold text-green-500"><?php echo e(number_format($stockLevels['healthy'])); ?></span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                                    <div class="bg-green-500 h-2.5 rounded-full transition-all duration-500"
+                                         style="width: <?php echo e(($stockLevels['healthy'] / $totalItems) * 100); ?>%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Bottom Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <!-- Top Selling Items -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="border-b border-gray-100 p-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-2xl font-bold text-gray-900">BEST Sellers</h3>
+                            <span class="px-3 py-1 text-sm font-medium text-emerald-700 bg-emerald-50 rounded-full">
+                                Last 30 Days
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-3">
+                            <?php $__currentLoopData = $topSellingItems; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <div class="group flex justify-between items-center p-4 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 text-sm font-bold">
+                                            #<?php echo e($loop->iteration); ?>
+
+                                        </div>
+                                        <span class="font-medium text-gray-900"><?php echo e($item->name); ?></span>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-lg font-bold text-gray-900"><?php echo e(number_format($item->total_quantity)); ?></span>
+                                        <span class="text-sm text-gray-500">sold</span>
+                                    </div>
+                                </div>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </div>
+                    </div>
+                </div>
+                <!-- Low Stock Alerts -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="border-b border-gray-100 p-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-2xl font-bold text-gray-900">Stock Warnings</h3>
+                            <span class="px-3 py-1 text-sm font-medium text-red-700 bg-red-50 rounded-full animate-pulse">
+                                Requires Attention
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <?php if($lowStockItems->isNotEmpty()): ?>
+                            <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                                <?php $__currentLoopData = $lowStockItems->sortBy('quantity'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <div class="group flex justify-between items-center p-4 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
+                                        <div class="flex flex-col">
+                                            <span class="font-medium text-gray-900"><?php echo e($item->name); ?></span>
+                                            <div class="flex items-center space-x-2 mt-1">
+                                                <span class="text-sm font-semibold text-gray-900"><?php echo e($item->priceAfterSale()); ?> EGP</span>
+                                                <span class="h-1 w-1 rounded-full bg-gray-300"></span>
+                                                <span class="text-sm text-red-400 font-medium"><?php echo e($item->quantity); ?> left</span>
+                                            </div>
+                                        </div>
+                                        <a href="<?php echo e(route('items.edit', $item->id)); ?>"
+                                           class="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-all duration-300">
+                                            <i class="fas fa-edit text-lg"></i>
+                                        </a>
+                                    </div>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="flex flex-col items-center justify-center py-8 px-4">
+                                <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
+                                    <i class="fas fa-check text-green-500 text-xl"></i>
+                                </div>
+                                <p class="text-green-500 font-medium">All items are well-stocked!</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Add SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Flash Messages -->
+    <?php if(session('success')): ?>
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: "<?php echo e(session('success')); ?>",
+            timer: 3000,
+            timerProgressBar: true
+        });
+    </script>
+    <?php endif; ?>
+
+    <?php if(session('error')): ?>
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: "<?php echo e(session('error')); ?>"
+        });
+    </script>
+    <?php endif; ?>
+</body>
+<footer class="bg-gray-100 border-t border-gray-200 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="md:flex md:items-center md:justify-between">
+            <div class="mt-4 md:mt-0">
+                <p class="text-sm text-gray-600">
+                    Connecting communities, empowering local businesses.
+                </p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <p class="text-sm text-gray-600">
+                    &copy; <?php echo e(date('Y')); ?> Local Hub<sup class="text-xs align-top">&reg;</sup>. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+<?php echo $__env->yieldPushContent('scripts'); ?>
+</html>
+<?php /**PATH D:\POS\capstone_pos\resources\views/layouts/dashboard.blade.php ENDPATH**/ ?>
