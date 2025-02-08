@@ -22,7 +22,16 @@
             <span class="input-group-text bg-gradient-primary">
                 <i class="fas fa-search text-gray-600"></i>
             </span>
-            <input type="text" class="form-control" id="itemSearch" placeholder="Search items...">
+            <form action="{{ route('items.index') }}" method="GET" class="d-flex flex-grow-1">
+                <input type="text"
+                       class="form-control"
+                       id="itemSearch"
+                       name="search"
+                       placeholder="Search items..."
+                       value="{{ request('search') }}">
+                <input type="hidden" name="brand_id" value="{{ request('brand_id') }}">
+                <input type="hidden" name="category_id" value="{{ request('category_id') }}">
+            </form>
         </div>
 
         <!-- Export Dropdown -->
@@ -56,46 +65,6 @@
                 </button>
             </div>
         </form>
-    </div>
-
-    <!-- Pagination -->
-    <div class="d-flex justify-content-center mt-4">
-        <nav aria-label="Page navigation">
-            <ul class="pagination pagination-sm">
-                <!-- Previous Page Link -->
-                @if ($items->onFirstPage())
-                    <li class="page-item disabled">
-                        <span class="page-link">&laquo; Previous</span>
-                    </li>
-                @else
-                    <li class="page-item">
-                        <a class="page-link" href="{{ $items->previousPageUrl() }}" aria-label="Previous">
-                            <span aria-hidden="true">&laquo; Previous</span>
-                        </a>
-                    </li>
-                @endif
-
-                <!-- Page Number Links -->
-                @foreach ($items->getUrlRange(1, $items->lastPage()) as $page => $url)
-                    <li class="page-item {{ $page == $items->currentPage() ? 'active' : '' }}">
-                        <a class="page-link" href="{{ $url }}">{{ $page }}</a>
-                    </li>
-                @endforeach
-
-                <!-- Next Page Link -->
-                @if ($items->hasMorePages())
-                    <li class="page-item">
-                        <a class="page-link" href="{{ $items->nextPageUrl() }}" aria-label="Next">
-                            <span aria-hidden="true">Next &raquo;</span>
-                        </a>
-                    </li>
-                @else
-                    <li class="page-item disabled">
-                        <span class="page-link">Next &raquo;</span>
-                    </li>
-                @endif
-            </ul>
-        </nav>
     </div>
 
     <!-- Items Grid -->
@@ -163,68 +132,25 @@
             @endif
         @endforeach
     </div>
-
-    <!-- Bottom Pagination -->
+    <!-- Pagination -->
     <div class="d-flex justify-content-center mt-4">
-        <nav aria-label="Page navigation">
-            <ul class="pagination pagination-sm">
-                <!-- Previous Page Link -->
-                @if ($items->onFirstPage())
-                    <li class="page-item disabled">
-                        <span class="page-link">&laquo; Previous</span>
-                    </li>
-                @else
-                    <li class="page-item">
-                        <a class="page-link" href="{{ $items->previousPageUrl() }}" aria-label="Previous">
-                            <span aria-hidden="true">&laquo; Previous</span>
-                        </a>
-                    </li>
-                @endif
-
-                <!-- Page Number Links -->
-                @foreach ($items->getUrlRange(1, $items->lastPage()) as $page => $url)
-                    <li class="page-item {{ $page == $items->currentPage() ? 'active' : '' }}">
-                        <a class="page-link" href="{{ $url }}">{{ $page }}</a>
-                    </li>
-                @endforeach
-
-                <!-- Next Page Link -->
-                @if ($items->hasMorePages())
-                    <li class="page-item">
-                        <a class="page-link" href="{{ $items->nextPageUrl() }}" aria-label="Next">
-                            <span aria-hidden="true">Next &raquo;</span>
-                        </a>
-                    </li>
-                @else
-                    <li class="page-item disabled">
-                        <span class="page-link">Next &raquo;</span>
-                    </li>
-                @endif
-            </ul>
-        </nav>
+        {{ $items->links() }}
     </div>
 </div>
 
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Existing search functionality
+            // Update search functionality to submit form on input
             const searchInput = document.getElementById('itemSearch');
+            let timeout = null;
+
             if (searchInput) {
-                searchInput.addEventListener('keyup', function () {
-                    const searchText = this.value.toLowerCase();
-                    const itemCards = document.querySelectorAll('.col-lg-4');
-
-                    itemCards.forEach(card => {
-                        const itemName = card.querySelector('.card-title').textContent.toLowerCase();
-                        const itemDetails = card.querySelector('.card-body').textContent.toLowerCase();
-
-                        if (itemName.includes(searchText) || itemDetails.includes(searchText)) {
-                            card.style.display = '';
-                        } else {
-                            card.style.display = 'none';
-                        }
-                    });
+                searchInput.addEventListener('input', function () {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => {
+                        this.closest('form').submit();
+                    }, 500);
                 });
             }
 

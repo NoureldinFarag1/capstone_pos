@@ -257,22 +257,34 @@ class ItemController extends BaseController
 
     public function index(Request $request)
     {
-        $brands = Brand::all(); // Fetch all brands
-        $categories = Category::all(); // Fetch all categories if needed
+        $brands = Brand::all();
+        $categories = Category::all();
 
-        $brandId = $request->input('brand_id'); // Capture the selected brand
-        $categoryId = $request->input('category_id'); // Capture the selected category
+        $brandId = $request->input('brand_id');
+        $categoryId = $request->input('category_id');
+        $search = $request->input('search');
 
-        // Query items with brand relationship
-        $items = Item::with('brand')  // Add this line to eager load brand
+        $query = Item::with('brand')
+            ->where('is_parent', true)  // Only get parent items
             ->when($brandId, function ($query) use ($brandId) {
                 return $query->where('brand_id', $brandId);
             })
             ->when($categoryId, function ($query) use ($categoryId) {
                 return $query->where('category_id', $categoryId);
             })
-            ->paginate(75) // Changed from 60 to 9
-            ->appends($request->all()); // Add this line to maintain query parameters
+            ->when($search, function ($query) use ($search) {
+                return $query->where(function($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                      ->orWhere('code', 'like', '%' . $search . '%')
+                      ->orWhereHas('brand', function($q) use ($search) {
+                          $q->where('name', 'like', '%' . $search . '%');
+                      });
+                });
+            });
+
+        $items = $query->orderBy('id', 'desc')  // Latest items first
+                      ->paginate(12)
+                      ->withQueryString();  // Use withQueryString instead of appends
 
         $lowStockItems = $this->getLowStockItems();
         return view('items.index', compact('items', 'categories', 'brands', 'lowStockItems'));
