@@ -5,6 +5,8 @@
 /public/storage
 /storage/*.key
 /storage/app/public/barcodes/*.png
+/storage/framework/views/*.php
+/storage/app/temp/*
 /vendor
 .env
 .env.backup
