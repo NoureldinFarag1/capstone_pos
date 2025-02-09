@@ -102,14 +102,16 @@ class ItemController extends BaseController
 
                     $totalQuantity += $variantQuantity;
 
-                    if ($size->name == 'N/A') {
+                    // Enhanced if conditions for 'N/A'
+                    if ($size->name == 'N/A' && $color->name == 'N/A') {
+                        $variantName = $request->input('name');
+                    } elseif ($size->name == 'N/A') {
                         $variantName = $request->input('name') . ' - ' . $color->name;
-                    }elseif ($color->name == 'N/A') {
+                    } elseif ($color->name == 'N/A') {
                         $variantName = $request->input('name') . ' - ' . $size->name;
-                    }else {
+                    } else {
                         $variantName = $request->input('name') . ' - ' . $size->name . ' - ' . $color->name;
                     }
-                    
 
                     // Create the variant
                     $variant = Item::create([
