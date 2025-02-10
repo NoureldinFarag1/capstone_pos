@@ -268,36 +268,45 @@ class ItemController extends BaseController
     public function index(Request $request)
     {
         $brands = Brand::all();
-        $categories = Category::all();
-
-        $brandId = $request->input('brand_id');
-        $categoryId = $request->input('category_id');
         $search = $request->input('search');
+        $brandId = $request->input('brand_id');
+        $showAll = $request->input('show_all');
 
-        $query = Item::with('brand')
-            ->where('is_parent', true)  // Only get parent items
-            ->when($brandId, function ($query) use ($brandId) {
-                return $query->where('brand_id', $brandId);
-            })
-            ->when($categoryId, function ($query) use ($categoryId) {
-                return $query->where('category_id', $categoryId);
-            })
-            ->when($search, function ($query) use ($search) {
-                return $query->where(function($q) use ($search) {
-                    $q->where('name', 'like', '%' . $search . '%')
-                      ->orWhere('code', 'like', '%' . $search . '%')
-                      ->orWhereHas('brand', function($q) use ($search) {
-                          $q->where('name', 'like', '%' . $search . '%');
-                      });
+        // Initialize query with pagination
+        $query = Item::with('brand')->where('is_parent', true);
+
+        if ($showAll) {
+            // Show all items when show_all is true
+            $items = $query->orderBy('id', 'desc')
+                          ->paginate(12)
+                          ->withQueryString();
+        } else {
+            // Apply filters if search or specific brand is selected
+            if ($search || $brandId) {
+                $query->when($brandId, function ($query) use ($brandId) {
+                    return $query->where('brand_id', $brandId);
+                })
+                ->when($search, function ($query) use ($search) {
+                    return $query->where(function($q) use ($search) {
+                        $q->where('name', 'like', '%' . $search . '%')
+                          ->orWhere('code', 'like', '%' . $search . '%')
+                          ->orWhereHas('brand', function($q) use ($search) {
+                              $q->where('name', 'like', '%' . $search . '%');
+                          });
+                    });
                 });
-            });
+            } else {
+                // If no filters are applied and not showing all, return empty result set
+                $query->whereRaw('1 = 0');
+            }
 
-        $items = $query->orderBy('id', 'desc')  // Latest items first
-                      ->paginate(12)
-                      ->withQueryString();  // Use withQueryString instead of appends
+            $items = $query->orderBy('id', 'desc')
+                          ->paginate(12)
+                          ->withQueryString();
+        }
 
         $lowStockItems = $this->getLowStockItems();
-        return view('items.index', compact('items', 'categories', 'brands', 'lowStockItems'));
+        return view('items.index', compact('items', 'brands', 'lowStockItems', 'showAll'));
     }
 
 
