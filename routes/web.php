@@ -14,6 +14,7 @@ use App\Http\Controllers\ColorController;
 use App\Http\Controllers\CustomerController;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\SettingsController;
 
 Route::get('/connection-test', function() {
     try {
@@ -120,7 +121,13 @@ Route::post('/items/update-variants-quantity', [ItemController::class, 'updateVa
     ->name('items.updateVariantsQuantity')
     ->middleware('auth');
 
-Route::post('/items/generate-barcodes', [ItemController::class, 'generateBarcodes'])->name('items.generateBarcodes');
+// Make sure this route is placed before any resource or generic routes
+Route::post('/items/generate-barcodes', [ItemController::class, 'generateBarcodes'])
+    ->name('items.generate-barcodes')
+    ->middleware(['web', 'auth']);
+
+Route::get('/settings/printer', [SettingsController::class, 'editPrinter'])->name('settings.printer.edit');
+Route::put('/settings/printer', [SettingsController::class, 'updatePrinter'])->name('settings.printer.update');
 
 Route::get('/loyal-customers', [SaleController::class, 'loyalCustomers'])->name('sales.loyal-customers');
 Route::get('/sales/{period}/{method}', [SaleController::class, 'paymentMethodSales'])

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "10befca1ca729fbe9287569247a58009",
+    "content-hash": "54f857980f0e72ed48b5de194241e260",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -5056,16 +5056,16 @@
         },
         {
             "name": "picqer/php-barcode-generator",
-            "version": "v3.1.0",
+            "version": "v3.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/picqer/php-barcode-generator.git",
-                "reference": "5fd1162746cf425dac7734fa09b1f0065b7d86c7"
+                "reference": "3ef0b26ebd3996e8bb9e90fa2059a67d2e482b3e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/picqer/php-barcode-generator/zipball/5fd1162746cf425dac7734fa09b1f0065b7d86c7",
-                "reference": "5fd1162746cf425dac7734fa09b1f0065b7d86c7",
+                "url": "https://api.github.com/repos/picqer/php-barcode-generator/zipball/3ef0b26ebd3996e8bb9e90fa2059a67d2e482b3e",
+                "reference": "3ef0b26ebd3996e8bb9e90fa2059a67d2e482b3e",
                 "shasum": ""
             },
             "require": {
@@ -5131,9 +5131,9 @@
             ],
             "support": {
                 "issues": "https://github.com/picqer/php-barcode-generator/issues",
-                "source": "https://github.com/picqer/php-barcode-generator/tree/v3.1.0"
+                "source": "https://github.com/picqer/php-barcode-generator/tree/v3.2.0"
             },
-            "time": "2024-09-21T12:50:01+00:00"
+            "time": "2024-10-01T19:35:25+00:00"
         },
         {
             "name": "psr/cache",

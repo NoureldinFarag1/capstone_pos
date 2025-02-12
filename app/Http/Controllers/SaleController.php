@@ -16,6 +16,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Mike42\Escpos\EscposImage;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\File;
 
 class SaleController extends Controller
 {
@@ -42,6 +44,30 @@ class SaleController extends Controller
             'shipping_fees' => 'nullable|numeric|min:0',
             'address' => 'nullable|string|max:255',
         ]);
+
+        $userRole = $request->user()->role; // Assuming role is available in the user object
+
+        // Log the user role and discount details for debugging
+        Log::info('User Role: ' . $userRole);
+        Log::info('Discount Type: ' . $request->discount_type);
+        Log::info('Discount Value: ' . $request->discount_value);
+
+        // Validate discount value based on user role
+        if ($userRole === 'cashier') {
+            if ($request->discount_type === 'percentage' && $request->discount_value > 20) {
+                Log::warning('Cashier attempted to apply a percentage discount greater than 20%.');
+                return redirect()->back()->with('error', 'As a cashier, percentage discount cannot exceed 20%.')->withInput();
+            }
+
+            if ($request->discount_type === 'fixed' && $request->discount_value > 100) {
+                Log::warning('Cashier attempted to apply a fixed discount greater than 100 EGP.');
+                return redirect()->back()->with('error', 'As a cashier, fixed amount discount cannot exceed 100 EGP.')->withInput();
+            }
+        }
+
+        // Ensure the discount values are set correctly in the validated data
+        $validated['discount_type'] = $request->discount_type;
+        $validated['discount_value'] = $request->discount_value;
 
         // Validate stock availability for all items before proceeding
         foreach ($request->items as $itemData) {
@@ -88,8 +114,8 @@ class SaleController extends Controller
             'customer_phone' => $request->customer_phone,
             'payment_method' => $request->payment_method,
             'payment_reference' => $request->payment_reference,
-            'discount_type' => $request->discount_type,
-            'discount_value' => $request->discount_value,
+            'discount_type' => $validated['discount_type'],
+            'discount_value' => $validated['discount_value'],
             'shipping_fees' => $request->shipping_fees,
             'address' => $request->address,
             'display_id' => $displayId,
@@ -113,6 +139,13 @@ class SaleController extends Controller
 
             // Update inventory
             $item->decrement('quantity', $itemData['quantity']);
+
+            // If item is a variant, update the parent item's stock.
+            if ($item->parent_id) {
+                $parentItem = Item::findOrFail($item->parent_id);
+                $parentItem->quantity = $parentItem->variants()->sum('quantity');
+                $parentItem->save();
+            }
         }
 
         // Calculate and store the actual discount amount
@@ -127,9 +160,9 @@ class SaleController extends Controller
 
         return redirect()->route('sales.index')->with('success', 'Sale created successfully.');
     }
-
-    private function getPrinterConnector($printerName)
+    private function getPrinterConnector()
     {
+        $printerName = trim(File::get(base_path('printer_name.txt')));
         if (PHP_OS_FAMILY === 'Windows') {
             return new WindowsPrintConnector($printerName);
         } else {
@@ -145,8 +178,7 @@ class SaleController extends Controller
             // Create a temporary receipt structure
             $items = collect($request->input('saleItems', []));
 
-            $printerName = 'XP-80C';
-            $connector = $this->getPrinterConnector($printerName);
+            $connector = $this->getPrinterConnector();
             $printer = new Printer($connector);
 
             // Initialize printer
@@ -244,10 +276,9 @@ class SaleController extends Controller
             Log::info('Starting thermal receipt print for sale #' . $id);
 
             $sale = Sale::with('saleItems.item')->findOrFail($id);
-            $printerName = 'XP-80C';
 
-            Log::info('Connecting to printer: ' . $printerName);
-            $connector = $this->getPrinterConnector($printerName);
+            Log::info('Connecting to printer');
+            $connector = $this->getPrinterConnector();
             //$connector = new WindowsPrintConnector($printerName);
             $printer = new Printer($connector);
 
@@ -288,6 +319,8 @@ class SaleController extends Controller
             $printer->setEmphasis(false);
             $printer->text("Date: " . $sale->created_at->format('d M Y') . "\n");
             $printer->text("Time: " . $sale->created_at->format('H:i:s') . "\n");
+            $printer->text("Payment Method: " . $sale->payment_method . "\n");
+
             $printer->text(str_repeat("·", 48) . "\n");
             $printer->feed(1);
 
@@ -424,6 +457,7 @@ class SaleController extends Controller
 
                     // Print phone number if available
                     if ($sale->customer_phone) {
+                        $printer->text("Name: " . $sale->customer_name . "\n");
                         $printer->text("Phone: " . $sale->customer_phone . "\n");
                     }
 
@@ -482,10 +516,7 @@ class SaleController extends Controller
         try {
             Log::info('Attempting to open cash drawer');
 
-            $printerName = 'XP-80C';
-            Log::info('Using printer: ' . $printerName);
-
-            $connector = $this->getPrinterConnector($printerName);
+            $connector = $this->getPrinterConnector();
             $printer = new Printer($connector);
 
             // Send raw bytes directly, bypassing text encoding

@@ -469,30 +469,36 @@
                     </div>
                 </div>
             </div>
-            <!-- Category Performance -->
-            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                <h3 class="text-xl font-bold mb-4">Category Performance</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full">
-                        <thead>
-                            <tr class="bg-gray-50">
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Price</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($categoryPerformance as $category)
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap">{{ $category->name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">{{ $category->items_count }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">{{ $category->items_sum_quantity ?? 0 }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">{{ number_format($category->items_avg_selling_price ?? 0, 2) }} EGP</td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+            <!-- Category Performance - Collapsible Version -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8" x-data="{ showAllCategories: false }">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold">Category Performance</h3>
+                    <button @click="showAllCategories = !showAllCategories"
+                            class="px-3 py-1 text-sm font-medium text-gray-600 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
+                        <span x-text="showAllCategories ? 'Show Less' : 'View All'">View All</span>
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    @foreach($categoryPerformance as $index => $category)
+                        <div x-show="showAllCategories || $index < 8"
+                             class="p-4 bg-gray-50 rounded-lg">
+                            <div class="text-sm font-medium text-gray-600">{{ $category->name }}</div>
+                            <div class="mt-2 space-y-1">
+                                <div class="flex justify-between text-xs">
+                                    <span>Items:</span>
+                                    <span class="font-medium">{{ $category->items_count }}</span>
+                                </div>
+                                <div class="flex justify-between text-xs">
+                                    <span>Stock:</span>
+                                    <span class="font-medium">{{ $category->items_sum_quantity ?? 0 }}</span>
+                                </div>
+                                <div class="flex justify-between text-xs">
+                                    <span>Avg:</span>
+                                    <span class="font-medium">{{ number_format($category->items_avg_selling_price ?? 0, 0) }} EGP</span>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
             </div>
             <!-- Refund Metrics -->
@@ -767,6 +773,14 @@
         });
     </script>
     @endif
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('categoryPerformance', () => ({
+                showAllCategories: false
+            }))
+        })
+    </script>
 </body>
 <footer class="bg-gray-100 border-t border-gray-200 py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -5,6 +5,7 @@
 /public/storage
 /storage/*.key
 /storage/app/public/barcodes/*.png
+/storage/app/public/barcodes
 /storage/framework/views/*.php
 /storage/app/temp/*
 /vendor
@@ -22,3 +23,10 @@ yarn-error.log
 /.idea
 /.vscode
 /.zed
+*.desktop
+/desktop_app/
+/desktop_app/build/
+/desktop_app/node_modules/
+main.cjs
+preload.cjs
+/capstone_pos-darwin-arm64

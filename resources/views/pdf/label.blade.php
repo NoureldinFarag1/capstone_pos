@@ -63,7 +63,7 @@
         }
 
         .pricing {
-            font-size: 11px;
+            font-size: 9px;
             /* Slightly reduced */
             display: flex;
             justify-content: center;
@@ -76,7 +76,7 @@
         }
 
         .original-price {
-            font-size: 11px;
+            font-size: 8px;
             text-decoration: line-through;
             color: black;
         }
@@ -108,7 +108,7 @@
                 <span class="original-price">EGP {{ number_format($item->selling_price, 2) }}</span>
                 <span class="sale-price">EGP {{ number_format($item->priceAfterSale(), 2) }}</span>
             @else
-                <span>${{ number_format($item->selling_price, 2) }}</span>
+                <span>EGP {{ number_format($item->selling_price, 2) }}</span>
             @endif
         </div>
     </div>

@@ -1,6 +1,9 @@
 @extends('layouts.dashboard')
 
 @section('content')
+@php
+use Illuminate\Support\Facades\Auth;
+@endphp
 <style>
     #barcode:focus {
         outline: 2px solid #96c9ff;
@@ -29,7 +32,12 @@
                 <label for="itemSelect" class="form-label">Item</label>
                 <select id="itemSelect" class="form-select">
                     <option value="">Select an item</option>
-                    @foreach($items as $item)
+                    @php
+                        $sortedItems = $items->sortBy(function($item) {
+                            return $item->brand->name ?? 'No Brand';
+                        });
+                    @endphp
+                    @foreach($sortedItems as $item)
                         @if(!$item->is_parent)
                             <option value="{{ $item->id }}"
                                     data-price="{{ $item->priceAfterSale() }}"
@@ -37,8 +45,8 @@
                                     data-code="{{ $item->code }}"
                                     data-stock="{{ $item->quantity }}"
                                     {{ $item->quantity <= 0 ? 'disabled' : '' }}>
-                                {{ $item->name }} (Stock: {{ $item->quantity }}) {{ $item->quantity <= 0 ? '- Out of Stock' : ''}}
-                            </option>
+                                    {{ $item->brand->name ?? 'No Brand' }} - {{ $item->name }} (Stock: {{ $item->quantity }}) {{ $item->quantity <= 0 ? '- Out of Stock' : ''}}
+                                </option>
                         @endif
                     @endforeach
                 </select>
@@ -124,9 +132,9 @@
         <!-- Total Amount -->
         <div class="row mb-3">
             <div class="col-md-12">
-                <h4>Subtotal: <span id="subtotalAmount" class="text">$0.00</span></h4>
-                <h4>Discount: <span id="discountAmount" class="text-danger">$0.00</span></h4>
-                <h4>Total: <span id="totalAmount" class="text">$0.00</span></h4>
+                <h4>Subtotal: <span id="subtotalAmount" class="text">EGP 0.00</span></h4>
+                <h4>Discount: <span id="discountAmount" class="text-danger">EGP 0.00</span></h4>
+                <h4>Total: <span id="totalAmount" class="text">EGP 0.00</span></h4>
             </div>
         </div>
 
@@ -237,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
         listItem.setAttribute('data-item-id', itemEntry.id);
 
         listItem.innerHTML = `
-            ${itemEntry.name} - $${itemEntry.price.toFixed(2)}
+            ${itemEntry.name} - EGP ${itemEntry.price.toFixed(2)}
             <div class="d-flex align-items-center">
                 <span class="badge bg-primary rounded-pill me-2">
                     Qty: ${itemEntry.quantity}
@@ -297,9 +305,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const total = subtotal - discountAmount;
 
         // Update display
-        subtotalAmountDisplay.textContent = `$${subtotal.toFixed(2)}`;
-        discountAmountDisplay.textContent = `$${discountAmount.toFixed(2)}`;
-        totalAmountDisplay.textContent = `$${total.toFixed(2)}`;
+        subtotalAmountDisplay.textContent = `EGP ${subtotal.toFixed(2)}`;
+        discountAmountDisplay.textContent = `EGP ${discountAmount.toFixed(2)}`;
+        totalAmountDisplay.textContent = `EGP ${total.toFixed(2)}`;
 
         // Update hidden fields
         document.getElementById('hiddenSubtotal').value = subtotal.toFixed(2);
@@ -418,14 +426,14 @@ function handlePrintGiftReceipt() {
     }
 
     const saleItems = Array.from(itemList.children).map(item => {
+        const itemId = item.getAttribute('data-item-id'); // Get item ID from the list item
         const itemText = item.firstChild.textContent.split(' - ')[0].trim();
         const quantityMatch = item.querySelector('.badge').textContent.match(/\d+/);
         const quantity = quantityMatch ? parseInt(quantityMatch[0]) : 1;
 
         return {
-            item: {
-                name: itemText
-            },
+            item_id: itemId, // Include item_id
+            name: itemText, // Include item name
             quantity: quantity
         };
     });
@@ -440,7 +448,7 @@ function handlePrintGiftReceipt() {
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            saleItems: saleItems
+            items: saleItems // Changed saleItems to items
         })
     })
     .then(response => response.json())
@@ -464,6 +472,27 @@ function handlePrintGiftReceipt() {
         } else {
             shippingFeesContainer.style.display = 'none';
             addressContainer.style.display = 'none';
+        }
+    });
+
+    // Add validation for discount value based on user role
+    saleForm.addEventListener('submit', function(event) {
+        const discountType = discountTypeSelect.value;
+        const discountValue = parseFloat(discountValueInput.value) || 0;
+        const userRole = '{{ Auth::user()->role }}'; // Assuming role is available in the user object
+
+        if (userRole === 'cashier') {
+            if (discountType === 'percentage' && discountValue > 20) {
+                alert('As a cashier, percentage discount cannot exceed 20%.');
+                event.preventDefault();
+                return;
+            }
+
+            if (discountType === 'fixed' && discountValue > 100) {
+                alert('As a cashier, fixed amount discount cannot exceed 100 EGP.');
+                event.preventDefault();
+                return;
+            }
         }
     });
 

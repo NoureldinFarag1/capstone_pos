@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
+use Illuminate\Support\Facades\Storage;
 
 class ItemController extends BaseController
 {
@@ -137,20 +138,30 @@ class ItemController extends BaseController
                     // Generate barcode image
                     $barcodeGenerator = new BarcodeGeneratorPNG();
                     $barcodePath = 'barcodes/' . $variantBarcode . '.png';
-                    $barcodeStorage = storage_path('app/public/' . $barcodePath);
+                    $storagePath = storage_path('app/public/' . $barcodePath);
 
                     // Ensure directory exists
-                    if (!file_exists(dirname($barcodeStorage))) {
-                        mkdir(dirname($barcodeStorage), 0755, true);
+                    if (!file_exists(dirname($storagePath))) {
+                        mkdir(dirname($storagePath), 0755, true);
                     }
 
-                    file_put_contents(
-                        $barcodeStorage,
-                        $barcodeGenerator->getBarcode($variantBarcode, $barcodeGenerator::TYPE_CODE_128)
+                    // Generate barcode with larger dimensions and higher quality
+                    $barcodeImage = $barcodeGenerator->getBarcode(
+                        $variantBarcode,
+                        $barcodeGenerator::TYPE_CODE_128,
+                        3,  // Width factor (larger number = wider bars)
+                        50  // Height in pixels
                     );
 
-                    $variant->barcode = $barcodePath;
-                    $variant->code = $variantBarcode;
+                    // Save the barcode image
+                    if (file_put_contents($storagePath, $barcodeImage)) {
+                        $variant->barcode = $barcodePath;
+                        $variant->code = $variantBarcode;
+                        $variant->save();
+                    } else {
+                        throw new \Exception('Failed to save barcode image');
+                    }
+
                     $variant->sizes()->attach([$size->id]);
                     $variant->colors()->attach([$color->id]);
                     $variant->save();
@@ -272,16 +283,12 @@ class ItemController extends BaseController
         $brandId = $request->input('brand_id');
         $showAll = $request->input('show_all');
 
-        // Initialize query with pagination
-        $query = Item::with('brand')->where('is_parent', true);
+        // Initialize query with pagination and include necessary relationships
+        $query = Item::with(['brand', 'category', 'sizes', 'colors'])
+                     ->where('is_parent', true);
 
-        if ($showAll) {
-            // Show all items when show_all is true
-            $items = $query->orderBy('id', 'desc')
-                          ->paginate(12)
-                          ->withQueryString();
-        } else {
-            // Apply filters if search or specific brand is selected
+        // Apply filters
+        if (!$showAll) {
             if ($search || $brandId) {
                 $query->when($brandId, function ($query) use ($brandId) {
                     return $query->where('brand_id', $brandId);
@@ -296,17 +303,15 @@ class ItemController extends BaseController
                     });
                 });
             } else {
-                // If no filters are applied and not showing all, return empty result set
                 $query->whereRaw('1 = 0');
             }
-
-            $items = $query->orderBy('id', 'desc')
-                          ->paginate(12)
-                          ->withQueryString();
         }
 
-        $lowStockItems = $this->getLowStockItems();
-        return view('items.index', compact('items', 'brands', 'lowStockItems', 'showAll'));
+        $items = $query->orderBy('id', 'desc')
+                       ->paginate(12)
+                       ->withQueryString();
+
+        return view('items.index', compact('items', 'brands', 'showAll'));
     }
 
 
@@ -423,6 +428,17 @@ class ItemController extends BaseController
             'barcode' => $item->barcode, // Store the item's barcode in the sale
         ]);
 
+        // Update the item's stock
+        $item->quantity -= $request->input('quantity');
+        $item->save();
+
+        // Update the parent item's stock if the item is a variant
+        if ($item->parent_id) {
+            $parentItem = Item::findOrFail($item->parent_id);
+            $parentItem->quantity = $parentItem->variants()->sum('quantity');
+            $parentItem->save();
+        }
+
         return redirect()->route('sales.index')->with('success', 'Sale recorded successfully.');
     }
 
@@ -510,7 +526,7 @@ class ItemController extends BaseController
         try {
             $item = Item::findOrFail($id);
             $quantity = $request->input('quantity', 1);
-            $printerName = 'Xprinter_XP-T361U';
+            $printerName = 'Xprinter_XP_T361U';
 
             // Generate PDF in memory
             $barcodePath = public_path('storage/' . $item->barcode);
@@ -644,7 +660,6 @@ class ItemController extends BaseController
         }
     }
 
-    // Add this new method to ItemController
     public function updateVariantsQuantity(Request $request)
     {
         try {
@@ -689,31 +704,105 @@ class ItemController extends BaseController
     public function generateBarcodes()
     {
         try {
-            $items = Item::all();
-            $barcodeGenerator = new BarcodeGeneratorPNG();
+            $processed = 0;
+            $errors = [];
 
-            foreach ($items as $item) {
-                $barcodePath = 'barcodes/' . $item->code . '.png';
-                $barcodeStorage = storage_path('app/public/' . $barcodePath);
+            // Get all parent items
+            $parentItems = Item::where('is_parent', true)->get();
 
-                // Ensure directory exists
-                if (!file_exists(dirname($barcodeStorage))) {
-                    mkdir(dirname($barcodeStorage), 0755, true);
-                }
-
-                file_put_contents(
-                    $barcodeStorage,
-                    $barcodeGenerator->getBarcode($item->code, $barcodeGenerator::TYPE_CODE_128)
-                );
-
-                $item->barcode = $barcodePath;
-                $item->save();
+            if ($parentItems->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No parent items found.',
+                    'processed' => 0
+                ]);
             }
 
-            return response()->json(['success' => true]);
+            // Ensure the barcodes directory exists
+            $barcodesPath = storage_path('app/public/barcodes');
+            if (!file_exists($barcodesPath)) {
+                mkdir($barcodesPath, 0755, true);
+            }
+
+            $barcodeGenerator = new BarcodeGeneratorPNG();
+
+            foreach ($parentItems as $parentItem) {
+                try {
+                    // Generate parent barcode if it doesn't exist
+                    if (empty($parentItem->code)) {
+                        $parentBarcode = Str::padLeft($parentItem->brand_id, 3, '0') .
+                            Str::padLeft($parentItem->category_id, 3, '0') .
+                            Str::padLeft($parentItem->id, 4, '0');
+
+                        $parentItem->code = $parentBarcode;
+                        $parentItem->save();
+                    } else {
+                        $parentBarcode = $parentItem->code;
+                    }
+
+                    // Generate barcodes for all variants of this parent
+                    $variants = Item::where('parent_id', $parentItem->id)->get();
+
+                    foreach ($variants as $variant) {
+                        try {
+                            // Get the first size and color for the variant
+                            $size = $variant->sizes->first();
+                            $color = $variant->colors->first();
+
+                            if ($size && $color) {
+                                $variantBarcode = $parentBarcode .
+                                    Str::padLeft($color->id, 2, '0') .
+                                    Str::padLeft($size->id, 2, '0');
+
+                                $barcodePath = 'barcodes/' . $variantBarcode . '.png';
+                                $storagePath = storage_path('app/public/' . $barcodePath);
+
+                                $barcodeImage = $barcodeGenerator->getBarcode(
+                                    $variantBarcode,
+                                    $barcodeGenerator::TYPE_CODE_128,
+                                    3,
+                                    50
+                                );
+
+                                if (file_put_contents($storagePath, $barcodeImage)) {
+                                    $variant->barcode = $barcodePath;
+                                    $variant->code = $variantBarcode;
+                                    $variant->save();
+                                    $processed++;
+                                    Log::info("Generated barcode for variant {$variant->id}: {$variantBarcode}");
+                                } else {
+                                    $errors[] = "Failed to save barcode image for variant {$variant->id}";
+                                    Log::error("Failed to save barcode image for variant {$variant->id}");
+                                }
+                            } else {
+                                $errors[] = "Size or color missing for variant {$variant->id}";
+                                Log::error("Size or color missing for variant {$variant->id}");
+                            }
+                        } catch (\Exception $e) {
+                            $errors[] = "Error processing variant {$variant->id}: " . $e->getMessage();
+                            Log::error("Barcode generation failed for variant {$variant->id}: " . $e->getMessage());
+                        }
+                    }
+                } catch (\Exception $e) {
+                    $errors[] = "Error processing parent item {$parentItem->id}: " . $e->getMessage();
+                    Log::error("Barcode generation failed for parent item {$parentItem->id}: " . $e->getMessage());
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $processed > 0 ? 'Barcodes generated successfully' : 'No barcodes generated',
+                'processed' => $processed,
+                'errors' => $errors
+            ]);
+
         } catch (\Exception $e) {
             Log::error('Barcode generation error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to generate barcodes: ' . $e->getMessage()
+            ], 500);
         }
     }
+
 }

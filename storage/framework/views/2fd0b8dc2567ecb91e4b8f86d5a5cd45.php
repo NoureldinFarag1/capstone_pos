@@ -10,6 +10,8 @@
                     </div>
                     <div class="card-body">
                         <form action="<?php echo e(route('items.index')); ?>" method="GET" id="filterForm">
+                            <!-- Add hidden input for show_all parameter -->
+                            <input type="hidden" name="show_all" value="<?php echo e(request('show_all')); ?>">
                             <!-- Search -->
                             <div class="mb-4">
                                 <label class="form-label text-muted small text-uppercase">Search Items</label>
@@ -75,7 +77,7 @@
                     <a href="<?php echo e(route('items.create')); ?>" class="btn btn-primary">
                         <i class="fas fa-plus-circle"></i> Add New Item
                     </a>
-                    <button id="generateBarcodes" class="btn btn-secondary">
+                    <button id="generateBarcodeBtn" class="btn btn-secondary">
                         <i class="fas fa-barcode"></i> Generate Barcodes
                     </button>
                     <!-- Export Dropdown -->
@@ -242,35 +244,119 @@
                 });
             });
 
-            // Generate barcodes
-            document.getElementById('generateBarcodes').addEventListener('click', function() {
-                fetch('<?php echo e(route('items.generateBarcodes')); ?>', {
+            // Update the route name to match the one defined in web.php
+            document.getElementById('generateBarcodeBtn').addEventListener('click', function() {
+                const button = this;
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+                fetch('<?php echo e(route("items.generate-barcodes")); ?>', {
                     method: 'POST',
                     headers: {
+                        'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
+                        'Accept': 'application/json'
                     }
-                }).then(response => response.json())
-                  .then(data => {
-                      if (data.success) {
-                          Swal.fire({
-                              title: 'Success!',
-                              text: 'Barcodes generated successfully!',
-                              icon: 'success',
-                              confirmButtonText: 'OK'
-                          });
-                      } else {
-                          Swal.fire({
-                              title: 'Error!',
-                              text: 'Failed to generate barcodes: ' + data.error,
-                              icon: 'error',
-                              confirmButtonText: 'OK'
-                          });
-                      }
-                  });
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Success!',
+                            text: `Generated ${data.processed} barcodes successfully!`,
+                            icon: 'success'
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        throw new Error(data.error || 'Failed to generate barcodes');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: 'Error!',
+                        text: error.message,
+                        icon: 'error'
+                    });
+                })
+                .finally(() => {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-barcode"></i> Generate Barcodes';
+                });
             });
         });
     </script>
+<?php $__env->stopPush(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Separate the barcode generation logic
+    const generateBarcodesBtn = document.getElementById('generateBarcodeBtn');
+    if (generateBarcodesBtn) {
+        generateBarcodesBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const button = this;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+            // Log the request details
+            console.log('Sending request to:', '<?php echo e(route("items.generate-barcodes")); ?>');
+
+            fetch('<?php echo e(route("items.generate-barcodes")); ?>', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin' // Include cookies
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error('Server response: ' + text);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: `Generated ${data.processed} barcodes successfully!`,
+                        icon: 'success'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    throw new Error(data.error || 'Failed to generate barcodes');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error!',
+                    text: error.message,
+                    icon: 'error'
+                });
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-barcode"></i> Generate Barcodes';
+            });
+        });
+    }
+});
+</script>
 <?php $__env->stopPush(); ?>
 
 <?php $__env->startPush('styles'); ?>

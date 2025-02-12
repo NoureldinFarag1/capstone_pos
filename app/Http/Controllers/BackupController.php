@@ -24,7 +24,7 @@ class BackupController extends Controller
         $dbPass = env('DB_PASSWORD');
 
         // Define the full path to the mysqldump executable
-        $mysqldumpPath = 'C:\xampp\mysql\bin\mysqldump.exe'; // Update this path as needed
+        $mysqldumpPath = '/opt/homebrew/bin/mysqldump'; // Update this path as needed for macOS
 
         // Create the database dump command
         $command = sprintf(
