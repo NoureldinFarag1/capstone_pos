@@ -14,10 +14,10 @@
             </div>
 
             <div class="form-group">
-                <label for="brand_id">Brand:</label>
-                <select name="brand_id" id="brand_id" class="form-control" required>
+                <label for="brand_ids">Brands:</label>
+                <select name="brand_ids[]" id="brand_ids" class="form-control" multiple required>
                     @foreach($brands as $brand)
-                        <option value="{{ $brand->id }}" {{ $brand->id == $category->brand_id ? 'selected' : '' }}>
+                        <option value="{{ $brand->id }}" {{ $category->brands->contains($brand->id) ? 'selected' : '' }}>
                             {{ $brand->name }}
                         </option>
                     @endforeach
@@ -38,9 +38,16 @@
 @endsection
 
 @push('scripts')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+$(document).ready(function() {
+    $('#brand_ids').select2({
+        placeholder: 'Select brands',
+        allowClear: true
+    });
+
     const form = document.querySelector('form');
     form.addEventListener('submit', function(e) {
         e.preventDefault();

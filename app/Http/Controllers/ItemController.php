@@ -353,13 +353,29 @@ class ItemController extends BaseController
                     $item->update(['picture' => $picturePath]);
                 }
 
-                // Update all variants with new shared properties
-                $item->variants()->update([
-                    'selling_price' => $request->selling_price,
-                    'tax' => $request->tax,
-                    'discount_type' => $request->discount_type,
-                    'discount_value' => $request->discount_value,
-                ]);
+                // Update all variants with new shared properties and names
+                foreach ($item->variants as $variant) {
+                    $size = $variant->sizes->first();
+                    $color = $variant->colors->first();
+
+                    if ($size && $color) {
+                        $variantName = $request->name . ' - ' . $size->name . ' - ' . $color->name;
+                    } elseif ($size) {
+                        $variantName = $request->name . ' - ' . $size->name;
+                    } elseif ($color) {
+                        $variantName = $request->name . ' - ' . $color->name;
+                    } else {
+                        $variantName = $request->name;
+                    }
+
+                    $variant->update([
+                        'name' => $variantName,
+                        'selling_price' => $request->selling_price,
+                        'tax' => $request->tax,
+                        'discount_type' => $request->discount_type,
+                        'discount_value' => $request->discount_value,
+                    ]);
+                }
             } else {
                 // Update variant
                 $item->update([

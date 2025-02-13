@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
-    protected $fillable = ['name', 'brand_id', 'picture'];
+    protected $fillable = ['name', 'picture'];
 
-    public function brand()
+    public function brands()
     {
-        return $this->belongsTo(Brand::class);
+        return $this->belongsToMany(Brand::class, 'brand_category');
     }
 
     public function items()

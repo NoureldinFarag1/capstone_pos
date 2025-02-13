@@ -18,7 +18,8 @@ class CategoryController extends Controller
     {
         $request->validate([
             'name' => 'required',
-            'brand_id' => 'required|exists:brands,id',
+            'brand_ids' => 'required|array',
+            'brand_ids.*' => 'exists:brands,id',
             'picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -28,11 +29,13 @@ class CategoryController extends Controller
             $picturePath = null;
         }
 
-        Category::create([
+        $category = Category::create([
             'name' => $request->input('name'),
-            'brand_id' => $request->input('brand_id'), // Save brand_id
             'picture' => $picturePath,
         ]);
+
+        $category->brands()->sync($request->input('brand_ids'));
+
         return redirect()->route('categories.index');
     }
 
@@ -53,7 +56,8 @@ class CategoryController extends Controller
     {
         $request->validate([
             'name' => 'required',
-            'brand_id' => 'required|exists:brands,id',
+            'brand_ids' => 'required|array',
+            'brand_ids.*' => 'exists:brands,id',
             'picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -66,8 +70,9 @@ class CategoryController extends Controller
         }
 
         $category->name = $request->input('name');
-        $category->brand_id = $request->input('brand_id');
         $category->save();
+
+        $category->brands()->sync($request->input('brand_ids'));
 
         return redirect()->route('categories.index')->with('success', 'Category updated successfully.');
     }
@@ -82,19 +87,27 @@ class CategoryController extends Controller
 
     public function getCategoriesByBrand($brand_id)
     {
-        $categories = Category::where('brand_id', $brand_id)->get();
+        $categories = Category::whereHas('brands', function ($query) use ($brand_id) {
+            $query->where('brand_id', $brand_id);
+        })->get();
         return response()->json($categories);
     }
 
     public function getCategories($brandId)
-{
-    $categories = Category::where('brand_id', $brandId)->get();
+    {
+        $categories = Category::whereHas('brands', function ($query) use ($brandId) {
+            $query->where('brand_id', $brandId);
+        })->get();
 
-    return response()->json([
-        'categories' => $categories
-    ]);
-}
+        return response()->json([
+            'categories' => $categories
+        ]);
+    }
 
-
+    public function show($id)
+    {
+        $category = Category::with('brands', 'items')->findOrFail($id);
+        return view('categories.show', compact('category'));
+    }
 }
 

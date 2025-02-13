@@ -10,12 +10,14 @@ class Brand extends Model
 
     public function categories()
     {
-        return $this->hasMany(Category::class);
+        return $this->belongsToMany(Category::class, 'brand_category');
     }
+
     public function items()
     {
-        return $this->hasMany(Item::class); // Define the relationship with items
+        return $this->hasMany(Item::class);
     }
+
     public function sales()
     {
         return $this->hasMany(Sale::class, 'brand_id');
