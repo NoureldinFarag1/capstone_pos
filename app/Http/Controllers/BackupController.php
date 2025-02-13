@@ -28,7 +28,7 @@ class BackupController extends Controller
 
         // Create the database dump command
         $command = sprintf(
-            '%s --user=%s --password=%s --host=%s --port=%s %s > %s',
+            '%s --user=%s --password=%s --host=%s --port=%s %s --result-file=%s',
             escapeshellarg($mysqldumpPath),
             escapeshellarg($dbUser),
             escapeshellarg($dbPass),
