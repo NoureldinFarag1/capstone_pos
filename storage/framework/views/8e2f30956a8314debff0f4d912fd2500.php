@@ -245,7 +245,10 @@
                                 <i class="fas fa-file-download text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
                                 <span class="text-white font-medium">Export Inventory</span>
                             </a>
-
+                            <a href="<?php echo e(route('store-settings.index')); ?>" class="group flex items-center justify-center p-6 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-xl hover:shadow-lg transition-all duration-300">
+                                <i class="fas fa-store text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-white font-medium">Store Settings</span>
+                            </a>
                             <a href="/users/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl hover:shadow-lg transition-all duration-300">
                                 <i class="fas fa-users-cog text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
                                 <span class="text-white font-medium">New User</span>

@@ -1,0 +1,33 @@
+――――――――――――――――――――――――――――――――――――――――――――――――
+RECEIPT %sale_date% - #%display_id%
+Date: %created_at%
+Time: %created_at_time%
+Payment Method: %payment_method%
+――――――――――――――――――――――――――――――――――――――――――――――――
+              PURCHASE DETAILS
+――――――――――――――――――――――――――――――――――――――――――――――――
+Item                   Qty    Price      Total
+――――――――――――――――――――――――――――――――――――――――――――――――
+%items%
+%separator%
+Subtotal:                           %subtotal%
+Item Discounts:                     -%total_discount%
+Additional Discount:                -%additional_discount%
+%if_shipping_start%
+Shipping Fees:                      %shipping_fees%
+%if_shipping_end%
+================================================
+TOTAL:                                %total_amount%
+================================================
+%if_shipping_start%
+Customer Name:  %customer_name%
+Customer Phone: %customer_phone%
+Address: %customer_address%
+================================================
+%if_shipping_end%
+Exchanges and Refunds are only applicable for
+                    7 days
+       Thank You For Shopping With Us!
+            Find us on Instagram
+               %store_instagram%
+――――――――――――――――――――――――――――――――――――――――――――――――

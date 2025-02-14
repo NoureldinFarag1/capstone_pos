@@ -129,6 +129,10 @@ Route::post('/items/generate-barcodes', [ItemController::class, 'generateBarcode
 Route::get('/settings/printer', [SettingsController::class, 'editPrinter'])->name('settings.printer.edit');
 Route::put('/settings/printer', [SettingsController::class, 'updatePrinter'])->name('settings.printer.update');
 
+Route::get('/store-settings', [App\Http\Controllers\StoreSettingsController::class, 'index'])->name('store-settings.index');
+Route::get('/store-settings/edit', [App\Http\Controllers\StoreSettingsController::class, 'edit'])->name('store-settings.edit');
+Route::put('/store-settings', [App\Http\Controllers\StoreSettingsController::class, 'update'])->name('store-settings.update');
+
 Route::get('/loyal-customers', [SaleController::class, 'loyalCustomers'])->name('sales.loyal-customers');
 Route::get('/sales/{period}/{method}', [SaleController::class, 'paymentMethodSales'])
     ->name('sales.by-payment-method')

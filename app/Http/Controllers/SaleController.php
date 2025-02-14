@@ -173,88 +173,98 @@ class SaleController extends Controller
     public function printGiftReceipt(Request $request)
     {
         try {
-            Log::info('Starting gift receipt print', ['request' => $request->all()]);
+            // Add detailed logging
+            Log::info('Full request data:', $request->all());
+            Log::info('Sale items data:', ['items' => $request->input('saleItems')]);
 
-            // Create a temporary receipt structure
-            $items = collect($request->input('saleItems', []));
+            // Load gift receipt template from config
+            $templatePath = Config::get('receipt.gift_receipt_template');
+            if (!File::exists($templatePath)) {
+                Log::error("Gift receipt template file not found: $templatePath");
+                return response()->json(['success' => false, 'message' => 'Gift receipt template not found.'], 500);
+            }
+            $template = File::get($templatePath);
 
+            // Load logo path from config
+            $logoPath = Config::get('receipt.logo_path');
+
+            // Load store information from config
+            $storeName = Config::get('receipt.store_name');
+            $storeInstagram = Config::get('receipt.store_instagram');
+
+            // Debug the incoming data
+            Log::info('Received sale items:', ['items' => $request->input('saleItems')]);
+
+            // Initialize printer early
             $connector = $this->getPrinterConnector();
             $printer = new Printer($connector);
-
-            // Initialize printer
             $printer->initialize();
 
-            // Print logo and header
-            $logoPath = public_path('images/RECEIPTLOGO.png');
+            // Print logo
             if (file_exists($logoPath)) {
                 try {
                     $printer->setJustification(Printer::JUSTIFY_CENTER);
-                    $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH | Printer::MODE_DOUBLE_HEIGHT);
-                    $printer->text("LOCAL HUB\n");
-                    $printer->selectPrintMode();
-
                     $logo = EscposImage::load($logoPath);
                     $printer->bitImage($logo);
-
-                    $printer->feed(1);
-                    $printer->text("It's not just a Showroom\n");
                     $printer->feed(1);
                 } catch (\Exception $e) {
                     Log::error("Logo error: " . $e->getMessage());
                 }
             }
 
-            // Gift Receipt Header
-            $printer->setJustification(Printer::JUSTIFY_CENTER);
-            $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
-            $printer->setEmphasis(true);
-            $printer->text("GIFT RECEIPT\n");
-            $printer->setEmphasis(false);
-            $printer->selectPrintMode();
-            $printer->feed(1);
+            // Create a temporary receipt structure with explicit formatting
+            $formattedItems = collect($request->input('items', []))->map(function ($item) {
+                Log::info('Processing item:', ['item' => $item]);
 
-            // Receipt Info
-            $printer->setJustification(Printer::JUSTIFY_LEFT);
-            $printer->text(str_repeat("-", 48) . "\n");
-            $printer->text("Date: " . now()->format('d M Y') . "\n");
-            $printer->text("Time: " . now()->format('H:i:s') . "\n");
-            $printer->text(str_repeat("-", 48) . "\n");
-
-            // Items
-            $printer->setEmphasis(true);
-            $printer->text("ITEMS\n");
-            $printer->setEmphasis(false);
-
-            foreach ($items as $item) {
-                if (isset($item['item']['name']) && isset($item['quantity'])) {
-                    $name = $item['item']['name'];
-                    $qty = $item['quantity'];
-
-                    // Print item details without price
-                    $printer->text(str_pad(substr($name, 0, 35), 35));
-                    $printer->text(str_pad("Qty: " . $qty, 13, ' ', STR_PAD_LEFT) . "\n");
+                // Get item details from database including brand
+                if (!empty($item['item_id'])) {
+                    $dbItem = Item::with('brand')->find($item['item_id']);
+                    $name = $dbItem ? $dbItem->name : ($item['name'] ?? 'Unknown Item');
+                    $brandName = $dbItem && $dbItem->brand ? $dbItem->brand->name : '';
+                    // Combine item name and brand
+                    $fullName = $name . ($brandName ? " - $brandName" : '');
+                } else {
+                    $fullName = $item['name'] ?? 'Unknown Item';
                 }
+
+                $qty = $item['quantity'] ?? 0;
+
+                // Format with fixed widths - allowing more space for the combined name
+                $formattedName = str_pad(substr($fullName, 0, 30), 30);
+                $formattedQty = str_pad((string)$qty, 8, ' ', STR_PAD_LEFT);
+
+                $line = $formattedName . $formattedQty;
+                Log::info('Formatted receipt line:', ['line' => $line]);
+
+                return $line;
+            })->join("\n");
+
+            // Prepare data for template
+            $data = [
+                'store_name' => $storeName,
+                'store_instagram' => $storeInstagram,
+                'date' => now()->format('d M Y'),
+                'time' => now()->format('H:i:s'),
+                'items' => $formattedItems ?: 'No items' // Provide fallback for empty items
+            ];
+
+            // Replace placeholders in the template
+            foreach ($data as $key => $value) {
+                $template = str_replace("%$key%", $value, $template);
             }
 
-            // Footer
-            $printer->feed(1);
-            $printer->text(str_repeat("-", 48) . "\n");
-            $printer->setJustification(Printer::JUSTIFY_CENTER);
-
-            $printer->setEmphasis(true);
-            $printer->text("Exchange & Return Policy\n");
-            $printer->setEmphasis(false);
-            $printer->text("Items may be exchanged within 14 days\n");
-            $printer->text("Refunds are only with the original receipt\n");
-
-            $printer->feed(1);
-            $printer->setEmphasis(true);
-            $printer->text("Thank You For Shopping With Us!\n");
-            $printer->setEmphasis(false);
-
-            $printer->feed(1);
-            $printer->text("Follow us on Instagram\n");
-            $printer->text("@localhub_egy\n");
+            // Print the template with explicit justification for items
+            $printer->setJustification(Printer::JUSTIFY_LEFT);
+            $lines = explode("\n", $template);
+            foreach ($lines as $line) {
+                // Center align everything except items section
+                if (strpos($line, 'Item') !== false || strpos($line, $formattedItems) !== false) {
+                    $printer->setJustification(Printer::JUSTIFY_LEFT);
+                } else {
+                    $printer->setJustification(Printer::JUSTIFY_CENTER);
+                }
+                $printer->text($line . "\n");
+            }
 
             // Cut receipt
             $printer->feed(3);
@@ -277,139 +287,90 @@ class SaleController extends Controller
 
             $sale = Sale::with('saleItems.item')->findOrFail($id);
 
+            // Load thermal receipt template from config
+            $templatePath = Config::get('receipt.thermal_receipt_template');
+            if (!File::exists($templatePath)) {
+                Log::error("Thermal receipt template file not found: $templatePath");
+                return redirect()->route('sales.index')->with('error', 'Thermal receipt template not found.');
+            }
+            $template = File::get($templatePath);
+
+            // Load logo path from config
+            $logoPath = Config::get('receipt.logo_path');
+
+            // Load store information from config
+            $storeName = Config::get('receipt.store_name');
+            $storeSlogan = Config::get('receipt.store_slogan');
+            $storeInstagram = Config::get('receipt.store_instagram');
+
             Log::info('Connecting to printer');
             $connector = $this->getPrinterConnector();
-            //$connector = new WindowsPrintConnector($printerName);
             $printer = new Printer($connector);
 
             // Initialize printer
             $printer->initialize();
-            $logoPath = public_path('images/RECEIPTLOGO.png');
+
+            // Print store name (larger and centered)
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->setTextSize(2, 2); // Double width and height
+            $printer->text($storeName . "\n");
+            $printer->setTextSize(1, 1); // Reset text size
+
+            // Print logo
             if (file_exists($logoPath)) {
                 try {
                     $printer->setJustification(Printer::JUSTIFY_CENTER);
-                    $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH | Printer::MODE_DOUBLE_HEIGHT);
-                    $printer->setEmphasis(true);
-                    $printer->text("LOCAL HUB\n");
-
-                    $printer->feed(1);
-                    $printer->setEmphasis(false);
                     $logo = EscposImage::load($logoPath);
-                    $printer->setJustification(Printer::JUSTIFY_CENTER);
                     $printer->bitImage($logo); // Print the logo
-                    $printer->selectPrintMode();
-                    $printer->feed(1);
-                    $printer->setEmphasis(true);
-                    $printer->text("It's not just a Showroom\n");
-                    $printer->setEmphasis(false);
                     $printer->feed(1);
                 } catch (\Exception $e) {
                     Log::error("Error loading logo: " . $e->getMessage());
-                    // Handle the error gracefully (e.g., print a message instead)
                     $printer->setJustification(Printer::JUSTIFY_CENTER);
                     $printer->text("Logo could not be printed\n");
-
                 }
             }
-            // Receipt Info with modern spacing
-            $printer->setJustification(Printer::JUSTIFY_LEFT);
-            $printer->text(str_repeat("·", 48) . "\n");
-            $printer->setEmphasis(true);
-            $printer->text("RECEIPT " . $sale->sale_date->format('d/m') . " - #" . str_pad($sale->display_id, 4, '0', STR_PAD_LEFT) . "\n");
-            $printer->setEmphasis(false);
-            $printer->text("Date: " . $sale->created_at->format('d M Y') . "\n");
-            $printer->text("Time: " . $sale->created_at->format('H:i:s') . "\n");
-            $printer->text("Payment Method: " . $sale->payment_method . "\n");
 
-            $printer->text(str_repeat("·", 48) . "\n");
+            // Print slogan (centered below the logo)
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->text($storeSlogan . "\n");
             $printer->feed(1);
 
-            // Modern Items Header
-            $printer->setEmphasis(true);
-            $printer->text("PURCHASE DETAILS\n");
-            $printer->setEmphasis(false);
-            $printer->text(str_repeat("-", 48) . "\n");
+            $printer->feed(1);
 
-            // Table Header with clean spacing - adjusted for 48 characters width
-            $printer->setJustification(Printer::JUSTIFY_LEFT);
-            $printer->text(
-                str_pad("Item", 20) .
-                str_pad("Qty", 3, ' ', STR_PAD_LEFT) .
-                str_pad("Price", 12, ' ', STR_PAD_LEFT) .
-                str_pad("Total", 13, ' ', STR_PAD_LEFT) . "\n"
-            );
-            $printer->text(str_repeat("-", 48) . "\n");
-
-            // Print items with improved spacing for better fit
-            $subtotal = 0;
-            $totalDiscount = 0;
-
-            foreach ($sale->saleItems as $saleItem) {
+            // Prepare data for template
+            $items = $sale->saleItems->map(function ($saleItem) {
                 $itemName = $saleItem->item->name;
                 $quantity = $saleItem->quantity;
                 $price = $saleItem->price;
-                $itemDiscount = $saleItem->item->discount_value;
-
-                // Calculate line totals
                 $lineTotal = $quantity * $price;
-                $lineDiscount = ($itemDiscount / 100) * ($quantity * $saleItem->item->selling_price);
-                $subtotal += $lineTotal;
-                $totalDiscount += $lineDiscount;
 
-                // Print item name with word wrap if needed
-                $itemNameLen = 19; // Maximum length for item name
-                $itemNameParts = str_split($itemName, $itemNameLen);
-                $firstLine = true;
-
-                foreach ($itemNameParts as $part) {
-                    if ($firstLine) {
-                        // First line includes quantity and prices
-                        $printer->text(
-                            str_pad(substr($part, 0, $itemNameLen), 20) .
-                            str_pad($quantity, 3, ' ', STR_PAD_LEFT) .
-                            str_pad(number_format($price, 2), 12, ' ', STR_PAD_LEFT) .
-                            str_pad(number_format($lineTotal, 2), 13, ' ', STR_PAD_LEFT) . "\n"
-                        );
-                        $firstLine = false;
-                    } else {
-                        // Continuation lines only show the rest of the item name
-                        $printer->text(str_pad($part, 20) . "\n");
-                    }
+                // Split item name into two lines if it's too long
+                if (strlen($itemName) > 20) {
+                    $itemNamePart1 = substr($itemName, 0, 20);
+                    $itemNamePart2 = substr($itemName, 20);
+                    return str_pad($itemNamePart1, 20) . "\n" . str_pad($itemNamePart2, 20) .
+                        str_pad($quantity, 5, ' ', STR_PAD_LEFT) .
+                        str_pad(number_format($price, 2), 12, ' ', STR_PAD_LEFT) .
+                        str_pad(number_format($lineTotal, 2), 11, ' ', STR_PAD_LEFT);
+                } else {
+                    return str_pad($itemName, 20) .
+                        str_pad($quantity, 5, ' ', STR_PAD_LEFT) .
+                        str_pad(number_format($price, 2), 12, ' ', STR_PAD_LEFT) .
+                        str_pad(number_format($lineTotal, 2), 11, ' ', STR_PAD_LEFT);
                 }
+            })->implode("\n");
 
-                // Show discount if any
-                if ($itemDiscount > 0) {
-                    $printer->text(str_pad("", 3) . "L");
-                    $printer->setEmphasis(true);
-                    $printer->text(number_format($itemDiscount, 0) . "% OFF: ");
-                    $printer->setEmphasis(false);
-                    $printer->text("-" . number_format($lineDiscount, 2) . "\n");
-                }
-            }
+            // Calculate discounts
+            $totalDiscount = $sale->saleItems->sum(function ($item) {
+                return ($item->item->discount_value / 100) * $item->quantity * $item->item->selling_price;
+            });
 
-            // Summary section
-            $printer->feed(1);
-            $printer->text(str_repeat("-", 48) . "\n");
+            $additionalDiscount = 0;
+            $subtotal = $sale->saleItems->sum(function ($item) {
+                return $item->quantity * $item->price;
+            });
 
-            // Print subtotal
-            $printer->text(
-                str_pad("Subtotal:", 37, ' ', STR_PAD_RIGHT) .
-                str_pad(number_format($subtotal, 2), 11, ' ', STR_PAD_LEFT) . "\n"
-            );
-
-            // Print item discounts if any
-            if ($totalDiscount > 0) {
-                $printer->setEmphasis(true);
-                $printer->text(
-                    str_pad("Item Discounts:", 37, ' ', STR_PAD_RIGHT) .
-                    str_pad("-" . number_format($totalDiscount, 2), 11, ' ', STR_PAD_LEFT) . "\n"
-                );
-                $printer->setEmphasis(false);
-            }
-
-            // Calculate and print additional discount if any
             if ($sale->discount_type !== 'none' && $sale->discount_value > 0) {
-                $additionalDiscount = 0;
                 $afterItemDiscounts = $subtotal - $totalDiscount;
 
                 if ($sale->discount_type === 'percentage') {
@@ -417,80 +378,54 @@ class SaleController extends Controller
                 } else if ($sale->discount_type === 'fixed') {
                     $additionalDiscount = $sale->discount_value;
                 }
-
-                $printer->text(
-                    str_pad("Additional Discount:", 37, ' ', STR_PAD_RIGHT) .
-                    str_pad("-" . number_format($additionalDiscount, 2), 11, ' ', STR_PAD_LEFT) . "\n"
-                );
             }
 
-            // Add shipping fees and address for COD
-            if ($sale->payment_method === 'cod') {
-                if ($sale->shipping_fees > 0) {
-                    $printer->text(
-                        str_pad("Shipping Fees:", 37, ' ', STR_PAD_RIGHT) .
-                        str_pad(number_format($sale->shipping_fees, 2), 11, ' ', STR_PAD_LEFT) . "\n"
-                    );
-                }
+            // Prepare base data array
+            $data = [
+                'store_name' => $storeName,
+                'store_slogan' => $storeSlogan,
+                'store_instagram' => $storeInstagram,
+                'sale_date' => $sale->sale_date->format('d/m'),
+                'display_id' => str_pad($sale->display_id, 4, '0', STR_PAD_LEFT),
+                'created_at' => $sale->created_at->format('d M Y'),
+                'created_at_time' => $sale->created_at->format('H:i:s'),
+                'payment_method' => $sale->payment_method,
+                'items' => $items,
+                'separator' => '――――――――――――――――――――――――――――――――――――――――――――――――',
+                'subtotal' => number_format($subtotal, 2),
+                'total_discount' => number_format($totalDiscount, 2),
+                'additional_discount' => number_format($additionalDiscount, 2),
+                'total_amount' => number_format($sale->total_amount, 2),
+                'shipping_fees' => $sale->shipping_fees ? number_format($sale->shipping_fees, 2) : '0.00',
+            ];
 
-                // Print address with word wrapping
-                if ($sale->address) {
-                    $printer->text(str_repeat("-", 48) . "\n");
-                    $printer->text("Delivery Address:\n");
-
-                    // Word wrap the address to fit within 48 characters
-                    $words = explode(' ', $sale->address);
-                    $line = '';
-
-                    foreach ($words as $word) {
-                        if (mb_strlen($line . ' ' . $word) <= 48) {
-                            $line .= ($line === '' ? '' : ' ') . $word;
-                        } else {
-                            $printer->text($line . "\n");
-                            $line = $word;
-                        }
-                    }
-                    // Print any remaining text
-                    if ($line !== '') {
-                        $printer->text($line . "\n");
-                    }
-
-                    // Print phone number if available
-                    if ($sale->customer_phone) {
-                        $printer->text("Name: " . $sale->customer_name . "\n");
-                        $printer->text("Phone: " . $sale->customer_phone . "\n");
-                    }
-
-                    $printer->text(str_repeat("-", 48) . "\n");
-                }
+            // Add customer details if shipping exists
+            if ($sale->shipping_fees > 0) {
+                $data['customer_name'] = $sale->customer_name ?? 'N/A';
+                $data['customer_phone'] = $sale->customer_phone ?? 'N/A';
+                $data['customer_address'] = $sale->address ?? 'N/A';
+                // Remove the conditional sections markers
+                $template = str_replace(['%if_shipping_start%', '%if_shipping_end%'], '', $template);
+            } else {
+                // Remove the entire shipping and customer details section
+                $template = preg_replace('/%if_shipping_start%.*?%if_shipping_end%\n?/s', '', $template);
+                // Make sure these fields are empty to avoid undefined placeholder errors
+                $data['customer_name'] = '';
+                $data['customer_phone'] = '';
+                $data['customer_address'] = '';
             }
 
-            // Print final total
-            $printer->text(str_repeat("=", 48) . "\n");
-            $printer->selectPrintMode(Printer::MODE_DOUBLE_WIDTH);
-            $printer->setEmphasis(true);
-            $printer->text(
-                str_pad("TOTAL ", 8, ' ', STR_PAD_LEFT) .
-                str_pad(number_format($sale->total_amount, 2), 5, ' ', STR_PAD_LEFT) . "\n"
-            );
-            $printer->setEmphasis(false);
-            $printer->selectPrintMode();
-            $printer->text(str_repeat("=", 48) . "\n");
+            // Replace placeholders in the template
+            foreach ($data as $key => $value) {
+                $template = str_replace("%$key%", $value, $template);
+            }
 
-            // Modern footer with social media
-            $printer->feed(1);
-            $printer->setJustification(Printer::JUSTIFY_CENTER);
-            $printer->setEmphasis(true);
-            $printer->text("Exchanges and Refunds are only applicable for 14 days\n");
-            $printer->text("Thank You For Shopping With Us!\n");
-            $printer->setEmphasis(false);
-            $printer->feed(1);
-            $printer->text("Find us on Instagram\n");
-            $printer->selectPrintMode(Printer::MODE_EMPHASIZED);
-            $printer->text("@localhub_egy\n");
-            $printer->selectPrintMode();
-            $printer->feed(1);
-            $printer->text(str_repeat(".", 48) . "\n");
+             // Print the template
+            $printer->setJustification(Printer::JUSTIFY_LEFT);
+            $lines = explode("\n", $template);
+            foreach ($lines as $line) {
+                $printer->text($line . "\n");
+            }
 
             // Open cash drawer
             $printer->getPrintConnector()->write("\x1B\x70\x00\x19\xFA");

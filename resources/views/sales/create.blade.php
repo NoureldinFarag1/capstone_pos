@@ -4,14 +4,9 @@
 @php
 use Illuminate\Support\Facades\Auth;
 @endphp
-<style>
-    #barcode:focus {
-        outline: 2px solid #96c9ff;
-        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
-    }
-</style>
+<link rel="stylesheet" href="{{ asset('css/custom.css') }}">
 <div class="container">
-    <h1>Create New Sale</h1>
+    <h1 class="mb-4">Create New Sale</h1>
 
     @if ($errors->any())
         <div class="alert alert-danger">
@@ -151,8 +146,16 @@ use Illuminate\Support\Facades\Auth;
     </form>
 </div>
 
+@push('scripts')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+$(document).ready(function() {
+    $('#itemSelect').select2({
+        placeholder: 'Select an item',
+        allowClear: true
+    });
+
     const itemSelect = document.getElementById('itemSelect');
     const quantityInput = document.getElementById('quantity');
     const addItemButton = document.getElementById('addItemButton');
@@ -498,5 +501,6 @@ function handlePrintGiftReceipt() {
 
 });
 </script>
+@endpush
 <meta name="csrf-token" content="{{ csrf_token() }}">
 @endsection

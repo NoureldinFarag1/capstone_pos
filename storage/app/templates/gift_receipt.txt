@@ -1,0 +1,15 @@
+%store_name%
+------------------------------------------------
+   Date: %date%
+   Time: %time%
+------------------------------------------------
+Item                                   Quantity
+------------------------------------------------
+%items%
+------------------------------------------------
+        Exchange & Return Policy
+    Items may be exchanged within 7 days
+Refunds are only with the original receipt
+
+    Follow us on Instagram
+        %store_instagram%
