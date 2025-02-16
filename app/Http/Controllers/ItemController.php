@@ -40,11 +40,11 @@ class ItemController extends BaseController
             // Validate incoming request
             $validated = $request->validate([
                 'name' => 'required',
-                'buying_price' => 'required|numeric|min:0',
+                'buying_price' => 'nullable|numeric|min:0',
                 'selling_price' => 'required|numeric|min:0',
-                'tax' => 'required|numeric|min:0',
+                'tax' => 'nullable|numeric|min:0',
                 'discount_type' => 'required|in:percentage,fixed',
-                'discount_value' => 'required|numeric|min:0',
+                'discount_value' => 'nullable|numeric|min:0',
                 'category_id' => 'required|exists:categories,id',
                 'brand_id' => 'required|exists:brands,id',
                 'picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
@@ -53,6 +53,11 @@ class ItemController extends BaseController
                 'colors.*' => 'exists:colors,id',
                 'variant_quantities' => 'required|array'
             ]);
+
+            // Set default values for nullable fields
+            $buyingPrice = $request->input('buying_price') ?? 0;
+            $tax = $request->input('tax') ?? 0;
+            $discountValue = $request->input('discount_value') ?? 0;
 
             $category = Category::findOrFail($request->input('category_id'));
             $brand = Brand::findOrFail($request->input('brand_id'));
@@ -70,11 +75,11 @@ class ItemController extends BaseController
                 'brand_id' => $request->input('brand_id'),
                 'picture' => $picturePath,
                 'quantity' => 0,
-                'buying_price' => $request->input('buying_price'),
+                'buying_price' => $buyingPrice,
                 'selling_price' => $request->input('selling_price'),
-                'tax' => $request->input('tax'),
+                'tax' => $tax,
                 'discount_type' => $request->input('discount_type'),
-                'discount_value' => $request->input('discount_value'),
+                'discount_value' => $discountValue,
                 'is_parent' => true,
             ]);
 
@@ -121,11 +126,11 @@ class ItemController extends BaseController
                         'brand_id' => $request->input('brand_id'),
                         'picture' => $picturePath,
                         'quantity' => $variantQuantity,
-                        'buying_price' => $request->input('buying_price'),
+                        'buying_price' => $buyingPrice,
                         'selling_price' => $request->input('selling_price'),
-                        'tax' => $request->input('tax'),
+                        'tax' => $tax,
                         'discount_type' => $request->input('discount_type'),
-                        'discount_value' => $request->input('discount_value'),
+                        'discount_value' => $discountValue,
                         'parent_id' => $parentItem->id,
                         'is_parent' => false,
                     ]);
@@ -282,8 +287,9 @@ class ItemController extends BaseController
         $search = $request->input('search');
         $brandId = $request->input('brand_id');
         $showAll = $request->input('show_all');
+        $sortBy = $request->input('sort_by', 'name');
+        $sortOrder = $request->input('sort_order', 'asc');
 
-        // Initialize query with pagination and include necessary relationships
         $query = Item::with(['brand', 'category', 'sizes', 'colors'])
                      ->where('is_parent', true);
 
@@ -307,13 +313,41 @@ class ItemController extends BaseController
             }
         }
 
-        $items = $query->orderBy('id', 'desc')
-                       ->paginate(12)
-                       ->withQueryString();
+        // Apply sorting
+        switch ($sortBy) {
+            case 'price':
+                $query->orderBy('selling_price', $sortOrder);
+                break;
+            case 'quantity':
+                $query->orderBy('quantity', $sortOrder);
+                break;
+            case 'name':
+            default:
+                $query->orderBy('name', $sortOrder);
+                break;
+        }
 
-        return view('items.index', compact('items', 'brands', 'showAll'));
+        $items = $query->paginate(12)->withQueryString();
+
+        return view('items.index', compact('items', 'brands', 'showAll', 'sortBy', 'sortOrder'));
     }
 
+    public function export(Request $request)
+    {
+        $brandId = $request->input('brand_id');
+        $query = Item::with(['brand', 'category'])
+                    ->where('is_parent', true);
+
+        if ($brandId) {
+            $query->where('brand_id', $brandId);
+        }
+
+        $items = $query->get();
+
+        $filename = $brandId ? Brand::find($brandId)->name . '_items.xlsx' : 'all_items.xlsx';
+
+        return Excel::download(new ItemsExport($items), $filename);
+    }
 
     public function edit($id)
     {

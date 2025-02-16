@@ -85,12 +85,11 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-3 mb-3">
-                                <label for="buying_price" class="form-label">Buying Price <span
-                                        class="text-danger">*</span></label>
+                                <label for="buying_price" class="form-label">Buying Price</label>
                                 <div class="input-group">
                                     <span class="input-group-text">EGP</span>
                                     <input type="number" name="buying_price" class="form-control" min="0" step="0.01"
-                                        required>
+                                        placeholder="0">
                                 </div>
                             </div>
 
@@ -105,9 +104,9 @@
                             </div>
 
                             <div class="col-md-3 mb-3">
-                                <label for="tax" class="form-label">Tax Rate <span class="text-danger">*</span></label>
+                                <label for="tax" class="form-label">Tax Rate</label>
                                 <div class="input-group">
-                                    <input type="number" name="tax" class="form-control" min="0" max="100" required>
+                                    <input type="number" name="tax" class="form-control" min="0" max="100" placeholder="0">
                                     <span class="input-group-text">%</span>
                                 </div>
                             </div>
@@ -130,7 +129,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="discount_value" class="form-label">Discount Value</label>
                                 <input type="number" id="discount_value" name="discount_value" class="form-control"
-                                    min="0" required>
+                                    min="0" placeholder="0">
                                 <div id="discountHelp" class="form-text"></div>
                             </div>
                         </div>
@@ -334,4 +333,5 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 </style>
 <?php $__env->stopSection(); ?>
+
 <?php echo $__env->make('layouts.dashboard', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH /Users/noureldinfarag/capstone_pos/resources/views/items/create.blade.php ENDPATH**/ ?>

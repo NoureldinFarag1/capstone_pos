@@ -134,6 +134,7 @@
                     <a href="<?php echo e(route('users.index')); ?>" class="<?php echo e(request()->is('users*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600'); ?> hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-users-cog mr-2"></i>Manage Users
                     </a>
+                    <?php endif; ?>
                     <!-- Backup Button -->
                     <form action="<?php echo e(route('backup.download')); ?>" method="POST" class="inline">
                         <?php echo csrf_field(); ?>
@@ -141,7 +142,6 @@
                             <i class="fas fa-download mr-2"></i>Backup
                         </button>
                     </form>
-                    <?php endif; ?>
                 </div>
                 <!-- Notification and Logout aligned to the right -->
                 <div class="hidden sm:flex sm:items-center">
@@ -245,6 +245,7 @@
                                 <i class="fas fa-file-download text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
                                 <span class="text-white font-medium">Export Inventory</span>
                             </a>
+                            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('admin')): ?>
                             <a href="<?php echo e(route('store-settings.index')); ?>" class="group flex items-center justify-center p-6 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-xl hover:shadow-lg transition-all duration-300">
                                 <i class="fas fa-store text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
                                 <span class="text-white font-medium">Store Settings</span>
@@ -253,6 +254,7 @@
                                 <i class="fas fa-users-cog text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
                                 <span class="text-white font-medium">New User</span>
                             </a>
+                            <?php endif; ?>
                             <a href="/brands/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl hover:shadow-lg transition-all duration-300">
                                 <i class="fas fa-tag text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
                                 <span class="text-white font-medium">Add Brand</span>

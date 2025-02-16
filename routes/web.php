@@ -60,7 +60,7 @@ Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logou
 
 // Export sales per brand to Excel
 Route::get('/sales/export', [SaleController::class, 'exportSalesPerBrand'])->name('sales.export');
-Route::get('/items/export', [ItemController::class, 'ItemsExport'])->name('items.export');
+Route::get('/items/export', [ItemController::class, 'export'])->name('items.export');
 Route::post('/export-items-csv', [ItemController::class, 'exportCSV'])->name('items.exportCSV');
 Route::get('/items/sample-file', function () {
     $headers = ['name', 'brand_id', 'category_id', 'code', 'quantity', 'buying_price', 'selling_price', 'sale_price'];

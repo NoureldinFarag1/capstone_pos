@@ -134,7 +134,7 @@
                                     (<?php echo e($sale->sale_date->format('d/m')); ?> - #<?php echo e(str_pad($sale->display_id, 4, '0', STR_PAD_LEFT)); ?>)
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-gray-800">$<?php echo e(number_format($sale->total_amount, 2)); ?></td>
+                            <td class="px-6 py-4 text-gray-800">EGP <?php echo e(number_format($sale->total_amount, 2)); ?></td>
                             <td class="px-6 py-4 text-gray-800"><?php echo e($sale->created_at->format('Y-m-d H:i')); ?></td>
                             <td class="px-6 py-4"><?php echo e($sale->user ? $sale->user->name : 'Unknown User'); ?></td>
                             <td class="px-6 py-4">

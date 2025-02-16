@@ -135,7 +135,7 @@
                                     ({{ $sale->sale_date->format('d/m') }} - #{{ str_pad($sale->display_id, 4, '0', STR_PAD_LEFT) }})
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-gray-800">${{ number_format($sale->total_amount, 2) }}</td>
+                            <td class="px-6 py-4 text-gray-800">EGP {{ number_format($sale->total_amount, 2) }}</td>
                             <td class="px-6 py-4 text-gray-800">{{ $sale->created_at->format('Y-m-d H:i') }}</td>
                             <td class="px-6 py-4">{{ $sale->user ? $sale->user->name : 'Unknown User' }}</td>
                             <td class="px-6 py-4">

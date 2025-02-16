@@ -30,4 +30,5 @@ yarn-error.log
 main.cjs
 preload.cjs
 /capstone_pos-darwin-arm64
-/logs
+/storage/logs/*.log
+/storage/framework/*.php
