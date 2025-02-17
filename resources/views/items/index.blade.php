@@ -34,10 +34,17 @@
                             <div class="mb-4">
                                 <label class="form-label text-muted small text-uppercase">Select Brand</label>
                                 <div class="brands-list bg-light rounded p-3">
+                                    <!-- Export All Brands button at the top -->
+                                    <div class="mb-3">
+                                        <a href="{{ route('items.exportCSV') }}" class="btn btn-success btn-sm w-100">
+                                            <i class="fas fa-file-export me-1"></i> Export All Brands
+                                        </a>
+                                    </div>
+
                                     <!-- Individual Brands -->
                                     @foreach($brands as $brand)
-                                        <div class="brand-item d-flex align-items-center mb-2 p-2 rounded hover-bg-light cursor-pointer">
-                                            <div class="form-check w-100">
+                                        <div class="brand-item d-flex align-items-center mb-2 p-2 rounded hover-bg-light">
+                                            <div class="form-check flex-grow-1">
                                                 <input type="radio"
                                                        class="form-check-input"
                                                        name="brand_id"
@@ -45,7 +52,7 @@
                                                        value="{{ $brand->id }}"
                                                        {{ request('brand_id') == $brand->id ? 'checked' : '' }}
                                                        onchange="document.getElementById('filterForm').submit()">
-                                                <label class="form-check-label w-100 d-flex align-items-center cursor-pointer"
+                                                <label class="form-check-label d-flex align-items-center cursor-pointer"
                                                        for="brand_{{ $brand->id }}">
                                                     <div class="brand-logo-wrapper">
                                                         @if($brand->picture)
@@ -59,6 +66,11 @@
                                                     <span class="brand-name">{{ $brand->name }}</span>
                                                 </label>
                                             </div>
+                                            <a href="{{ route('items.exportCSV', ['brand_id' => $brand->id]) }}"
+                                               class="btn btn-outline-success btn-sm ms-2"
+                                               title="Export {{ $brand->name }}">
+                                                <i class="fas fa-file-export"></i>
+                                            </a>
                                         </div>
                                     @endforeach
                                 </div>
@@ -81,22 +93,6 @@
                     <button id="generateBarcodeBtn" class="btn btn-secondary">
                         <i class="fas fa-barcode"></i> Generate Barcodes
                     </button>
-                    <!-- Export Dropdown -->
-                    <div class="dropdown">
-                        <button class="btn btn-success dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown">
-                            <i class="fas fa-file-export"></i> Export
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ route('items.export') }}">All Brands</a></li>
-                            @foreach($brands as $brand)
-                                <li>
-                                    <a class="dropdown-item" href="{{ route('items.export', ['brand_id' => $brand->id]) }}">
-                                        {{ $brand->name }}
-                                    </a>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
                 </div>
             </div>
 
@@ -201,102 +197,49 @@
 </div>
 
 @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Autofocus on search input
-            const searchInput = document.getElementById('itemSearch');
-            if (searchInput) {
-                searchInput.focus();
-            }
-            // Update search functionality to submit form on input
-            const searchInput = document.getElementById('itemSearch');
-            let timeout = null;
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Initialize dropdowns
+    var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+    var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+        return new bootstrap.Dropdown(dropdownToggleEl);
+    });
 
-            if (searchInput) {
-                searchInput.addEventListener('input', function () {
-                    clearTimeout(timeout);
-                    timeout = setTimeout(() => {
-                        this.closest('form').submit();
-                    }, 500);
-                });
-            }
+    // Search input functionality
+    const searchInput = document.getElementById('itemSearch');
+    if (searchInput) {
+        searchInput.focus();
+        let timeout = null;
+        searchInput.addEventListener('input', function () {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                this.closest('form').submit();
+            }, 500);
+        });
+    }
 
-            // Existing delete confirmation
-            document.querySelectorAll('.delete-item-form').forEach(form => {
-                form.addEventListener('submit', function (e) {
-                    e.preventDefault();
-
-                    Swal.fire({
-                        title: 'Are you sure?',
-                        text: "This will delete the item and all its variants. You won't be able to revert this!",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#d33',
-                        cancelButtonColor: '#3085d6',
-                        confirmButtonText: 'Yes, delete it!',
-                        cancelButtonText: 'Cancel'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            form.submit();
-                        }
-                    });
-                });
-            });
-
-            // Update the route name to match the one defined in web.php
-            document.getElementById('generateBarcodeBtn').addEventListener('click', function() {
-                const button = this;
-                button.disabled = true;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-
-                fetch('{{ route("items.generate-barcodes") }}', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        Swal.fire({
-                            title: 'Success!',
-                            text: `Generated ${data.processed} barcodes successfully!`,
-                            icon: 'success'
-                        }).then(() => {
-                            window.location.reload();
-                        });
-                    } else {
-                        throw new Error(data.error || 'Failed to generate barcodes');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    Swal.fire({
-                        title: 'Error!',
-                        text: error.message,
-                        icon: 'error'
-                    });
-                })
-                .finally(() => {
-                    button.disabled = false;
-                    button.innerHTML = '<i class="fas fa-barcode"></i> Generate Barcodes';
-                });
+    // Delete confirmation
+    document.querySelectorAll('.delete-item-form').forEach(form => {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This will delete the item and all its variants. You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
             });
         });
-    </script>
-@endpush
+    });
 
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Separate the barcode generation logic
+    // Barcode generation
     const generateBarcodesBtn = document.getElementById('generateBarcodeBtn');
     if (generateBarcodesBtn) {
         generateBarcodesBtn.addEventListener('click', function(e) {
@@ -305,9 +248,6 @@ document.addEventListener('DOMContentLoaded', function() {
             button.disabled = true;
             button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
 
-            // Log the request details
-            console.log('Sending request to:', '{{ route("items.generate-barcodes") }}');
-
             fetch('{{ route("items.generate-barcodes") }}', {
                 method: 'POST',
                 headers: {
@@ -315,10 +255,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                credentials: 'same-origin' // Include cookies
+                credentials: 'same-origin'
             })
             .then(response => {
-                console.log('Response status:', response.status);
                 if (!response.ok) {
                     return response.text().then(text => {
                         throw new Error('Server response: ' + text);
@@ -327,7 +266,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(data => {
-                console.log('Response data:', data);
                 if (data.success) {
                     Swal.fire({
                         title: 'Success!',

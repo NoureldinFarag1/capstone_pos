@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\BestSellingReportExport;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Item;
@@ -18,6 +19,10 @@ use Illuminate\Support\Facades\Log;
 use Mike42\Escpos\EscposImage;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\File;
+use App\Exports\DailySalesExport;
+use App\Exports\HourlySalesReportExport;
+use App\Exports\PaymentMethodReportExport;
+use App\Exports\RefundsReportExport;
 
 class SaleController extends Controller
 {
@@ -162,10 +167,14 @@ class SaleController extends Controller
     }
     private function getPrinterConnector()
     {
-        $printerName = trim(File::get(base_path('printer_name.txt')));
+        $configPath = base_path('printer_config.json');
+        $config = json_decode(File::get($configPath), true);
+
         if (PHP_OS_FAMILY === 'Windows') {
+            $printerName = $config['windows'];
             return new WindowsPrintConnector($printerName);
         } else {
+            $printerName = $config['mac'];
             return new CupsPrintConnector($printerName);
         }
     }
@@ -446,28 +455,6 @@ class SaleController extends Controller
         }
     }
 
-    private function openCashDrawer()
-    {
-        try {
-            Log::info('Attempting to open cash drawer');
-
-            $connector = $this->getPrinterConnector();
-            $printer = new Printer($connector);
-
-            // Send raw bytes directly, bypassing text encoding
-            $printer->getPrintConnector()->write("\x1B\x70\x00\x19\xFA");
-
-            $printer->close();
-            Log::info('Cash drawer operation completed');
-
-            return true;
-        } catch (\Exception $e) {
-            Log::error('Cash drawer error: ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
-            throw $e;
-        }
-    }
-
 
     public function index(Request $request)
     {
@@ -615,5 +602,116 @@ class SaleController extends Controller
         $methodLabel = str_replace('_', ' ', ucfirst($method));
 
         return view('sales.payment-method', compact('sales', 'periodLabel', 'methodLabel'));
+    }
+
+    public function generateDailyReport(Request $request)
+    {
+        $date = $request->get('date', now()->format('Y-m-d'));
+        $format = $request->get('format', 'excel');
+
+        // Get sales with necessary relationships
+        $sales = Sale::whereDate('sale_date', $date)
+            ->with(['user', 'refunds', 'saleItems.item'])
+            ->get();
+
+        // Prepare report data
+        $reportData = [
+            'date' => $date,
+            'totalSales' => $sales->sum('total_amount'),
+            'numberOfSales' => $sales->count(),
+            'sales' => $sales
+        ];
+
+        $fileName = 'daily_sales_' . $date;
+
+        // Handle different export formats
+        return match ($format) {
+            'excel' => Excel::download(
+                new DailySalesExport($reportData, $date),
+                $fileName . '.xlsx'
+            ),
+            'csv' => Excel::download(
+                new DailySalesExport($reportData, $date),
+                $fileName . '.csv'
+            ),
+            default => response('Invalid format specified.', 400),
+        };
+    }
+
+    public function generatePaymentMethodReport(Request $request)
+    {
+        $date = $request->query('date', now()->toDateString());
+        $format = $request->query('format', 'excel');
+
+        $sales = Sale::where('sale_date', $date)
+            ->select('payment_method',
+                DB::raw('COUNT(*) as count'),
+                DB::raw('SUM(total_amount) as total_amount'))
+            ->groupBy('payment_method')
+            ->get();
+
+        $reportData = [
+            'date' => $date,
+            'sales' => $sales
+        ];
+
+        $fileName = 'payment_method_report_' . $date;
+        return $this->downloadReport($reportData, $fileName, $format, PaymentMethodReportExport::class);
+    }
+
+    public function generateHourlySalesReport(Request $request)
+    {
+        $date = $request->query('date', now()->toDateString());
+        $format = $request->query('format', 'excel');
+
+        $sales = Sale::where('sale_date', $date)
+            ->select(DB::raw('HOUR(created_at) as hour'),
+                DB::raw('COUNT(*) as count'),
+                DB::raw('SUM(total_amount) as total_amount'))
+            ->groupBy('hour')
+            ->orderBy('hour')
+            ->get();
+
+        $reportData = [
+            'date' => $date,
+            'sales' => $sales
+        ];
+
+        $fileName = 'hourly_sales_report_' . $date;
+        return $this->downloadReport($reportData, $fileName, $format, HourlySalesReportExport::class);
+    }
+
+    public function generateRefundsReport(Request $request)
+    {
+        $date = $request->query('date', now()->toDateString());
+        $format = $request->query('format', 'excel');
+
+        // Changed to query refunds directly and include necessary relationships
+        $refunds = Sale::where('sale_date', $date)
+            ->whereIn('refund_status', ['partial_refund', 'full_refund'])
+            ->with([
+                'user:id,name',
+                'refunds.item:id,name',
+                'saleItems.item:id,name'
+            ])
+            ->get();
+
+        $reportData = [
+            'date' => $date,
+            'refunds' => $refunds
+        ];
+
+        $fileName = 'refunds_report_' . $date;
+        return $this->downloadReport($reportData, $fileName, $format, RefundsReportExport::class);
+    }
+
+    private function downloadReport($data, $fileName, $format, $exportClass)
+    {
+        if ($format === 'excel') {
+            return Excel::download(new $exportClass($data), $fileName . '.xlsx');
+        } elseif ($format === 'csv') {
+            return Excel::download(new $exportClass($data), $fileName . '.csv');
+        }
+        return response('Invalid format specified.', 400);
     }
 }

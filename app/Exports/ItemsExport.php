@@ -2,10 +2,11 @@
 
 namespace App\Exports;
 
-use Illuminate\Contracts\View\View;
-use Maatwebsite\Excel\Concerns\FromView;
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 
-class ItemsExport implements FromView
+class ItemsExport implements FromCollection, WithHeadings, ShouldAutoSize
 {
     protected $items;
 
@@ -14,9 +15,32 @@ class ItemsExport implements FromView
         $this->items = $items;
     }
 
-    public function view(): View
+    public function collection()
     {
-        return view('exports.items', ['items' => $this->items]);
+        return $this->items->map(function ($item) {
+            return [
+                'Name' => $item->name,
+                'Brand' => $item->brand->name,
+                'Category' => $item->category->name,
+                'Stock' => $item->quantity,
+                'Regular Price' => $item->selling_price,
+                'Sale Price' => $item->priceAfterSale(),
+                'Total Value' => $item->quantity * $item->priceAfterSale()
+            ];
+        });
+    }
+
+    public function headings(): array
+    {
+        return [
+            'Name',
+            'Brand',
+            'Category',
+            'Stock',
+            'Regular Price',
+            'Sale Price',
+            'Total Value'
+        ];
     }
 }
 

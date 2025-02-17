@@ -58,10 +58,26 @@ Route::get('/test-write', function() {
 // Logout route
 Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 
-// Export sales per brand to Excel
+// Update the daily report route to use query parameters
+Route::get('/sales/daily-report', [SaleController::class, 'generateDailyReport'])->name('sales.dailyReport');
 Route::get('/sales/export', [SaleController::class, 'exportSalesPerBrand'])->name('sales.export');
-Route::get('/items/export', [ItemController::class, 'export'])->name('items.export');
-Route::post('/export-items-csv', [ItemController::class, 'exportCSV'])->name('items.exportCSV');
+Route::get('/items/export-inventory-csv/{brand_id?}', [ItemController::class, 'exportInventoryCSV'])
+    ->name('items.exportInventoryCSV')
+    ->middleware(['web', 'auth']);
+
+Route::get('/items/export-sales-csv/{brand_id?}', [ItemController::class, 'exportSalesCSV'])
+    ->name('items.exportSalesCSV')
+    ->middleware(['web', 'auth']);
+// Remove these duplicate routes
+// Route::get('/items/export', [ItemController::class, 'export'])->name('items.export');
+// Route::post('/export-items-csv', [ItemController::class, 'exportCSV'])->name('items.exportCSV');
+// Route::get('items/export/{brand_id?}', [ItemController::class, 'export'])->name('items.export');
+
+// Single route for CSV export
+Route::get('/items/export-csv/{brand_id?}', [ItemController::class, 'exportCSV'])
+    ->name('items.exportCSV')
+    ->middleware(['web', 'auth']);
+
 Route::get('/items/sample-file', function () {
     $headers = ['name', 'brand_id', 'category_id', 'code', 'quantity', 'buying_price', 'selling_price', 'sale_price'];
     return response()->streamDownload(function () use ($headers) {
@@ -71,6 +87,9 @@ Route::get('/items/sample-file', function () {
     }, 'sample_items.csv');
 })->name('items.sampleFile');
 
+Route::get('/sales/payment-method-report', [SaleController::class, 'generatePaymentMethodReport'])->name('sales.paymentMethodReport');
+Route::get('/sales/hourly-report', [SaleController::class, 'generateHourlySalesReport'])->name('sales.hourlyReport');
+Route::get('/sales/refunds-report', [SaleController::class, 'generateRefundsReport'])->name('sales.refundsReport');
 
 // Resource routes for brands, categories, items, and sales
 Route::resource('brands', BrandController::class);
@@ -126,6 +145,7 @@ Route::post('/items/generate-barcodes', [ItemController::class, 'generateBarcode
     ->name('items.generate-barcodes')
     ->middleware(['web', 'auth']);
 
+// Add this route for handling exports
 Route::get('/settings/printer', [SettingsController::class, 'editPrinter'])->name('settings.printer.edit');
 Route::put('/settings/printer', [SettingsController::class, 'updatePrinter'])->name('settings.printer.update');
 
@@ -147,6 +167,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/items/export-brand-sales', [ItemController::class, 'exportBrandSales'])->name('items.exportBrandSales');
 
 // Profile routes
 Route::middleware('auth')->group(function () {

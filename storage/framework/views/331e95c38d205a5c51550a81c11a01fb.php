@@ -14,6 +14,53 @@
                 </svg>
                 Create New Sale
             </a>
+            <!-- Daily Sales Report Dropdown -->
+            <div class="relative" x-data="{ open: false, selectedDate: '<?php echo e(now()->format('Y-m-d')); ?>' }">
+                <button @click="open = !open" type="button" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    Generate Reports
+                    <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+                <div x-show="open"
+                     @click.away="open = false"
+                     class="origin-top-right absolute right-0 mt-2 w-72 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100">
+                    <div class="p-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Date</label>
+                        <input type="date"
+                               x-model="selectedDate"
+                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mb-3">
+                        <div class="flex flex-col gap-2">
+                            <!-- Daily Sales -->
+                            <div class="text-sm font-medium text-gray-900 mb-2">Daily Sales</div>
+                            <a href="#"
+                               @click.prevent="window.location.href='<?php echo e(route('sales.dailyReport')); ?>?format=excel&date=' + selectedDate"
+                               class="text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md">Daily Sales (Excel)</a>
+                            <a href="#"
+                               @click.prevent="window.location.href='<?php echo e(route('sales.dailyReport')); ?>?format=csv&date=' + selectedDate"
+                               class="text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md">Daily Sales (CSV)</a>
+
+                            <!-- Payment Methods -->
+                            <div class="text-sm font-medium text-gray-900 mb-2 mt-3">Payment Methods</div>
+                            <a href="#"
+                               @click.prevent="window.location.href='<?php echo e(route('sales.paymentMethodReport')); ?>?format=excel&date=' + selectedDate"
+                               class="text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md">Payment Methods Report</a>
+
+                            <!-- Hourly Sales -->
+                            <div class="text-sm font-medium text-gray-900 mb-2 mt-3">Hourly Analysis</div>
+                            <a href="#"
+                               @click.prevent="window.location.href='<?php echo e(route('sales.hourlyReport')); ?>?format=excel&date=' + selectedDate"
+                               class="text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md">Hourly Sales Report</a>
+
+                            <!-- Refunds -->
+                            <div class="text-sm font-medium text-gray-900 mb-2 mt-3">Refunds</div>
+                            <a href="#"
+                               @click.prevent="window.location.href='<?php echo e(route('sales.refundsReport')); ?>?format=excel&date=' + selectedDate"
+                               class="text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md">Refunds Report</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -80,11 +127,12 @@
                 </form>
 
                 <!-- Enhanced Filter & Export -->
-                <form action="<?php echo e(route('items.exportCSV')); ?>" method="POST" class="flex flex-col md:flex-row gap-3">
-                    <?php echo csrf_field(); ?>
+                <form action="<?php echo e(route('items.exportSalesCSV')); ?>" method="GET" class="flex flex-col md:flex-row gap-3">
                     <div>
-                        <label for="brand" class="block text-sm font-medium text-gray-700 mb-1">Brand</label>
-                        <select id="brand" name="brand_id" class="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <label for="brand_id" class="block text-sm font-medium text-gray-700 mb-1">Select Brand</label>
+                        <select id="brand_id"
+                                name="brand_id"
+                                class="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
                             <option value="">All Brands</option>
                             <?php $__currentLoopData = $brands; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $brand): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <option value="<?php echo e($brand->id); ?>"><?php echo e($brand->name); ?></option>
@@ -93,17 +141,25 @@
                     </div>
                     <div>
                         <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                        <input type="date" id="start_date" name="start_date" class="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                        <input type="date"
+                               id="start_date"
+                               name="start_date"
+                               value="<?php echo e(request('start_date', now()->subDays(30)->format('Y-m-d'))); ?>"
+                               class="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
                     </div>
                     <div>
                         <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                        <input type="date" id="end_date" name="end_date" class="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus-border-blue-500" />
+                        <input type="date"
+                               id="end_date"
+                               name="end_date"
+                               value="<?php echo e(request('end_date', now()->format('Y-m-d'))); ?>"
+                               class="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
                     </div>
                     <button type="submit" class="mt-auto bg-green-600 text-white px-6 py-2 rounded-lg shadow hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                         </svg>
-                        Export CSV
+                        Export Sales Report (Excel)
                     </button>
                 </form>
             </div>

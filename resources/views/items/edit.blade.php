@@ -55,7 +55,7 @@
                         <!-- Picture -->
                         <div class="mb-3">
                             <label class="form-label">Item Picture</label>
-                            <input type="file" name="picture" class="form-control">
+                            <input type="file" name="picture" class="form-control" {{ !$item->is_parent ? 'disabled' : '' }}>
                             @if($item->picture)
                                 <div class="mt-2">
                                     <img src="{{ asset('storage/' . $item->picture) }}" alt="Current Image" class="img-thumbnail" style="max-height: 100px">
@@ -139,8 +139,10 @@
                                                 <td>
                                                     @if($variant->colors->first())
                                                         <span class="d-flex align-items-center gap-2">
-                                                            <span class="color-preview rounded-circle"
-                                                                  style="width: 15px; height: 15px; background-color: {{ $variant->colors->first()->hex_code }};"></span>
+                                                            @if($variant->colors->first()->name != 'N/A')
+                                                                <span class="color-preview rounded-circle"
+                                                                    style="width: 15px; height: 15px; background-color: {{ $variant->colors->first()->hex_code }};"></span>
+                                                            @endif
                                                             {{ $variant->colors->first()->name }}
                                                         </span>
                                                     @endif
@@ -157,6 +159,7 @@
                         </div>
                     </div>
 
+                    @if(!$hasNASize || !$hasNAColor)
                     <!-- Add New Variant Section -->
                     <div class="card mb-4">
                         <div class="card-header bg-light">
@@ -164,24 +167,28 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
+                                @if(!$hasNASize)
                                 <div class="col-md-4 mb-3">
                                     <label for="new_variant_size" class="form-label">Size</label>
                                     <select id="new_variant_size" class="form-select">
                                         <option value="" selected disabled>Select Size</option>
-                                        @foreach($sizes as $size)
+                                        @foreach($sizes->where('name', '!=', 'N/A') as $size)
                                             <option value="{{ $size->id }}">{{ $size->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
+                                @endif
+                                @if(!$hasNAColor)
                                 <div class="col-md-4 mb-3">
                                     <label for="new_variant_color" class="form-label">Color</label>
                                     <select id="new_variant_color" class="form-select">
                                         <option value="" selected disabled>Select Color</option>
-                                        @foreach($colors as $color)
+                                        @foreach($colors->where('name', '!=', 'N/A') as $color)
                                             <option value="{{ $color->id }}">{{ $color->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
+                                @endif
                                 <div class="col-md-4 mb-3">
                                     <label for="new_variant_quantity" class="form-label">Quantity</label>
                                     <input type="number" id="new_variant_quantity" class="form-control" min="0">
@@ -190,6 +197,7 @@
                             <button type="button" class="btn btn-primary" id="addVariantBtn">Add Variant</button>
                         </div>
                     </div>
+                    @endif
                 @else
                     <!-- Single Variant Quantity -->
                     <div class="card mb-4">

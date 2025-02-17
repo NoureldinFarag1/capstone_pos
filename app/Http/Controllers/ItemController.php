@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\ItemsExport;
+use App\Exports\SalesExport;
 use App\Imports\ItemsImport;
 use App\Models\Category;
 use App\Models\Brand;
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
 use Illuminate\Support\Facades\Storage;
+use App\Exports\SalesPerBrandExport;
 
 class ItemController extends BaseController
 {
@@ -291,7 +293,13 @@ class ItemController extends BaseController
         $sortOrder = $request->input('sort_order', 'asc');
 
         $query = Item::with(['brand', 'category', 'sizes', 'colors'])
-                     ->where('is_parent', true);
+                    ->where('is_parent', true)
+                    ->select([
+                        'items.*',
+                        DB::raw('CAST(items.selling_price AS DECIMAL(10,2)) as selling_price'),
+                        DB::raw('CAST(items.discount_value AS DECIMAL(10,2)) as discount_value'),
+                        DB::raw('CAST(items.quantity AS SIGNED) as quantity')
+                    ]);
 
         // Apply filters
         if (!$showAll) {
@@ -313,13 +321,13 @@ class ItemController extends BaseController
             }
         }
 
-        // Apply sorting
+        // Apply sorting with proper number handling
         switch ($sortBy) {
             case 'price':
-                $query->orderBy('selling_price', $sortOrder);
+                $query->orderByRaw('CAST(selling_price AS DECIMAL(10,2)) ' . $sortOrder);
                 break;
             case 'quantity':
-                $query->orderBy('quantity', $sortOrder);
+                $query->orderByRaw('CAST(quantity AS SIGNED) ' . $sortOrder);
                 break;
             case 'name':
             default:
@@ -329,12 +337,19 @@ class ItemController extends BaseController
 
         $items = $query->paginate(12)->withQueryString();
 
+        // Format numeric values
+        $items->transform(function ($item) {
+            $item->selling_price = number_format($item->selling_price, 2, '.', '');
+            $item->discount_value = number_format($item->discount_value, 2, '.', '');
+            $item->quantity = (int)$item->quantity;
+            return $item;
+        });
+
         return view('items.index', compact('items', 'brands', 'showAll', 'sortBy', 'sortOrder'));
     }
 
-    public function export(Request $request)
+    public function export($brandId = null)
     {
-        $brandId = $request->input('brand_id');
         $query = Item::with(['brand', 'category'])
                     ->where('is_parent', true);
 
@@ -357,12 +372,16 @@ class ItemController extends BaseController
         $sizes = Size::all();
         $colors = Color::all();
 
+        // Check if item is a variant with N/A size or color
+        $hasNASize = $item->sizes()->where('name', 'N/A')->exists();
+        $hasNAColor = $item->colors()->where('name', 'N/A')->exists();
+
         if (!$item->is_parent) {
             $parentItems = Item::where('is_parent', true)->get();
-            return view('items.edit', compact('item', 'categories', 'brands', 'sizes', 'colors', 'parentItems'));
+            return view('items.edit', compact('item', 'categories', 'brands', 'sizes', 'colors', 'parentItems', 'hasNASize', 'hasNAColor'));
         }
 
-        return view('items.edit', compact('item', 'categories', 'brands', 'sizes', 'colors'));
+        return view('items.edit', compact('item', 'categories', 'brands', 'sizes', 'colors', 'hasNASize', 'hasNAColor'));
     }
 
     public function update(Request $request, Item $item)
@@ -633,66 +652,91 @@ class ItemController extends BaseController
         }
     }
 
-    public function exportCSV(Request $request)
+    public function exportCSV($brandId = null)
     {
-        $brandId = $request->input('brand_id');
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-
+        // Query builder for items
         $query = DB::table('items')
             ->join('brands', 'items.brand_id', '=', 'brands.id')
-            ->leftJoin('sale_items', function ($join) use ($startDate, $endDate) {
-                $join->on('items.id', '=', 'sale_items.item_id');
-                if ($startDate && $endDate) {
-                    $join->whereBetween('sale_items.created_at', [$startDate, date('Y-m-d 23:59:59', strtotime($endDate))]);
-                }
-            })
             ->select(
-                'items.id',
                 'brands.name as brand_name',
                 'items.name as item_name',
                 'items.quantity as stock_quantity',
                 'items.selling_price',
-                DB::raw('COALESCE(SUM(sale_items.quantity), 0) as quantity_sold')
+                'items.discount_type',
+                'items.discount_value'
             )
-            ->where('items.is_parent', false); // Exclude parent items
+            ->where('items.is_parent', false);
 
-        // Only apply brand filter if a specific brand is selected
         if ($brandId) {
             $query->where('items.brand_id', $brandId);
-            $fileName = str_replace(' ', '_', strtolower(DB::table('brands')->where('id', $brandId)->value('name')));
-        } else {
-            $fileName = 'all_brands';
         }
 
-        $items = $query->groupBy('items.id', 'brands.name', 'items.name', 'items.quantity', 'items.selling_price')
-            ->get();
+        $items = $query->get();
 
-        // Including sale price and selling price
-        $items = $items->map(function ($itemData) {
-            $item = Item::find($itemData->id);
-            $itemData->sale_price = $item->priceAfterSale();
-            $itemData->selling_price = $item->selling_price;
-            return $itemData;
-        });
+        // Calculate totals
+        $totalStock = 0;
+        $totalValue = 0;
 
-        // Create CSV data
-        $csvData = "Brand,Item,Quantity Sold,Stock Quantity,Price Before Sale,Price After Sale\n";
+        // Create CSV data with sections
+        $csvData = "INVENTORY REPORT\n";
+        $csvData .= "Generated on: " . now()->format('Y-m-d H:i:s') . "\n\n";
+
+        // Add detailed items section
+        $csvData .= "DETAILED INVENTORY LIST\n";
+        $csvData .= "Brand,Item Name,Stock,Regular Price,Discount,Sale Price,Stock Value\n";
+
         foreach ($items as $item) {
-            $csvData .= "{$item->brand_name},{$item->item_name},{$item->quantity_sold},{$item->stock_quantity},{$item->selling_price}EGP,{$item->sale_price}EGP\n";
+            // Calculate values
+            $salePrice = $item->discount_type === 'percentage'
+                ? $item->selling_price * (1 - ($item->discount_value / 100))
+                : $item->selling_price - $item->discount_value;
+
+            $stockValue = $item->stock_quantity * $salePrice;
+
+            // Update totals
+            $totalStock += $item->stock_quantity;
+            $totalValue += $stockValue;
+
+            // Format discount for display (remove EGP from fixed discount)
+            $discountDisplay = $item->discount_type === 'percentage'
+                ? "{$item->discount_value}%"
+                : $item->discount_value;
+
+            $csvData .= sprintf(
+                "%s,%s,%d,%.2f,%s,%.2f,%.2f\n",
+                $item->brand_name,
+                $item->item_name,
+                $item->stock_quantity,
+                $item->selling_price,
+                $discountDisplay,
+                $salePrice,
+                $stockValue
+            );
         }
 
-        // Dynamic file name with date range if provided
-        $fileName .= '_items_report';
-        if ($startDate && $endDate) {
-            $fileName .= "_{$startDate}_to_{$endDate}";
-        }
-        $fileName .= '.csv';
+        // Add summary section (removed EGP from values)
+        $csvData .= "\nINVENTORY SUMMARY\n";
+        $csvData .= "Total Items in Stock," . $totalStock . "\n";
+        $csvData .= "Total Stock Value," . number_format($totalValue, 2) . "\n";
 
-        // Return CSV as downloadable response
+        // Add brand-specific statistics if filtering by brand (removed EGP)
+        if ($brandId) {
+            $brand = Brand::find($brandId);
+            $csvData .= "\nBRAND STATISTICS: {$brand->name}\n";
+            $csvData .= "Total SKUs," . $items->count() . "\n";
+            $csvData .= "Average Item Price," . number_format($items->avg('selling_price'), 2) . "\n";
+            $csvData .= "Highest Priced Item," . number_format($items->max('selling_price'), 2) . "\n";
+            $csvData .= "Lowest Priced Item," . number_format($items->min('selling_price'), 2) . "\n";
+        }
+
+        // Generate filename
+        $fileName = $brandId
+            ? str_replace(' ', '_', strtolower(Brand::find($brandId)->name)) . '_inventory_' . now()->format('Y-m-d') . '.csv'
+            : 'full_inventory_' . now()->format('Y-m-d') . '.csv';
+
         return Response::make($csvData, 200, [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"$fileName\"",
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"'
         ]);
     }
 
@@ -855,4 +899,99 @@ class ItemController extends BaseController
         }
     }
 
+    public function exportBrandSales(Request $request)
+    {
+        $date = $request->date ?? now()->format('Y-m-d');
+        return Excel::download(new SalesPerBrandExport(), 'brand-sales-' . $date . '.xlsx');
+    }
+
+    public function exportInventoryCSV($brandId = null)
+    {
+        // Query builder for items
+        $query = DB::table('items')
+            ->join('brands', 'items.brand_id', '=', 'brands.id')
+            ->select(
+                'brands.name as brand_name',
+                'items.name as item_name',
+                'items.quantity as stock_quantity',
+                'items.selling_price',
+                'items.discount_type',
+                'items.discount_value'
+            )
+            ->where('items.is_parent', false);
+
+        if ($brandId) {
+            $query->where('items.brand_id', $brandId);
+        }
+
+        $items = $query->get();
+
+        // Create CSV data
+        $csvData = "Brand,Item,Stock Quantity,Regular Price,Discount,Final Price\n";
+
+        foreach ($items as $item) {
+            $finalPrice = $item->discount_type === 'percentage'
+                ? $item->selling_price * (1 - ($item->discount_value / 100))
+                : $item->selling_price - $item->discount_value;
+
+            $discountDisplay = $item->discount_type === 'percentage'
+                ? "{$item->discount_value}%" : $item->discount_value;
+
+            $csvData .= sprintf(
+                "%s,%s,%d,%.2f,%s,%.2f\n",
+                str_replace(',', ' ', $item->brand_name),
+                str_replace(',', ' ', $item->item_name),
+                $item->stock_quantity,
+                $item->selling_price,
+                $discountDisplay,
+                $finalPrice
+            );
+        }
+
+        $fileName = $brandId
+            ? str_replace(' ', '_', strtolower(Brand::find($brandId)->name)) . '_inventory.csv'
+            : 'full_inventory.csv';
+
+        return Response::make($csvData, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"'
+        ]);
+    }
+
+    public function exportSalesCSV(Request $request)
+    {
+        $startDate = $request->start_date ?? now()->subDays(30)->format('Y-m-d');
+        $endDate = $request->end_date ?? now()->format('Y-m-d');
+        $brandId = $request->brand_id;
+
+        $reportData = $this->generateSalesReport($startDate, $endDate, $brandId);
+
+        $brandName = $brandId ? str_replace(' ', '_', strtolower(Brand::find($brandId)->name)) . '_' : '';
+        $fileName = $brandName . 'sales-report_' . $startDate . '_to_' . $endDate . '.xlsx';
+
+        return Excel::download(
+            new SalesExport($startDate, $endDate, $brandId),
+            $fileName
+        );
+    }
+
+    private function generateSalesReport($startDate, $endDate, $brandId = null)
+    {
+        // Add your report generation logic here
+        $sales = Sale::query()
+            ->when($startDate, function ($query) use ($startDate) {
+                return $query->whereDate('created_at', '>=', $startDate);
+            })
+            ->when($endDate, function ($query) use ($endDate) {
+                return $query->whereDate('created_at', '<=', $endDate);
+            })
+            ->when($brandId, function ($query) use ($brandId) {
+                return $query->whereHas('items', function ($q) use ($brandId) {
+                    $q->where('brand_id', $brandId);
+                });
+            })
+            ->get();
+
+        return ['sales' => $sales];
+    }
 }

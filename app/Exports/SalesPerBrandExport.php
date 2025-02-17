@@ -12,39 +12,26 @@ class SalesPerBrandExport implements FromCollection, WithHeadings
 {
     public function collection()
     {
-        $brands = Brand::all();
-        $data = new Collection();
-
-        foreach ($brands as $brand) {
-            $totalSales = SaleItem::whereHas('item', function ($query) use ($brand) {
+        return Brand::all()->map(function ($brand) {
+            $sales = SaleItem::whereHas('item', function ($query) use ($brand) {
                 $query->where('brand_id', $brand->id);
-            })->sum('price');
+            });
 
-            $totalQuantity = SaleItem::whereHas('item', function ($query) use ($brand) {
-                $query->where('brand_id', $brand->id);
-            })->sum('quantity');
-
-            $salesCount = SaleItem::whereHas('item', function ($query) use ($brand) {
-                $query->where('brand_id', $brand->id);
-            })->count();
-
+            $totalSales = $sales->sum('price');
+            $totalQuantity = $sales->sum('quantity');
+            $salesCount = $sales->count();
             $averagePrice = $totalQuantity > 0 ? $totalSales / $totalQuantity : 0;
+            $lastSaleDate = $sales->latest('created_at')->value('created_at');
 
-            $lastSaleDate = SaleItem::whereHas('item', function ($query) use ($brand) {
-                $query->where('brand_id', $brand->id);
-            })->latest('created_at')->value('created_at');
-
-            $data->push([
+            return [
                 'Brand' => $brand->name,
                 'Total Sales' => $totalSales,
                 'Total Quantity' => $totalQuantity,
                 'Sales Count' => $salesCount,
                 'Average Price' => number_format($averagePrice, 2),
                 'Last Sale Date' => $lastSaleDate ? $lastSaleDate->format('Y-m-d') : 'N/A',
-            ]);
-        }
-
-        return $data;
+            ];
+        });
     }
 
     public function headings(): array
