@@ -40,7 +40,7 @@
                                     </div>
 
                                     <!-- Individual Brands -->
-                                    <?php $__currentLoopData = $brands; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $brand): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php $__currentLoopData = $brands->sortBy('name'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $brand): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <div class="brand-item d-flex align-items-center mb-2 p-2 rounded hover-bg-light">
                                             <div class="form-check flex-grow-1">
                                                 <input type="radio"

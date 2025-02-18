@@ -17,7 +17,7 @@ Additional Discount:                -%additional_discount%
 Shipping Fees:                      %shipping_fees%
 %if_shipping_end%
 ================================================
-TOTAL:                                %total_amount%
+TOTAL:                              %total_amount%
 ================================================
 %if_shipping_start%
 Customer Name:  %customer_name%
@@ -25,9 +25,10 @@ Customer Phone: %customer_phone%
 Address: %customer_address%
 ================================================
 %if_shipping_end%
-Exchanges and Refunds are only applicable for
-                    7 days
-       Thank You For Shopping With Us!
-            Find us on Instagram
-               %store_instagram%
+Exchanges and Refunds are applicable for 7 days.
+  Accessories, perfumes, and personal items
+            are non-refundable.
+――――――――――――――――――――――――――――――――――――――――――――――――
+            Follow us on Instagram
+                %store_instagram%
 ――――――――――――――――――――――――――――――――――――――――――――――――

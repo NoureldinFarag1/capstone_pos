@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Sale extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'user_id',
         'total_amount',
@@ -54,9 +57,13 @@ class Sale extends Model
         return in_array($this->refund_status, ['partial_refund', 'full_refund']);
     }
 
-
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function item()
+    {
+        return $this->belongsTo(Item::class);
     }
 }

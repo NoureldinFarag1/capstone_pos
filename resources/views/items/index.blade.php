@@ -42,7 +42,7 @@
                                     </div>
 
                                     <!-- Individual Brands -->
-                                    @foreach($brands as $brand)
+                                    @foreach($brands->sortBy('name') as $brand)
                                         <div class="brand-item d-flex align-items-center mb-2 p-2 rounded hover-bg-light">
                                             <div class="form-check flex-grow-1">
                                                 <input type="radio"

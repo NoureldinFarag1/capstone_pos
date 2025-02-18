@@ -161,8 +161,6 @@ class SaleController extends Controller
 
         // Open the cash drawer and Print the thermal receipt
         $this->printThermalReceipt($sale->id);
-        $this->openCashDrawer();
-
         return redirect()->route('sales.index')->with('success', 'Sale created successfully.');
     }
     private function getPrinterConnector()

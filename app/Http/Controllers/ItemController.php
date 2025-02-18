@@ -977,7 +977,6 @@ class ItemController extends BaseController
 
     private function generateSalesReport($startDate, $endDate, $brandId = null)
     {
-        // Add your report generation logic here
         $sales = Sale::query()
             ->when($startDate, function ($query) use ($startDate) {
                 return $query->whereDate('created_at', '>=', $startDate);
@@ -986,10 +985,14 @@ class ItemController extends BaseController
                 return $query->whereDate('created_at', '<=', $endDate);
             })
             ->when($brandId, function ($query) use ($brandId) {
-                return $query->whereHas('items', function ($q) use ($brandId) {
+                return $query->whereHas('item', function ($q) use ($brandId) {
                     $q->where('brand_id', $brandId);
                 });
             })
+            ->with(['item' => function ($query) {
+                $query->select('sale_items.sale_id', 'items.name', 'sale_items.quantity', 'sale_items.price')
+                    ->join('sale_items', 'items.id', '=', 'sale_items.item_id');
+            }])
             ->get();
 
         return ['sales' => $sales];

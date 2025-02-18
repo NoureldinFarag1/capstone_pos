@@ -10,7 +10,7 @@
 
 <div class="container">
     <div class="row">
-        @foreach($brands as $brand)
+        @foreach($brands->sortBy('name') as $brand)
             <div class="col-md-4">
                 <div class="card mb-4">
                     <img src="{{ asset('storage/' . $brand->picture) }}" alt="{{ $brand->name }}" class="card-img-top rounded-circle mx-auto d-block mt-2" style="width: 100px; height: 100px; object-fit: cover;">
