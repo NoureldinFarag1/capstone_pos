@@ -145,26 +145,85 @@
                         <!-- Sizes -->
                         <div class="mb-4">
                             <label class="form-label">Available Sizes <span class="text-danger">*</span></label>
-                            <div class="d-flex flex-wrap gap-2">
-                                <?php $__currentLoopData = $sizes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <div class="form-check">
-                                    <input type="checkbox" name="sizes[]" value="<?php echo e($size->id); ?>"
-                                        class="form-check-input" id="size<?php echo e($size->id); ?>">
-                                    <label class="form-check-label px-3 py-2 border rounded-3"
-                                        for="size<?php echo e($size->id); ?>">
-                                        <?php echo e($size->name); ?>
 
-                                    </label>
+                            <!-- N/A Size Option -->
+                            <div class="mb-3">
+                                <div class="d-flex flex-wrap gap-2">
+                                    <?php $__currentLoopData = $sizes->where('name', 'N/A'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <div class="form-check">
+                                        <input type="checkbox" name="sizes[]" value="<?php echo e($size->id); ?>"
+                                            class="form-check-input" id="size<?php echo e($size->id); ?>">
+                                        <label class="form-check-label px-3 py-2 border rounded-3"
+                                            for="size<?php echo e($size->id); ?>">
+                                            <?php echo e($size->name); ?>
+
+                                        </label>
+                                    </div>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </div>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </div>
+
+                            <!-- Clothes Sizes -->
+                            <div class="mb-3">
+                                <h6>Clothes Sizes</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <?php $__currentLoopData = $sizes->where('type', 'clothes')->where('name', '!=', 'N/A')->sortBy('name'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <div class="form-check">
+                                        <input type="checkbox" name="sizes[]" value="<?php echo e($size->id); ?>"
+                                            class="form-check-input" id="size<?php echo e($size->id); ?>">
+                                        <label class="form-check-label px-3 py-2 border rounded-3"
+                                            for="size<?php echo e($size->id); ?>">
+                                            <?php echo e($size->name); ?>
+
+                                        </label>
+                                    </div>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </div>
+                            </div>
+
+                            <!-- Shoes Sizes -->
+                            <div class="mb-3">
+                                <h6>Shoes Sizes</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <?php $__currentLoopData = $sizes->where('type', 'shoes')->where('name', '!=', 'N/A')->sortBy('name'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <div class="form-check">
+                                        <input type="checkbox" name="sizes[]" value="<?php echo e($size->id); ?>"
+                                            class="form-check-input" id="size<?php echo e($size->id); ?>">
+                                        <label class="form-check-label px-3 py-2 border rounded-3"
+                                            for="size<?php echo e($size->id); ?>">
+                                            <?php echo e($size->name); ?>
+
+                                        </label>
+                                    </div>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Colors -->
                         <div class="mb-3">
                             <label class="form-label">Available Colors</label>
+                            <!-- N/A Color Option -->
+                            <div class="mb-2">
+                                <div class="d-flex flex-wrap gap-2">
+                                    <?php $__currentLoopData = $colors->where('name', 'N/A'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $color): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <div class="form-check">
+                                        <input type="checkbox" name="colors[]" value="<?php echo e($color->id); ?>"
+                                            class="form-check-input" id="color<?php echo e($color->id); ?>">
+                                        <label class="form-check-label d-flex align-items-center gap-2"
+                                            for="color<?php echo e($color->id); ?>">
+                                            <span class="color-preview rounded-circle border"
+                                                style="width: 20px; height: 20px; background-color: <?php echo e($color->hex_code); ?>;"></span>
+                                            <?php echo e($color->name); ?>
+
+                                        </label>
+                                    </div>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </div>
+                            </div>
+                            <!-- Other Colors -->
                             <div class="d-flex flex-wrap gap-2">
-                                <?php $__currentLoopData = $colors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $color): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php $__currentLoopData = $colors->where('name', '!=', 'N/A')->sortBy('name'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $color): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <div class="form-check">
                                     <input type="checkbox" name="colors[]" value="<?php echo e($color->id); ?>"
                                         class="form-check-input" id="color<?php echo e($color->id); ?>">

@@ -67,7 +67,7 @@
                                                 </label>
                                             </div>
                                             <a href="{{ route('items.exportCSV', ['brand_id' => $brand->id]) }}"
-                                               class="btn btn-outline-success btn-sm ms-2"
+                                               class="btn btn-outline-success btn-sm"
                                                title="Export {{ $brand->name }}">
                                                 <i class="fas fa-file-export"></i>
                                             </a>
@@ -157,7 +157,9 @@
                                                 @endif
                                                 <p class="mb-1 d-flex justify-content-between">
                                                     <span class="text-muted">Final Price:</span>
-                                                    <span class="fw-bold">EGP{{ number_format($item->priceAfterSale(), 2) }}</span>
+                                                    <span class="fw-bold">
+                                                        EGP{{ number_format($item->priceAfterSale(), 2) }}
+                                                    </span>
                                                 </p>
                                             </div>
                                             <p class="mb-0 d-flex justify-content-between align-items-center">
@@ -301,6 +303,27 @@ document.addEventListener('DOMContentLoaded', function () {
         .color-preview {
             display: inline-block;
             border: 1px solid #dee2e6;
+        }
+        .brand-item {
+            transition: all 0.3s ease;
+            padding: 0.75rem !important;
+        }
+
+        .brand-item:hover {
+            background-color: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        .brand-logo {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            margin-right: 0.5rem;
+        }
+
+        .brand-name {
+            font-size: 0.9rem;
+            color: #495057;
         }
     </style>
 @endpush

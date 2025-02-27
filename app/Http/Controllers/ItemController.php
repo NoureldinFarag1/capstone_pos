@@ -997,4 +997,43 @@ class ItemController extends BaseController
 
         return ['sales' => $sales];
     }
+
+    public function toggleDiscount(Request $request, $id)
+    {
+        try {
+            DB::beginTransaction();
+
+            $item = Item::findOrFail($id);
+            $applyDiscount = $request->input('apply_discount');
+            $discountValue = $request->input('discount_value', $item->discount_value ?: 0);
+
+            // Update item
+            $item->discount_value = $applyDiscount ? $discountValue : 0;
+            $item->save();
+
+            // Update all variants if this is a parent item
+            if ($item->is_parent) {
+                Item::where('parent_id', $item->id)->update([
+                    'discount_value' => $item->discount_value
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => $applyDiscount ?
+                    "Discount of {$discountValue}% applied successfully" :
+                    'Discount removed successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Discount update error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to update discount: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -288,15 +288,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const addVariantBtn = document.getElementById('addVariantBtn');
     addVariantBtn.addEventListener('click', function() {
-        const sizeId = document.getElementById('new_variant_size').value;
-        const colorId = document.getElementById('new_variant_color').value;
+        let sizeId = document.getElementById('new_variant_size').value;
+        let colorId = document.getElementById('new_variant_color').value;
         const quantity = document.getElementById('new_variant_quantity').value;
 
-        if (!sizeId || !colorId || quantity <= 0) {
+        // Auto-select "N/A" if size or color is not chosen
+        if (!sizeId) {
+            sizeId = "{{ $sizes->where('name', 'N/A')->first()->id }}";
+        }
+        if (!colorId) {
+            colorId = "{{ $colors->where('name', 'N/A')->first()->id }}";
+        }
+
+        if (quantity <= 0) {
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: 'Please select size, color, and enter a valid quantity.'
+                text: 'Please enter a valid quantity.'
             });
             return;
         }

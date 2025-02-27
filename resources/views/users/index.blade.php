@@ -2,6 +2,12 @@
 
 @section('content')
 <div class="container-fluid py-4">
+    <!-- Add New User Button -->
+    <div class="d-flex justify-content-end mb-4">
+        <a href="{{ route('users.create') }}" class="btn bg-gradient-dark mb-0 add-user-btn">
+            <i class="fas fa-plus me-2"></i>Add New User
+        </a>
+    </div>
     <!-- Statistics Row -->
     <div class="row mb-4">
         <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
@@ -96,9 +102,6 @@
                         Manage your team members and their account permissions here
                     </p>
                 </div>
-                <a href="{{ route('users.create') }}" class="btn bg-gradient-dark mb-0">
-                    <i class="fas fa-plus me-2"></i>Add New User
-                </a>
             </div>
             <div class="card-body px-0 pt-0 pb-2">
                 <!-- Search Bar -->
@@ -124,7 +127,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($users as $user)
+                                @foreach($users->sortBy('name') as $user)
                                 <tr>
                                     <td>
                                         <div class="d-flex px-2 py-1">
@@ -219,5 +222,19 @@
         });
     });
 </script>
+@endpush
+
+@push('styles')
+<style>
+    .add-user-btn {
+        background-color: #343a40;
+        color: #fff;
+        transition: background-color 0.3s ease;
+    }
+    .add-user-btn:hover {
+        background-color: #23272b;
+        color: #fff;
+    }
+</style>
 @endpush
 @endsection

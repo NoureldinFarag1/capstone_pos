@@ -10,9 +10,12 @@ Item                   Qty    Price      Total
 ――――――――――――――――――――――――――――――――――――――――――――――――
 %items%
 %separator%
-Subtotal:                           %subtotal%
+Subtotal:                           %subtotal_before_discount%
+Total Discount:                     -%total_discount%
+%if_discount_start%
 Item Discounts:                     -%total_discount%
 Additional Discount:                -%additional_discount%
+%if_discount_end%
 %if_shipping_start%
 Shipping Fees:                      %shipping_fees%
 %if_shipping_end%

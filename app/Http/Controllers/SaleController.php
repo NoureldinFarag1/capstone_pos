@@ -348,8 +348,9 @@ class SaleController extends Controller
             $items = $sale->saleItems->map(function ($saleItem) {
                 $itemName = $saleItem->item->name;
                 $quantity = $saleItem->quantity;
-                $price = $saleItem->price;
-                $lineTotal = $quantity * $price;
+                $price = $saleItem->item->selling_price;
+                $discount = ($saleItem->item->discount_value / 100) * $price;
+                $lineTotal = $quantity * ($price - $discount);
 
                 // Split item name into two lines if it's too long
                 if (strlen($itemName) > 20) {
@@ -358,12 +359,14 @@ class SaleController extends Controller
                     return str_pad($itemNamePart1, 20) . "\n" . str_pad($itemNamePart2, 20) .
                         str_pad($quantity, 5, ' ', STR_PAD_LEFT) .
                         str_pad(number_format($price, 2), 12, ' ', STR_PAD_LEFT) .
-                        str_pad(number_format($lineTotal, 2), 11, ' ', STR_PAD_LEFT);
+                        str_pad(number_format($lineTotal, 2), 11, ' ', STR_PAD_LEFT) . "\n" .
+                        str_pad("Discount: -" . number_format($discount, 2), 48, ' ', STR_PAD_LEFT);
                 } else {
                     return str_pad($itemName, 20) .
                         str_pad($quantity, 5, ' ', STR_PAD_LEFT) .
                         str_pad(number_format($price, 2), 12, ' ', STR_PAD_LEFT) .
-                        str_pad(number_format($lineTotal, 2), 11, ' ', STR_PAD_LEFT);
+                        str_pad(number_format($lineTotal, 2), 11, ' ', STR_PAD_LEFT) . "\n" .
+                        str_pad("Discount: -" . number_format($discount, 2), 48, ' ', STR_PAD_LEFT);
                 }
             })->implode("\n");
 
@@ -373,8 +376,12 @@ class SaleController extends Controller
             });
 
             $additionalDiscount = 0;
+            $subtotalBeforeDiscount = $sale->saleItems->sum(function ($item) {
+                return $item->quantity * $item->item->selling_price;
+            });
+
             $subtotal = $sale->saleItems->sum(function ($item) {
-                return $item->quantity * $item->price;
+                return $item->quantity * ($item->item->selling_price - ($item->item->discount_value / 100) * $item->item->selling_price);
             });
 
             if ($sale->discount_type !== 'none' && $sale->discount_value > 0) {
@@ -399,6 +406,7 @@ class SaleController extends Controller
                 'payment_method' => $sale->payment_method,
                 'items' => $items,
                 'separator' => '――――――――――――――――――――――――――――――――――――――――――――――――',
+                'subtotal_before_discount' => number_format($subtotalBeforeDiscount, 2),
                 'subtotal' => number_format($subtotal, 2),
                 'total_discount' => number_format($totalDiscount, 2),
                 'additional_discount' => number_format($additionalDiscount, 2),
@@ -420,6 +428,13 @@ class SaleController extends Controller
                 $data['customer_name'] = '';
                 $data['customer_phone'] = '';
                 $data['customer_address'] = '';
+            }
+
+            // Add discount details if applicable
+            if ($sale->discount_type !== 'none' && $sale->discount_value > 0) {
+                $template = str_replace(['%if_discount_start%', '%if_discount_end%'], '', $template);
+            } else {
+                $template = preg_replace('/%if_discount_start%.*?%if_discount_end%\n?/s', '', $template);
             }
 
             // Replace placeholders in the template
@@ -711,5 +726,48 @@ class SaleController extends Controller
             return Excel::download(new $exportClass($data), $fileName . '.csv');
         }
         return response('Invalid format specified.', 400);
+    }
+
+    public function exchange(Request $request, Sale $sale)
+    {
+        Log::info('Exchange request received', $request->all());
+
+        $validated = $request->validate([
+            'exchange_items' => 'required|array',
+            'exchange_items.*.sale_item_id' => 'required|exists:sale_items,id',
+            'exchange_items.*.new_item_id' => 'required|exists:items,id',
+        ]);
+
+        Log::info('Validated exchange data', $validated);
+
+        if (empty($validated['exchange_items'])) {
+            return redirect()->back()->with('error', 'No items provided for exchange.')->withInput();
+        }
+
+        foreach ($validated['exchange_items'] as $exchangeItem) {
+            $saleItem = SaleItem::findOrFail($exchangeItem['sale_item_id']);
+            $newItem = Item::findOrFail($exchangeItem['new_item_id']);
+
+            // Update inventory for the old item
+            $saleItem->item->increment('quantity', $saleItem->quantity);
+
+            // Update the sale item with new details
+            $saleItem->update([
+                'item_id' => $newItem->id,
+            ]);
+
+            // Update inventory for the new item
+            $newItem->decrement('quantity', $saleItem->quantity);
+
+            Log::info('Item exchanged successfully', ['sale_item_id' => $saleItem->id]);
+        }
+
+        return redirect()->route('sales.show', $sale->id)->with('success', 'Items exchanged successfully.');
+    }
+
+    public function showExchangeForm(Sale $sale)
+    {
+        $items = Item::where('is_parent', false)->get();
+        return view('sales.exchange', compact('sale', 'items'));
     }
 }

@@ -3,7 +3,8 @@
 }
 
 .card:hover {
-
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
 }
 
 .card-img-top {
@@ -193,7 +194,7 @@
 }
 .no-underline {
     text-decoration: none;
-  }
+}
 
 .pagination .page-item.active .page-link {
     background-color: #007bff;
@@ -213,9 +214,9 @@
 
 .text-right {
     text-align: right; /* Aligns text to the right within the cell */
-  }
+}
 
-  .hover-shadow:hover {
+.hover-shadow:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0,0,0,.1) !important;
 }
@@ -545,5 +546,59 @@
 
     .col-lg-9 {
         min-height: auto;
+    }
+    .discount-controls {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 3px solid #dee2e6;
+    }
+
+    .brand-discount-inputs {
+        padding-left: 1.75rem;
+        margin-top: 0.5rem;
+    }
+
+    .form-switch .form-check-input {
+        width: 2.5em;
+        height: 1.25em;
+        margin-top: 0.2em;
+    }
+
+    .form-check-label {
+        user-select: none;
+        cursor: pointer;
+    }
+
+    .card {
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .card:hover .discount-controls {
+        border-left-color: #0d6efd;
+    }
+
+    .form-switch .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+
+    .form-switch .form-check-input:checked::before {
+        transform: translateX(1.25em);
+    }
+
+    .form-switch .form-check-input::before {
+        content: '';
+        display: block;
+        width: 1em;
+        height: 1em;
+        background-color: #fff;
+        border-radius: 50%;
+        transition: transform 0.3s ease;
     }
 }

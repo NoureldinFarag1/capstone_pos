@@ -17,4 +17,21 @@ class SaleItem extends Model
     {
         return $this->belongsTo(Sale::class);
     }
+
+    public function exchange($newItemId, $newQuantity, $newPrice)
+    {
+        // Update inventory for the old item
+        $this->item->increment('quantity', $this->quantity);
+
+        // Update the sale item with new details
+        $this->update([
+            'item_id' => $newItemId,
+            'quantity' => $newQuantity,
+            'price' => $newPrice,
+        ]);
+
+        // Update inventory for the new item
+        $newItem = Item::find($newItemId);
+        $newItem->decrement('quantity', $newQuantity);
+    }
 }

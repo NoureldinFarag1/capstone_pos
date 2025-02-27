@@ -69,10 +69,6 @@
                             class="absolute z-10 mt-2 w-48 rounded-md shadow-lg origin-top-right right-0"
                         >
                             <div class="py-1 bg-white rounded-md shadow-xs">
-                                <a href="{{ route('items.index') }}"
-                                    class="{{ request()->routeIs('items.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100">
-                                    <i class="fas fa-box mr-2"></i>Items
-                                </a>
                                 <a href="{{ route('brands.index') }}"
                                     class="{{ request()->routeIs('brands.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100">
                                     <i class="fas fa-tags mr-2"></i>Brands
@@ -80,6 +76,10 @@
                                 <a href="{{ route('categories.index') }}"
                                     class="{{ request()->routeIs('categories.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100">
                                     <i class="fas fa-th-list mr-2"></i>Categories
+                                </a>
+                                <a href="{{ route('items.index') }}"
+                                    class="{{ request()->routeIs('items.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100">
+                                    <i class="fas fa-box mr-2"></i>Items
                                 </a>
                                 <a href="{{ route('sizes.index') }}"
                                     class="{{ request()->routeIs('sizes.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100">
@@ -508,58 +508,73 @@
                 </div>
             </div>
             <!-- Refund Metrics -->
-            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8" x-data="{ isOpen: false }">
                 <div class="border-b border-gray-100 mb-6">
                     <div class="flex items-center justify-between">
                         <h3 class="text-2xl font-bold text-gray-900">Refund Analytics</h3>
-                        <span class="px-3 py-1 text-sm font-medium text-red-700 bg-red-50 rounded-full">
-                            Refund Overview
-                        </span>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Today's Refunds -->
-                    <div class="p-4 bg-red-50 rounded-lg">
-                        <div class="text-sm text-red-600">Today's Refunds</div>
-                        <div class="text-2xl font-bold text-red-700">
-                            {{ number_format($refundMetrics['today_refunds'], 2) }} EGP
-                        </div>
-                    </div>
-                    <!-- Monthly Refunds -->
-                    <div class="p-4 bg-orange-50 rounded-lg">
-                        <div class="text-sm text-orange-600">Monthly Refunds</div>
-                        <div class="text-2xl font-bold text-orange-700">
-                            {{ number_format($refundMetrics['month_refunds'], 2) }} EGP
-                        </div>
-                    </div>
-                    <!-- Refund Rate -->
-                    <div class="p-4 bg-blue-50 rounded-lg">
-                        <div class="text-sm text-blue-600">Refund Rate</div>
-                        <div class="text-2xl font-bold text-blue-700">
-                            {{ number_format($refundMetrics['refund_rate'], 1) }}%
+                        <div class="flex items-center space-x-2">
+                            <span class="px-3 py-1 text-sm font-medium text-red-700 bg-red-50 rounded-full">
+                                Refund Overview
+                            </span>
+                            <button @click="isOpen = !isOpen" class="text-gray-400 hover:text-gray-600">
+                                <i class="fas" :class="isOpen ? 'fa-eye' : 'fa-eye-slash'"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
-                <!-- Recent Refunds -->
-                @if($refundMetrics['recent_refunds']->isNotEmpty())
-                <div class="mt-6">
-                    <h4 class="text-lg font-semibold mb-4">Recent Refunds</h4>
-                    <div class="space-y-3">
-                        @foreach($refundMetrics['recent_refunds'] as $refund)
-                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                            <div class="flex flex-col">
-                                <span class="font-medium">Sale #{{ $refund->sale_id }}</span>
-                                <span class="text-sm text-gray-500">{{ $refund->item->name }}</span>
-                            </div>
-                            <div class="text-right">
-                                <span class="font-bold text-red-600">{{ number_format($refund->refund_amount, 2) }} EGP</span>
-                                <div class="text-xs text-gray-500">{{ $refund->created_at->diffForHumans() }}</div>
+
+                <div x-show="isOpen" x-transition>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Today's Refunds -->
+                        <div class="p-4 bg-red-50 rounded-lg">
+                            <div class="text-sm text-red-600">Today's Refunds</div>
+                            <div class="text-2xl font-bold text-red-700">
+                                {{ number_format($refundMetrics['today_refunds'], 2) }} EGP
                             </div>
                         </div>
-                        @endforeach
+                        <!-- Monthly Refunds -->
+                        <div class="p-4 bg-orange-50 rounded-lg">
+                            <div class="text-sm text-orange-600">Monthly Refunds</div>
+                            <div class="text-2xl font-bold text-orange-700">
+                                {{ number_format($refundMetrics['month_refunds'], 2) }} EGP
+                            </div>
+                        </div>
+                        <!-- Refund Rate -->
+                        <div class="p-4 bg-blue-50 rounded-lg">
+                            <div class="text-sm text-blue-600">Refund Rate</div>
+                            <div class="text-2xl font-bold text-blue-700">
+                                {{ number_format($refundMetrics['refund_rate'], 1) }}%
+                            </div>
+                        </div>
                     </div>
+                    <!-- Recent Refunds -->
+                    @if($refundMetrics['recent_refunds']->isNotEmpty())
+                    <div class="mt-6">
+                        <h4 class="text-lg font-semibold mb-4">Recent Refunds</h4>
+                        <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                            @foreach($refundMetrics['recent_refunds'] as $refund)
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                                <div class="flex flex-col">
+                                    <span class="font-medium">Sale #{{ $refund->sale_id }}</span>
+                                    <span class="text-sm text-gray-500">{{ $refund->item->name }}</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="font-bold text-red-600">{{ number_format($refund->refund_amount, 2) }} EGP</span>
+                                    <div class="text-xs text-gray-500">{{ $refund->created_at->diffForHumans() }}</div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @else
+                    <div class="flex flex-col items-center justify-center py-8 px-4">
+                        <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
+                            <i class="fas fa-check text-green-500 text-xl"></i>
+                        </div>
+                        <p class="text-green-500 font-medium">No recent refunds!</p>
+                    </div>
+                    @endif
                 </div>
-                @endif
             </div>
             <!-- Details Row -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -705,43 +720,50 @@
                     </div>
                 </div>
                 <!-- Low Stock Alerts -->
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden" x-data="{ isOpen: false }">
                     <div class="border-b border-gray-100 p-6">
                         <div class="flex items-center justify-between">
                             <h3 class="text-2xl font-bold text-gray-900">Stock Warnings</h3>
-                            <span class="px-3 py-1 text-sm font-medium text-red-700 bg-red-50 rounded-full animate-pulse">
-                                Requires Attention
-                            </span>
+                            <div class="flex items-center space-x-2">
+                                <span class="px-3 py-1 text-sm font-medium text-red-700 bg-red-50 rounded-full animate-pulse">
+                                    Requires Attention
+                                </span>
+                                <button @click="isOpen = !isOpen" class="text-gray-400 hover:text-gray-600">
+                                    <i class="fas" :class="isOpen ? 'fa-eye' : 'fa-eye-slash'"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div class="p-6">
-                        @if($lowStockItems->isNotEmpty())
-                            <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                                @foreach($lowStockItems->sortBy('quantity') as $item)
-                                    <div class="group flex justify-between items-center p-4 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
-                                        <div class="flex flex-col">
-                                            <span class="font-medium text-gray-900">{{ $item->name }}</span>
-                                            <div class="flex items-center space-x-2 mt-1">
-                                                <span class="text-sm font-semibold text-gray-900">{{ $item->priceAfterSale() }} EGP</span>
-                                                <span class="h-1 w-1 rounded-full bg-gray-300"></span>
-                                                <span class="text-sm text-red-400 font-medium">{{ $item->quantity }} left</span>
+                    <div x-show="isOpen" x-transition>
+                        <div class="p-6">
+                            @if($lowStockItems->isNotEmpty())
+                                <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                                    @foreach($lowStockItems->sortBy('quantity') as $item)
+                                        <div class="group flex justify-between items-center p-4 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
+                                            <div class="flex flex-col">
+                                                <span class="font-medium text-gray-900">{{ $item->name }}</span>
+                                                <div class="flex items-center space-x-2 mt-1">
+                                                    <span class="text-sm font-semibold text-gray-900">{{ $item->priceAfterSale() }} EGP</span>
+                                                    <span class="h-1 w-1 rounded-full bg-gray-300"></span>
+                                                    <span class="text-sm text-red-400 font-medium">{{ $item->quantity }} left</span>
+                                                </div>
                                             </div>
+                                            <a href="{{ route('items.edit', $item->id) }}"
+                                               class="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-all duration-300">
+                                                <i class="fas fa-edit text-lg"></i>
+                                            </a>
                                         </div>
-                                        <a href="{{ route('items.edit', $item->id) }}"
-                                           class="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-all duration-300">
-                                            <i class="fas fa-edit text-lg"></i>
-                                        </a>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @else
-                            <div class="flex flex-col items-center justify-center py-8 px-4">
-                                <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
-                                    <i class="fas fa-check text-green-500 text-xl"></i>
+                                    @endforeach
                                 </div>
-                                <p class="text-green-500 font-medium">All items are well-stocked!</p>
-                            </div>
-                        @endif
+                            @else
+                                <div class="flex flex-col items-center justify-center py-8 px-4">
+                                    <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
+                                        <i class="fas fa-check text-green-500 text-xl"></i>
+                                    </div>
+                                    <p class="text-green-500 font-medium">All items are well-stocked!</p>
+                                </div>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>

@@ -30,9 +30,9 @@
                             <tbody>
                                 <?php $__currentLoopData = $sale->saleItems; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $saleItem): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr>
-                                        <td class="px-4"><?php echo e($saleItem->item->name); ?></td>
+                                        <td class="px-4"><?php echo e($saleItem->item->brand->name ?? 'No Brand'); ?> - <?php echo e($saleItem->item->name); ?></td>
                                         <td class="text-center"><?php echo e($saleItem->quantity); ?></td>
-                                        <td class="text-end">EGP    <?php echo e(number_format($saleItem->price, 2)); ?></td>
+                                        <td class="text-end">EGP <?php echo e(number_format($saleItem->price, 2)); ?></td>
                                         <td class="text-end px-4">EGP <?php echo e(number_format($saleItem->price * $saleItem->quantity, 2)); ?></td>
                                     </tr>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -62,7 +62,7 @@
                                     </div>
                                     <div class="d-flex justify-content-between">
                                         <h4 class="mb-0">Total Amount:</h4>
-                                        <h4 class="mb-0">EGP    <?php echo e(number_format($sale->total_amount, 2)); ?></h4>
+                                        <h4 class="mb-0">EGP <?php echo e(number_format($sale->total_amount, 2)); ?></h4>
                                     </div>
                                 </div>
                             </div>
@@ -85,6 +85,9 @@
                                     <i class="fas fa-file-invoice me-2"></i>Print Invoice
                                 </button>
                             </form>
+                            <a href="<?php echo e(route('sales.showExchangeForm', $sale->id)); ?>" class="btn btn-warning ms-2">
+                                <i class="fas fa-exchange-alt me-2"></i>Exchange Item
+                            </a>
                         </div>
                     </div>
                 </div>

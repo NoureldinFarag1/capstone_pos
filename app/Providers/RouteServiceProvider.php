@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Gate;
 use App\Http\Middleware\RoleMiddleware;
-
+use App\Http\Middleware\RedirectBasedOnRole;
 
 class RouteServiceProvider extends ServiceProvider
 {
@@ -34,6 +34,9 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Fix: Correct way to register middleware alias
+        $this->app['router']->aliasMiddleware('role.redirect', RedirectBasedOnRole::class);
+
         // Define gates directly without registerPolicies
         Gate::define('admin', function ($user) {
             return $user->hasRole('admin');

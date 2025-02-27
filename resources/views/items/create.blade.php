@@ -146,25 +146,81 @@
                         <!-- Sizes -->
                         <div class="mb-4">
                             <label class="form-label">Available Sizes <span class="text-danger">*</span></label>
-                            <div class="d-flex flex-wrap gap-2">
-                                @foreach ($sizes as $size)
-                                <div class="form-check">
-                                    <input type="checkbox" name="sizes[]" value="{{ $size->id }}"
-                                        class="form-check-input" id="size{{ $size->id }}">
-                                    <label class="form-check-label px-3 py-2 border rounded-3"
-                                        for="size{{ $size->id }}">
-                                        {{ $size->name }}
-                                    </label>
+
+                            <!-- N/A Size Option -->
+                            <div class="mb-3">
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach ($sizes->where('name', 'N/A') as $size)
+                                    <div class="form-check">
+                                        <input type="checkbox" name="sizes[]" value="{{ $size->id }}"
+                                            class="form-check-input" id="size{{ $size->id }}">
+                                        <label class="form-check-label px-3 py-2 border rounded-3"
+                                            for="size{{ $size->id }}">
+                                            {{ $size->name }}
+                                        </label>
+                                    </div>
+                                    @endforeach
                                 </div>
-                                @endforeach
+                            </div>
+
+                            <!-- Clothes Sizes -->
+                            <div class="mb-3">
+                                <h6>Clothes Sizes</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach ($sizes->where('type', 'clothes')->where('name', '!=', 'N/A')->sortBy('name') as $size)
+                                    <div class="form-check">
+                                        <input type="checkbox" name="sizes[]" value="{{ $size->id }}"
+                                            class="form-check-input" id="size{{ $size->id }}">
+                                        <label class="form-check-label px-3 py-2 border rounded-3"
+                                            for="size{{ $size->id }}">
+                                            {{ $size->name }}
+                                        </label>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- Shoes Sizes -->
+                            <div class="mb-3">
+                                <h6>Shoes Sizes</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach ($sizes->where('type', 'shoes')->where('name', '!=', 'N/A')->sortBy('name') as $size)
+                                    <div class="form-check">
+                                        <input type="checkbox" name="sizes[]" value="{{ $size->id }}"
+                                            class="form-check-input" id="size{{ $size->id }}">
+                                        <label class="form-check-label px-3 py-2 border rounded-3"
+                                            for="size{{ $size->id }}">
+                                            {{ $size->name }}
+                                        </label>
+                                    </div>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
 
                         <!-- Colors -->
                         <div class="mb-3">
                             <label class="form-label">Available Colors</label>
+                            <!-- N/A Color Option -->
+                            <div class="mb-2">
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach($colors->where('name', 'N/A') as $color)
+                                    <div class="form-check">
+                                        <input type="checkbox" name="colors[]" value="{{ $color->id }}"
+                                            class="form-check-input" id="color{{ $color->id }}">
+                                        <label class="form-check-label d-flex align-items-center gap-2"
+                                            for="color{{ $color->id }}">
+                                            <span class="color-preview rounded-circle border"
+                                                style="width: 20px; height: 20px; background-color: {{ $color->hex_code }};"></span>
+                                            {{ $color->name }}
+                                        </label>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <!-- Other Colors -->
                             <div class="d-flex flex-wrap gap-2">
-                                @foreach($colors as $color)
+                                @foreach($colors->where('name', '!=', 'N/A')->sortBy('name') as $color)
                                 <div class="form-check">
                                     <input type="checkbox" name="colors[]" value="{{ $color->id }}"
                                         class="form-check-input" id="color{{ $color->id }}">

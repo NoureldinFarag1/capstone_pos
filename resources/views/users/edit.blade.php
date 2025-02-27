@@ -20,6 +20,7 @@
                     value="{{ $user->name }}"
                     required
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    readonly
                 >
             </div>
 
@@ -33,6 +34,26 @@
                     required
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     readonly
+                >
+            </div>
+
+            <div class="mb-4">
+                <label for="old_password" class="block text-gray-700 font-bold mb-2">Old Password</label>
+                <input
+                    type="password"
+                    name="old_password"
+                    id="old_password"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+            </div>
+
+            <div class="mb-4">
+                <label for="new_password" class="block text-gray-700 font-bold mb-2">New Password</label>
+                <input
+                    type="password"
+                    name="new_password"
+                    id="new_password"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
             </div>
 

@@ -68,12 +68,8 @@ Route::get('/items/export-inventory-csv/{brand_id?}', [ItemController::class, 'e
 Route::get('/items/export-sales-csv/{brand_id?}', [ItemController::class, 'exportSalesCSV'])
     ->name('items.exportSalesCSV')
     ->middleware(['web', 'auth']);
-// Remove these duplicate routes
-// Route::get('/items/export', [ItemController::class, 'export'])->name('items.export');
-// Route::post('/export-items-csv', [ItemController::class, 'exportCSV'])->name('items.exportCSV');
-// Route::get('items/export/{brand_id?}', [ItemController::class, 'export'])->name('items.export');
 
-// Single route for CSV export
+    // Single route for CSV export
 Route::get('/items/export-csv/{brand_id?}', [ItemController::class, 'exportCSV'])
     ->name('items.exportCSV')
     ->middleware(['web', 'auth']);
@@ -165,25 +161,39 @@ Route::post('/backup/download', [BackupController::class, 'download'])->name('ba
 // Default homepage
 Route::get('/', function () {
     return view('welcome');
-});
+})->middleware(['auth', 'role.redirect']);
 
 Route::get('/items/export-brand-sales', [ItemController::class, 'exportBrandSales'])->name('items.exportBrandSales');
 
-// Profile routes
-Route::middleware('auth')->group(function () {
+// Update the authenticated routes group
+Route::middleware(['auth'])->group(function () {
+    // Routes accessible by all authenticated users
+    Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Admin/moderator only routes
+    Route::middleware(['role:admin|moderator'])->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
 });
 
-Route::middleware(['auth','role:admin|moderator'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/users', [UserController::class, 'index'])->name('users.index'); // View all users
-    Route::get('/users/create', [UserController::class, 'create'])->name('users.create'); // Create user
-    Route::post('/users', [UserController::class, 'store'])->name('users.store'); // Store new user
-    Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit'); // Edit user
-    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update'); // Update user
-    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy'); // Delete user
-});
+Route::get('/sales/{sale}/exchange', [SaleController::class, 'showExchangeForm'])->name('sales.showExchangeForm');
+Route::post('/sales/{sale}/exchange', [SaleController::class, 'exchange'])->name('sales.exchange');
+
+Route::post('/items/{id}/toggle-discount', [ItemController::class, 'toggleDiscount'])
+    ->name('items.toggleDiscount')
+    ->middleware(['web', 'auth']);
+
+Route::post('/brands/{id}/toggle-discount', [BrandController::class, 'toggleDiscount'])
+    ->name('brands.toggleDiscount')
+    ->middleware(['web', 'auth']);
 
 require __DIR__.'/auth.php';
