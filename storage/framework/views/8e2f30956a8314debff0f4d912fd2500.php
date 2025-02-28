@@ -730,7 +730,7 @@
                         <div class="flex items-center justify-between">
                             <h3 class="text-2xl font-bold text-gray-900">Stock Warnings</h3>
                             <div class="flex items-center space-x-2">
-                                <span class="px-3 py-1 text-sm font-medium text-red-700 bg-red-50 rounded-full animate-pulse">
+                                <span class="px-3 py-1 text-sm font-medium text-red-700 bg-red-50 rounded-full animate-">
                                     Requires Attention
                                 </span>
                                 <button @click="isOpen = !isOpen" class="text-gray-400 hover:text-gray-600">
