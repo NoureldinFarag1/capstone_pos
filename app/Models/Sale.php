@@ -4,12 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Sale extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'total',
+        'created_at',
         'user_id',
         'total_amount',
         'refund_status',
@@ -39,7 +42,7 @@ class Sale extends Model
 
     protected $casts = [
         'refund_status' => 'string',
-        'sale_date' => 'date'  // Add this line to cast sale_date as date
+        'sale_date' => 'date'
     ];
 
     public function size()
@@ -65,5 +68,12 @@ class Sale extends Model
     public function item()
     {
         return $this->belongsTo(Item::class);
+    }
+
+    public function items(): BelongsToMany
+    {
+        return $this->belongsToMany(Item::class, 'sale_items')
+            ->withPivot(['quantity', 'price'])
+            ->withTimestamps();
     }
 }

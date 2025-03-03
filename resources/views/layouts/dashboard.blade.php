@@ -1,9 +1,10 @@
 @php
-    use Illuminate\Support\Facades\Request;
-    $user = auth()->user();
+use Illuminate\Support\Facades\Request;
+$user = auth()->user();
 @endphp
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,7 +21,9 @@
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- Add SweetAlert2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    @stack('styles')
 </head>
+
 <body class="bg-gray-100">
     <nav class="bg-white shadow-lg sticky">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -39,35 +42,28 @@
                 <div class="hidden sm:flex sm:items-center sm:space-x-4">
                     <!-- Dashboard -->
                     @role('admin|moderator')
-                    <a href="{{ route('dashboard') }}" class="{{ request()->is('dashboard*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                    <a href="{{ route('dashboard') }}"
+                        class="{{ request()->is('dashboard*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-home mr-2"></i>Dashboard
                     </a>
                     @endrole
 
                     <!-- Inventory Dropdown -->
                     <div x-data="{ isOpen: false }" class="relative">
-                        <button
-                            @click="isOpen = !isOpen"
-                            @keydown.escape.window="isOpen = false"
-                            class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors"
-                        >
+                        <button @click="isOpen = !isOpen" @keydown.escape.window="isOpen = false"
+                            class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors">
                             <i class="fas fa-box-open mr-2"></i>
                             <span>Inventory</span>
-                            <svg
-                                class="ml-2 h-4 w-4 transform transition-transform duration-200"
-                                :class="{'rotate-180': isOpen}"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                            >
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            <svg class="ml-2 h-4 w-4 transform transition-transform duration-200"
+                                :class="{'rotate-180': isOpen}" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                    clip-rule="evenodd" />
                             </svg>
                         </button>
 
-                        <div
-                            x-show="isOpen"
-                            @click.away="isOpen = false"
-                            class="absolute z-10 mt-2 w-48 rounded-md shadow-lg origin-top-right right-0"
-                        >
+                        <div x-show="isOpen" @click.away="isOpen = false"
+                            class="absolute z-10 mt-2 w-48 rounded-md shadow-lg origin-top-right right-0">
                             <div class="py-1 bg-white rounded-md shadow-xs">
                                 <a href="{{ route('brands.index') }}"
                                     class="{{ request()->routeIs('brands.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100">
@@ -95,28 +91,20 @@
 
                     <!-- Sales Dropdown -->
                     <div x-data="{ isOpen: false }" class="relative">
-                        <button
-                            @click="isOpen = !isOpen"
-                            @keydown.escape.window="isOpen = false"
-                            class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors"
-                        >
+                        <button @click="isOpen = !isOpen" @keydown.escape.window="isOpen = false"
+                            class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors">
                             <i class="fas fa-chart-line mr-2"></i>
                             <span>Sales</span>
-                            <svg
-                                class="ml-2 h-4 w-4 transform transition-transform duration-200"
-                                :class="{'rotate-180': isOpen}"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                            >
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            <svg class="ml-2 h-4 w-4 transform transition-transform duration-200"
+                                :class="{'rotate-180': isOpen}" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                    clip-rule="evenodd" />
                             </svg>
                         </button>
 
-                        <div
-                            x-show="isOpen"
-                            @click.away="isOpen = false"
-                            class="absolute z-10 mt-2 w-48 rounded-md shadow-lg origin-top-right right-0"
-                        >
+                        <div x-show="isOpen" @click.away="isOpen = false"
+                            class="absolute z-10 mt-2 w-48 rounded-md shadow-lg origin-top-right right-0">
                             <div class="py-1 bg-white rounded-md shadow-xs">
                                 <a href="{{ route('sales.index') }}"
                                     class="{{ request()->routeIs('sales.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100">
@@ -132,14 +120,16 @@
 
                     <!-- Admin Section -->
                     @can('admin')
-                    <a href="{{ route('users.index') }}" class="{{ request()->is('users*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                    <a href="{{ route('users.index') }}"
+                        class="{{ request()->is('users*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-users-cog mr-2"></i>Manage Users
                     </a>
                     @endcan
                     <!-- Backup Button -->
                     <form action="{{ route('backup.download') }}" method="POST" class="inline">
                         @csrf
-                        <button type="submit" class="{{ request()->is('backup*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors">
+                        <button type="submit"
+                            class="{{ request()->is('backup*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors">
                             <i class="fas fa-download mr-2"></i>Backup
                         </button>
                     </form>
@@ -149,39 +139,37 @@
                     <!-- Low Stock Notification Dropdown -->
                     @if(isset($lowStockItems) && $lowStockItems->isNotEmpty())
                     <div x-data="{ open: false, dotVisible: true }" class="relative mr-4">
-                        <button @click="open = !open; dotVisible = false"
-                                class="notification-btn">
+                        <button @click="open = !open; dotVisible = false" class="notification-btn">
                             <i :class="open ? 'far fa-bell' : 'fas fa-bell'"></i>
                             <div x-show="dotVisible" class="notification-dot"></div>
                         </button>
-                        <div x-show="open"
-                             @click.away="open = false"
-                             class="notification-dropdown">
+                        <div x-show="open" @click.away="open = false" class="notification-dropdown">
                             <div class="px-4 py-2 border-b border-gray-100">
                                 <h6 class="text-sm font-semibold">Stock Alerts</h6>
                             </div>
                             <div class="max-h-64 overflow-y-auto">
                                 @foreach($lowStockItems->sortBy('quantity') as $item)
-                                    <a href="{{ route('items.edit', $item->id) }}"
-                                       class="notification-item">
-                                        <span class="font-medium">{{ $item->name }}</span>
-                                        <span class="text-red-500">{{ $item->quantity }} left</span>
-                                    </a>
+                                <a href="{{ route('items.edit', $item->id) }}" class="notification-item">
+                                    <span class="font-medium">{{ $item->name }}</span>
+                                    <span class="text-red-500">{{ $item->quantity }} left</span>
+                                </a>
                                 @endforeach
                             </div>
                         </div>
                     </div>
                     @endif
 
-                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-4">
                         <div>
                             <span class="font-semibold">{{ $user->name }}</span>
-                            <span class="text-sm text-gray-500">({{ $user->getRoleNames()->first() ?? 'Role not assigned' }})</span>
+                            <span
+                                class="text-sm text-gray-500">({{ $user->getRoleNames()->first() ?? 'Role not assigned' }})</span>
                         </div>
                         <!-- Logout Button -->
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
-                            <button type="submit" class="bg-red-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-600 transition-colors">
+                            <button type="submit"
+                                class="bg-red-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-600 transition-colors">
                                 Logout
                             </button>
                         </form>
@@ -193,23 +181,22 @@
     <!-- Content Area -->
     <div class="container mx-auto p-6">
         <div class="mb-4 flex justify-end">
-            <button
-                x-data="{ loading: false }"
-                @click="loading = true; window.location.reload()"
+            <button x-data="{ loading: false }" @click="loading = true; window.location.reload()"
                 class="group bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2.5 rounded-lg flex items-center transition-all duration-300 relative tooltip-trigger"
                 title="Refresh Page">
-                <i class="fas fa-sync-alt"
-                   :class="{ 'animate-spin': loading }"
-                   class="mr-2 text-lg group-hover:rotate-180 transition-transform duration-500"></i>
+                <i class="fas fa-sync-alt" :class="{ 'animate-spin': loading }"
+                    class="mr-2 text-lg group-hover:rotate-180 transition-transform duration-500"></i>
                 <!-- Tooltip -->
-                <span class="tooltip absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <span
+                    class="tooltip absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     Refresh page
                 </span>
             </button>
         </div>
         @yield('content')
         <br>
-        @if(Request::routeIs('dashboard')) <!-- Show only on the dashboard page -->
+        @if(Request::routeIs('dashboard'))
+        <!-- Show only on the dashboard page -->
         <!-- Dashboard Widgets -->
         <div class="container mx-auto p-6">
 
@@ -224,53 +211,84 @@
                         </div>
                     </div>
                     <div class="p-6">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
-                            <a href="/sales/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl hover:shadow-lg transition-all duration-300">
-                                <i class="fas fa-plus-circle text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
-                                <span class="text-white font-medium">New Sale</span>
+                            <a href="{{ route('sales.create') }}"
+                                class="group flex items-center justify-center p-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-md transition-colors duration-300 no-underline">
+                                <i class="fas fa-plus-circle text-xl mr-2 "></i>
+                                <span class="font-medium">New Sale</span>
                             </a>
-                            <a href="/sales" class="group flex items-center justify-center p-6 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl hover:shadow-lg transition-all duration-300">
-                                <i class="fas fa-chart-line text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
-                                <span class="text-white font-medium">Sales Overview</span>
+
+                            <a href="{{ route('items.trace') }}"
+                                class="group flex items-center justify-center p-4 bg-purple-500 hover:bg-purple-600 text-white rounded-lg shadow-md transition-colors duration-300 no-underline">
+                                <i class="fas fa-search-location text-xl mr-2"></i>
+                                <span class="font-medium">Trace Item</span>
                             </a>
-                            <a href="/items/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-green-500 to-green-700 rounded-xl hover:shadow-lg transition-all duration-300">
-                                <i class="fas fa-box-open text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
-                                <span class="text-white font-medium">Add Item</span>
+
+                            <a href="{{ route('expenses.index') }}"
+                                class="group flex items-center justify-center p-4 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-md transition-colors duration-300 no-underline">
+                                <i class="fas fa-receipt text-xl mr-2"></i>
+                                <span class="font-medium">Expenses</span>
                             </a>
-                            <a href="/items" class="group flex items-center justify-center p-6 bg-gradient-to-br from-gray-500 to-gray-700 rounded-xl hover:shadow-lg transition-all duration-300">
-                                <i class="fas fa-boxes text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
-                                <span class="text-white font-medium">View Inventory</span>
+
+                            <a href="/sales"
+                                class="group flex items-center justify-center p-4 bg-teal-500 hover:bg-teal-600 text-white rounded-lg shadow-md transition-colors duration-300 no-underline">
+                                <i class="fas fa-chart-line text-xl mr-2"></i>
+                                <span class="font-medium">Sales Overview</span>
                             </a>
-                            <a href="/items/export" class="group flex items-center justify-center p-6 bg-gradient-to-br from-gray-400 to-gray-600 rounded-xl hover:shadow-lg transition-all duration-300">
-                                <i class="fas fa-file-download text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
-                                <span class="text-white font-medium">Export Inventory</span>
+
+                            <a href="/items/create"
+                                class="group flex items-center justify-center p-4 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md transition-colors duration-300 no-underline">
+                                <i class="fas fa-box-open text-xl mr-2"></i>
+                                <span class="font-medium">Add Item</span>
                             </a>
+
+                            <a href="/items"
+                                class="group flex items-center justify-center p-4 bg-gray-700 hover:bg-gray-800 text-white rounded-lg shadow-md transition-colors duration-300 no-underline">
+                                <i class="fas fa-boxes text-xl mr-2"></i>
+                                <span class="font-medium">View Inventory</span>
+                            </a>
+
+                            <a href="/items/export"
+                                class="group flex items-center justify-center p-4 bg-gray-700 hover:bg-gray-800 text-white rounded-lg shadow-md transition-colors duration-300 no-underline">
+                                <i class="fas fa-file-download text-xl mr-2"></i>
+                                <span class="font-medium">Export Inventory</span>
+                            </a>
+
                             @can('admin')
-                            <a href="{{ route('store-settings.index') }}" class="group flex items-center justify-center p-6 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-xl hover:shadow-lg transition-all duration-300">
-                                <i class="fas fa-store text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
-                                <span class="text-white font-medium">Store Settings</span>
+                            <a href="{{ route('store-settings.index') }}"
+                                class="group flex items-center justify-center p-4 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg shadow-md transition-colors duration-300 no-underline">
+                                <i class="fas fa-store text-xl mr-2"></i>
+                                <span class="font-medium">Store Settings</span>
                             </a>
-                            <a href="/users/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl hover:shadow-lg transition-all duration-300">
-                                <i class="fas fa-users-cog text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
-                                <span class="text-white font-medium">New User</span>
+
+                            <a href="/users/create"
+                                class="group flex items-center justify-center p-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg shadow-md transition-colors duration-300 no-underline">
+                                <i class="fas fa-users-cog text-xl mr-2"></i>
+                                <span class="font-medium">New User</span>
                             </a>
                             @endcan
-                            <a href="/brands/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl hover:shadow-lg transition-all duration-300">
-                                <i class="fas fa-tag text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
-                                <span class="text-white font-medium">Add Brand</span>
+
+                            <a href="/brands/create"
+                                class="group flex items-center justify-center p-4 bg-orange-500 hover:bg-orange-600 text-white rounded-lg shadow-md transition-colors duration-300 no-underline">
+                                <i class="fas fa-tag text-xl mr-2"></i>
+                                <span class="font-medium">Add Brand</span>
                             </a>
-                            <a href="/categories/create" class="group flex items-center justify-center p-6 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl hover:shadow-lg transition-all duration-300">
-                                <i class="fas fa-th-list text-white text-xl mr-3 group-hover:scale-110 transition-transform"></i>
-                                <span class="text-white font-medium">Add Category</span>
+
+                            <a href="/categories/create"
+                                class="group flex items-center justify-center p-4 bg-fuchsia-500 hover:bg-fuchsia-600 text-white rounded-lg shadow-md transition-colors duration-300 no-underline">
+                                <i class="fas fa-th-list text-xl mr-2"></i>
+                                <span class="font-medium">Add Category</span>
                             </a>
+
                         </div>
                     </div>
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
 
-                <div class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                <div
+                    class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
                     <div class="relative z-10">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-medium">Today's Earnings</h3>
@@ -280,29 +298,29 @@
                         </div>
                         <div class="text-3xl font-bold mb-2">{{ number_format($todayRevenue ?? 0, 2) }} EGP</div>
                         @if(isset($revenueGrowth) && $revenueGrowth > 0)
-                            <div class="text-sm bg-white/20 rounded-lg px-3 py-1.5 inline-block">
-                                <i class="fas fa-arrow-up mr-1"></i>
-                                {{ number_format($revenueGrowth, 1) }}% from yesterday
-                            </div>
+                        <div class="text-sm bg-white/20 rounded-lg px-3 py-1.5 inline-block">
+                            <i class="fas fa-arrow-up mr-1"></i>
+                            {{ number_format($revenueGrowth, 1) }}% from yesterday
+                        </div>
                         @endif
                         <div class="mt-6 space-y-3">
                             <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'cash']) }}"
-                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
                                 <span>Cash</span>
                                 <span class="font-bold">{{ number_format($cashPayments, 2) }} EGP</span>
                             </a>
                             <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'credit_card']) }}"
-                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
                                 <span>Visa</span>
                                 <span class="font-bold">{{ number_format($creditPayments, 2) }} EGP</span>
                             </a>
                             <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'mobile_pay']) }}"
-                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
                                 <span>Mobile Payment</span>
                                 <span class="font-bold">{{ number_format($mobilePayments, 2) }} EGP</span>
                             </a>
                             <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'cod']) }}"
-                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
                                 <span>COD</span>
                                 <span class="font-bold">{{ number_format($codPayments, 2) }} EGP</span>
                             </a>
@@ -311,7 +329,8 @@
                     <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-16 -mt-16"></div>
                 </div>
 
-                <div class="bg-gradient-to-br from-green-500 to-green-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                <div
+                    class="bg-gradient-to-br from-green-500 to-green-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
                     <div class="relative z-10">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-medium">Monthly Sales</h3>
@@ -321,26 +340,27 @@
                         </div>
                         <div class="text-3xl font-bold mb-2">{{ number_format($monthlySales, 2) }} EGP</div>
                         <div class="text-sm bg-white/20 rounded-lg px-3 py-1.5 inline-block">
-                            {{ $salesGrowthPercentage >= 0 ? '+' : '' }}{{ number_format($salesGrowthPercentage, 2) }}% from last month
+                            {{ $salesGrowthPercentage >= 0 ? '+' : '' }}{{ number_format($salesGrowthPercentage, 2) }}%
+                            from last month
                         </div>
                         <div class="mt-6 space-y-3">
                             <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'cash']) }}"
-                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
                                 <span>Cash</span>
                                 <span class="font-bold">{{ number_format($cashPaymentsMonthly, 2) }} EGP</span>
                             </a>
                             <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'credit_card']) }}"
-                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
                                 <span>Visa</span>
                                 <span class="font-bold">{{ number_format($creditPaymentsMonthly, 2) }} EGP</span>
                             </a>
                             <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'mobile_pay']) }}"
-                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
                                 <span>Mobile Payment</span>
                                 <span class="font-bold">{{ number_format($mobilePaymentsMonthly, 2) }} EGP</span>
                             </a>
                             <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'cod']) }}"
-                               class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
+                                class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
                                 <span>COD</span>
                                 <span class="font-bold">{{ number_format($codPaymentsMonthly, 2) }} EGP</span>
                             </a>
@@ -349,17 +369,18 @@
                     <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-16 -mt-16"></div>
                 </div>
 
-                <div class="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                <div
+                    class="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
                     <div class="relative z-10">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-medium">Top Payment Method</h3>
                             <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                                 @if($topPaymentMethod === 'cash')
-                                    <i class="fas fa-cash-register text-2xl"></i>
+                                <i class="fas fa-cash-register text-2xl"></i>
                                 @elseif ($topPaymentMethod === 'credit_card')
-                                    <i class="fas fa-credit-card text-2xl"></i>
+                                <i class="fas fa-credit-card text-2xl"></i>
                                 @elseif($topPaymentMethod === 'mobile_pay')
-                                    <i class="fas fa-mobile-alt text-2xl"></i>
+                                <i class="fas fa-mobile-alt text-2xl"></i>
                                 @endif
                             </div>
                         </div>
@@ -370,7 +391,8 @@
                                 <span class="font-bold">{{ number_format($topPaymentMethodPercentage, 2) }}%</span>
                             </div>
                             <div class="w-full bg-white/30 rounded-full h-2 mb-4">
-                                <div class="bg-white h-2 rounded-full" style="width: {{ $topPaymentMethodPercentage }}%"></div>
+                                <div class="bg-white h-2 rounded-full"
+                                    style="width: {{ $topPaymentMethodPercentage }}%"></div>
                             </div>
                             <div class="text-white/80">
                                 {{ $topPaymentMethodCount }} out of {{ $AllSalesCount }} transactions
@@ -391,16 +413,16 @@
                         <h4 class="text-lg font-semibold mb-3">Peak Business Hours</h4>
                         <div class="space-y-2">
                             @foreach($peakHours as $hour)
-                                <div class="flex justify-between items-center">
-                                    <span>{{ Carbon\Carbon::createFromFormat('H', $hour->hour)->format('g:i A') }}</span>
-                                    <div class="flex-1 mx-4">
-                                        <div class="h-2 bg-blue-100 rounded-full">
-                                            <div class="h-2 bg-blue-500 rounded-full"
-                                                 style="width: {{ ($hour->count / $peakHours->max('count')) * 100 }}%"></div>
-                                        </div>
+                            <div class="flex justify-between items-center">
+                                <span>{{ Carbon\Carbon::createFromFormat('H', $hour->hour)->format('g:i A') }}</span>
+                                <div class="flex-1 mx-4">
+                                    <div class="h-2 bg-blue-100 rounded-full">
+                                        <div class="h-2 bg-blue-500 rounded-full"
+                                            style="width: {{ ($hour->count / $peakHours->max('count')) * 100 }}%"></div>
                                     </div>
-                                    <span class="text-sm">{{ $hour->count }} sales</span>
                                 </div>
+                                <span class="text-sm">{{ $hour->count }} sales</span>
+                            </div>
                             @endforeach
                         </div>
                     </div>
@@ -409,10 +431,11 @@
                         <h4 class="text-lg font-semibold mb-3">Best Selling Days</h4>
                         <div class="grid grid-cols-7 gap-2">
                             @foreach($bestSellingDays as $day)
-                                <div class="text-center p-2 {{ $day->count === $bestSellingDays->max('count') ? 'bg-green-100' : 'bg-gray-50' }} rounded">
-                                    <div class="text-sm font-medium">{{ substr($day->day, 0, 3) }}</div>
-                                    <div class="text-xs">{{ $day->count }}</div>
-                                </div>
+                            <div
+                                class="text-center p-2 {{ $day->count === $bestSellingDays->max('count') ? 'bg-green-100' : 'bg-gray-50' }} rounded">
+                                <div class="text-sm font-medium">{{ substr($day->day, 0, 3) }}</div>
+                                <div class="text-xs">{{ $day->count }}</div>
+                            </div>
                             @endforeach
                         </div>
                     </div>
@@ -429,7 +452,7 @@
                                 </div>
                             </a>
                         </div>
-                         <!-- All Customers -->
+                        <!-- All Customers -->
                         <a href="{{ route('customers.index') }}" class="p-4 bg-blue-50 rounded-lg hover:bg-blue-100">
                             <div class="text-sm text-blue-600">All Customers</div>
                             <div class="text-2xl font-bold text-blue-700">
@@ -480,30 +503,31 @@
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-xl font-bold">Category Performance</h3>
                     <button @click="showAllCategories = !showAllCategories"
-                            class="px-3 py-1 text-sm font-medium text-gray-600 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
+                        class="px-3 py-1 text-sm font-medium text-gray-600 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
                         <span x-text="showAllCategories ? 'Show Less' : 'View All'">View All</span>
                     </button>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     @foreach($categoryPerformance as $index => $category)
-                        <div x-show="showAllCategories || $index < 8"
-                             class="p-4 bg-gray-50 rounded-lg">
-                            <div class="text-sm font-medium text-gray-600">{{ $category->name }}</div>
-                            <div class="mt-2 space-y-1">
-                                <div class="flex justify-between text-xs">
-                                    <span>Items:</span>
-                                    <span class="font-medium">{{ $category->items_count }}</span>
-                                </div>
-                                <div class="flex justify-between text-xs">
-                                    <span>Stock:</span>
-                                    <span class="font-medium">{{ $category->items_sum_quantity ?? 0 }}</span>
-                                </div>
-                                <div class="flex justify-between text-xs">
-                                    <span>Avg:</span>
-                                    <span class="font-medium">{{ number_format($category->items_avg_selling_price ?? 0, 0) }} EGP</span>
-                                </div>
+                    <div x-show="showAllCategories || $index < 8" class="p-4 bg-gray-50 rounded-lg">
+                        <div class="text-sm font-medium text-gray-600">{{ $category->name }}</div>
+                        <div class="mt-2 space-y-1">
+                            <div class="flex justify-between text-xs">
+                                <span>Items:</span>
+                                <span class="font-medium">{{ $category->items_count }}</span>
+                            </div>
+                            <div class="flex justify-between text-xs">
+                                <span>Stock:</span>
+                                <span class="font-medium">{{ $category->items_sum_quantity ?? 0 }}</span>
+                            </div>
+                            <div class="flex justify-between text-xs">
+                                <span>Avg:</span>
+                                <span
+                                    class="font-medium">{{ number_format($category->items_avg_selling_price ?? 0, 0) }}
+                                    EGP</span>
                             </div>
                         </div>
+                    </div>
                     @endforeach
                 </div>
             </div>
@@ -553,13 +577,15 @@
                         <h4 class="text-lg font-semibold mb-4">Recent Refunds</h4>
                         <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                             @foreach($refundMetrics['recent_refunds'] as $refund)
-                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                            <div
+                                class="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
                                 <div class="flex flex-col">
                                     <span class="font-medium">Sale #{{ $refund->sale_id }}</span>
                                     <span class="text-sm text-gray-500">{{ $refund->item->name }}</span>
                                 </div>
                                 <div class="text-right">
-                                    <span class="font-bold text-red-600">{{ number_format($refund->refund_amount, 2) }} EGP</span>
+                                    <span class="font-bold text-red-600">{{ number_format($refund->refund_amount, 2) }}
+                                        EGP</span>
                                     <div class="text-xs text-gray-500">{{ $refund->created_at->diffForHumans() }}</div>
                                 </div>
                             </div>
@@ -591,37 +617,38 @@
                     <div class="p-6">
                         <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                             @foreach($topSellingBrandDetails as $index => $brand)
-                                <div class="group flex items-center justify-between p-4 rounded-lg transition-all duration-300 hover:bg-gray-50/80 hover:shadow-sm">
-                                    <div class="flex items-center space-x-4">
-                                        @if($brand['image'])
-                                            <img src="{{ asset('storage/' . $brand['image']) }}"
-                                                 alt="{{ $brand['name'] }}"
-                                                 class="w-12 h-12 rounded-lg object-cover border-2
+                            <div
+                                class="group flex items-center justify-between p-4 rounded-lg transition-all duration-300 hover:bg-gray-50/80 hover:shadow-sm">
+                                <div class="flex items-center space-x-4">
+                                    @if($brand['image'])
+                                    <img src="{{ asset('storage/' . $brand['image']) }}" alt="{{ $brand['name'] }}"
+                                        class="w-12 h-12 rounded-lg object-cover border-2
                                                  @if($index == 0) border-yellow-400
                                                  @elseif($index == 1) border-gray-400
                                                  @elseif($index == 2) border-orange-600
                                                  @else border-gray-100 @endif">
-                                        @else
-                                            <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center border-2
+                                    @else
+                                    <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center border-2
                                                  @if($index == 0) border-yellow-400
                                                  @elseif($index == 1) border-gray-400
                                                  @elseif($index == 2) border-orange-600
                                                  @else border-gray-100 @endif">
-                                                <span class="text-xl font-bold text-gray-400">
-                                                    {{ substr($brand['name'], 0, 1) }}
-                                                </span>
-                                            </div>
-                                        @endif
-                                        <div class="flex flex-col">
-                                            <span class="text-lg font-semibold text-gray-900">{{ $brand['name'] }}</span>
-                                            <span class="text-sm text-gray-500">Rank #{{ $index + 1 }}</span>
-                                        </div>
+                                        <span class="text-xl font-bold text-gray-400">
+                                            {{ substr($brand['name'], 0, 1) }}
+                                        </span>
                                     </div>
-                                    <div class="flex flex-col items-end">
-                                        <span class="text-xl font-bold text-gray-900">{{ number_format($brand['total_sales'], 0) }}</span>
-                                        <span class="text-sm text-gray-500">Sales</span>
+                                    @endif
+                                    <div class="flex flex-col">
+                                        <span class="text-lg font-semibold text-gray-900">{{ $brand['name'] }}</span>
+                                        <span class="text-sm text-gray-500">Rank #{{ $index + 1 }}</span>
                                     </div>
                                 </div>
+                                <div class="flex flex-col items-end">
+                                    <span
+                                        class="text-xl font-bold text-gray-900">{{ number_format($brand['total_sales'], 0) }}</span>
+                                    <span class="text-sm text-gray-500">Sales</span>
+                                </div>
+                            </div>
                             @endforeach
                         </div>
                     </div>
@@ -649,11 +676,12 @@
                                         <div class="w-3 h-3 rounded-full bg-red-500"></div>
                                         <span class="text-gray-600 font-medium">Critical Stock</span>
                                     </div>
-                                    <span class="text-lg font-bold text-red-500">{{ number_format($stockLevels['critical']) }}</span>
+                                    <span
+                                        class="text-lg font-bold text-red-500">{{ number_format($stockLevels['critical']) }}</span>
                                 </div>
                                 <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
                                     <div class="bg-red-500 h-2.5 rounded-full transition-all duration-500"
-                                         style="width: {{ ($stockLevels['critical'] / $totalItems) * 100 }}%"></div>
+                                        style="width: {{ ($stockLevels['critical'] / $totalItems) * 100 }}%"></div>
                                 </div>
                             </div>
                             <!-- Low Stock -->
@@ -663,11 +691,12 @@
                                         <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
                                         <span class="text-gray-600 font-medium">Low Stock</span>
                                     </div>
-                                    <span class="text-lg font-bold text-yellow-500">{{ number_format($stockLevels['low']) }}</span>
+                                    <span
+                                        class="text-lg font-bold text-yellow-500">{{ number_format($stockLevels['low']) }}</span>
                                 </div>
                                 <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
                                     <div class="bg-yellow-500 h-2.5 rounded-full transition-all duration-500"
-                                         style="width: {{ ($stockLevels['low'] / $totalItems) * 100 }}%"></div>
+                                        style="width: {{ ($stockLevels['low'] / $totalItems) * 100 }}%"></div>
                                 </div>
                             </div>
                             <!-- Well Stocked -->
@@ -677,11 +706,12 @@
                                         <div class="w-3 h-3 rounded-full bg-green-500"></div>
                                         <span class="text-gray-600 font-medium">Well Stocked</span>
                                     </div>
-                                    <span class="text-lg font-bold text-green-500">{{ number_format($stockLevels['healthy']) }}</span>
+                                    <span
+                                        class="text-lg font-bold text-green-500">{{ number_format($stockLevels['healthy']) }}</span>
                                 </div>
                                 <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
                                     <div class="bg-green-500 h-2.5 rounded-full transition-all duration-500"
-                                         style="width: {{ ($stockLevels['healthy'] / $totalItems) * 100 }}%"></div>
+                                        style="width: {{ ($stockLevels['healthy'] / $totalItems) * 100 }}%"></div>
                                 </div>
                             </div>
                         </div>
@@ -703,18 +733,21 @@
                     <div class="p-6">
                         <div class="space-y-3">
                             @foreach($topSellingItems as $item)
-                                <div class="group flex justify-between items-center p-4 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 text-sm font-bold">
-                                            #{{ $loop->iteration }}
-                                        </div>
-                                        <span class="font-medium text-gray-900">{{ $item->name }}</span>
+                            <div
+                                class="group flex justify-between items-center p-4 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
+                                <div class="flex items-center space-x-3">
+                                    <div
+                                        class="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 text-sm font-bold">
+                                        #{{ $loop->iteration }}
                                     </div>
-                                    <div class="flex items-center space-x-2">
-                                        <span class="text-lg font-bold text-gray-900">{{ number_format($item->total_quantity) }}</span>
-                                        <span class="text-sm text-gray-500">sold</span>
-                                    </div>
+                                    <span class="font-medium text-gray-900">{{ $item->name }}</span>
                                 </div>
+                                <div class="flex items-center space-x-2">
+                                    <span
+                                        class="text-lg font-bold text-gray-900">{{ number_format($item->total_quantity) }}</span>
+                                    <span class="text-sm text-gray-500">sold</span>
+                                </div>
+                            </div>
                             @endforeach
                         </div>
                     </div>
@@ -725,7 +758,8 @@
                         <div class="flex items-center justify-between">
                             <h3 class="text-2xl font-bold text-gray-900">Stock Warnings</h3>
                             <div class="flex items-center space-x-2">
-                                <span class="px-3 py-1 text-sm font-medium text-red-700 bg-red-50 rounded-full animate-">
+                                <span
+                                    class="px-3 py-1 text-sm font-medium text-red-700 bg-red-50 rounded-full animate-">
                                     Requires Attention
                                 </span>
                                 <button @click="isOpen = !isOpen" class="text-gray-400 hover:text-gray-600">
@@ -737,51 +771,55 @@
                     <div x-show="isOpen" x-transition>
                         <div class="p-6">
                             @if($lowStockItems->isNotEmpty())
-                                <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                                    @foreach($lowStockItems->sortBy('quantity') as $item)
-                                        <div class="group flex justify-between items-center p-4 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
-                                            <div class="flex flex-col">
-                                                <span class="font-medium text-gray-900">{{ $item->name }}</span>
-                                                <div class="flex items-center space-x-2 mt-1">
-                                                    <span class="text-sm font-semibold text-gray-900">{{ $item->priceAfterSale() }} EGP</span>
-                                                    <span class="h-1 w-1 rounded-full bg-gray-300"></span>
-                                                    <span class="text-sm text-red-400 font-medium">{{ $item->quantity }} left</span>
-                                                </div>
-                                            </div>
-                                            <a href="{{ route('items.edit', $item->id) }}"
-                                               class="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-all duration-300">
-                                                <i class="fas fa-edit text-lg"></i>
-                                            </a>
+                            <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                                @foreach($lowStockItems->sortBy('quantity') as $item)
+                                <div
+                                    class="group flex justify-between items-center p-4 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-sm">
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-gray-900">{{ $item->name }}</span>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <span
+                                                class="text-sm font-semibold text-gray-900">{{ $item->priceAfterSale() }}
+                                                EGP</span>
+                                            <span class="h-1 w-1 rounded-full bg-gray-300"></span>
+                                            <span class="text-sm text-red-400 font-medium">{{ $item->quantity }}
+                                                left</span>
                                         </div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <div class="flex flex-col items-center justify-center py-8 px-4">
-                                    <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
-                                        <i class="fas fa-check text-green-500 text-xl"></i>
                                     </div>
-                                    <p class="text-green-500 font-medium">All items are well-stocked!</p>
+                                    <a href="{{ route('items.edit', $item->id) }}"
+                                        class="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-all duration-300">
+                                        <i class="fas fa-edit text-lg"></i>
+                                    </a>
                                 </div>
+                                @endforeach
+                            </div>
+                            @else
+                            <div class="flex flex-col items-center justify-center py-8 px-4">
+                                <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
+                                    <i class="fas fa-check text-green-500 text-xl"></i>
+                                </div>
+                                <p class="text-green-500 font-medium">All items are well-stocked!</p>
+                            </div>
                             @endif
                         </div>
                     </div>
                 </div>
             </div>
-        @endif
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Add SweetAlert2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+            @endif
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Add SweetAlert2 JS -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- Flash Messages -->
-    @if(session('success'))
-    <script>
+        <!-- Flash Messages -->
+        @if(session('success'))
+        <script>
         Swal.fire({
             icon: 'success',
             title: 'Success!',
@@ -789,26 +827,27 @@
             timer: 3000,
             timerProgressBar: true
         });
-    </script>
-    @endif
+        </script>
+        @endif
 
-    @if(session('error'))
-    <script>
+        @if(session('error'))
+        <script>
         Swal.fire({
             icon: 'error',
             title: 'Oops...',
             text: "{{ session('error') }}"
         });
-    </script>
-    @endif
+        </script>
+        @endif
 
-    <script>
+        <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('categoryPerformance', () => ({
                 showAllCategories: false
             }))
         })
-    </script>
+        </script>
+        @stack('scripts')
 </body>
 <footer class="bg-gray-100 border-t border-gray-200 py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -827,4 +866,5 @@
     </div>
 </footer>
 @stack('scripts')
+
 </html>

@@ -12,11 +12,13 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\CashDrawerController;
 use App\Http\Controllers\ColorController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\ExpenseController; // Add this line
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\ItemTraceController;
 
-Route::get('/connection-test', function() {
+Route::get('/connection-test', function () {
     try {
         $pdo = DB::connection()->getPdo();
         $processlist = DB::select('SHOW PROCESSLIST');
@@ -34,7 +36,7 @@ Route::get('/connection-test', function() {
     }
 });
 
-Route::get('/test-write', function() {
+Route::get('/test-write', function () {
     try {
         DB::beginTransaction();
 
@@ -69,7 +71,7 @@ Route::get('/items/export-sales-csv/{brand_id?}', [ItemController::class, 'expor
     ->name('items.exportSalesCSV')
     ->middleware(['web', 'auth']);
 
-    // Single route for CSV export
+// Single route for CSV export
 Route::get('/items/export-csv/{brand_id?}', [ItemController::class, 'exportCSV'])
     ->name('items.exportCSV')
     ->middleware(['web', 'auth']);
@@ -109,7 +111,7 @@ Route::get('/get-items/{category}', [ItemController::class, 'getItems'])->name('
 Route::post('/sales/{id}/thermal-receipt', [SaleController::class, 'printThermalReceipt'])->name('sales.thermalReceipt');
 Route::get('/sales/{id}/invoice', [SaleController::class, 'printInvoice'])->name('sales.invoice');
 Route::resource('sizes', SizeController::class);
-Route::get('/items/findByBarcode/{barcode}', function($barcode) {
+Route::get('/items/findByBarcode/{barcode}', function ($barcode) {
     $item = App\Models\Item::where('code', $barcode)->first();
     if ($item) {
         return response()->json(['item' => $item]);
@@ -167,6 +169,10 @@ Route::get('/items/export-brand-sales', [ItemController::class, 'exportBrandSale
 
 // Update the authenticated routes group
 Route::middleware(['auth'])->group(function () {
+    // Add trace items routes at the beginning of the auth middleware group
+    Route::get('/trace-items', [ItemTraceController::class, 'index'])->name('items.trace');
+    Route::post('/trace-items', [ItemTraceController::class, 'trace'])->name('items.trace.search');
+
     // Routes accessible by all authenticated users
     Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -196,4 +202,8 @@ Route::post('/brands/{id}/toggle-discount', [BrandController::class, 'toggleDisc
     ->name('brands.toggleDiscount')
     ->middleware(['web', 'auth']);
 
-require __DIR__.'/auth.php';
+Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+Route::resource('expenses', ExpenseController::class);
+
+require __DIR__ . '/auth.php';

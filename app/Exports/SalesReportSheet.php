@@ -53,12 +53,12 @@ class SalesReportSheet implements FromCollection, WithHeadings, WithMapping, Wit
 
         // Prepend custom heading row and an empty row for separation
         $salesData->prepend((object) [
-            'brand' => '',
-            'item' => '',
-            'quantity_sold' => '',
-            'stock_quantity' => '',
-            'sale_price' => '',
-            'line_total' => ''
+            'brand' => 'Brand Name',
+            'item' => 'Item Name',
+            'quantity_sold' => 'Quantity Sold',
+            'stock_quantity' => 'Stock Quantity',
+            'sale_price' => 'Sale Price',
+            'line_total' => 'Total'
         ]);
 
         $salesData->prepend((object) [
@@ -108,17 +108,19 @@ class SalesReportSheet implements FromCollection, WithHeadings, WithMapping, Wit
             1 => ['font' => ['bold' => true, 'size' => 16]], // Style for custom heading row
             2 => ['font' => ['bold' => true, 'size' => 12]], // Style for date row
             3 => ['font' => ['bold' => true]], // Style for column headings
-            'A2:F2' => ['fill' => [
-                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                'startColor' => ['rgb' => 'E2E8F0']
-            ]],
+            'A2:F2' => [
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'E2E8F0']
+                ]
+            ],
         ];
     }
 
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function(AfterSheet $event) {
+            AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
                 $lastRow = $sheet->getHighestRow();
                 $totalRow = $lastRow + 1;
