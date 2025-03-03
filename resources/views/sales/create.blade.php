@@ -395,8 +395,6 @@ $(document).ready(function() {
             // Reset inputs
             itemSelect.value = '';
             quantityInput.value = 1;
-        } else {
-            alert('Please select an item.');
         }
     });
 

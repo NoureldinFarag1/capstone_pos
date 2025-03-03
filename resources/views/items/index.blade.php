@@ -58,9 +58,11 @@
                                                         @if($brand->picture)
                                                             <img src="{{ asset('storage/' . $brand->picture) }}"
                                                                  alt="{{ $brand->name }}"
-                                                                 class="brand-logo">
+                                                                 class="brand-logo rounded-circle">
                                                         @else
-                                                            <i class="fas fa-building text-secondary"></i>
+                                                            <div class="brand-logo-placeholder rounded-circle d-flex align-items-center justify-content-center">
+                                                                <i class="fas fa-building"></i>
+                                                            </div>
                                                         @endif
                                                     </div>
                                                     <span class="brand-name">{{ $brand->name }}</span>
@@ -306,24 +308,52 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         .brand-item {
             transition: all 0.3s ease;
-            padding: 0.75rem !important;
+            padding: 0.5rem 0.75rem !important; /* Reduced padding */
         }
 
         .brand-item:hover {
             background-color: #f8f9fa;
-            transform: translateX(5px);
+            transform: translateX(2px); /* Reduced transform */
+        }
+
+        .brand-logo-wrapper {
+            width: 40px;           /* Adjusted width */
+            height: 40px;          /* Adjusted height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.75rem; /* Adjusted margin */
         }
 
         .brand-logo {
-            width: 24px;
-            height: 24px;
-            object-fit: contain;
-            margin-right: 0.5rem;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border: 1px solid #ced4da; /* Reduced border */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08); /* Reduced shadow */
+            transition: border-color 0.2s ease-in-out; /* Added transition */
+        }
+
+        .brand-logo-placeholder {
+            width: 100%;
+            height: 100%;
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da; /* Reduced border */
+            color: #6c757d;
+            font-size: 1.1rem;       /* Adjusted font size */
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .brand-name {
-            font-size: 0.9rem;
+            font-size: 0.9rem;       /* Adjusted font size */
             color: #495057;
+            font-weight: 500;
+        }
+
+        .form-check-input:checked + .form-check-label .brand-logo {
+            background-color: #e7f1ff;
         }
     </style>
 @endpush
