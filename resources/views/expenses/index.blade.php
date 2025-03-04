@@ -55,22 +55,50 @@
             </div>
         </div>
 
-        <!-- Reason Totals Chart -->
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 mb-8" x-data="{ isOpen: false }">
+        <!-- Reason Totals Display -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 mb-8">
             <div class="border-b border-gray-100 p-6 bg-gradient-to-r from-gray-50 to-white">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-bold text-gray-800">Monthly Expenses by Reason</h2>
+                    <h2 class="text-2xl font-bold text-gray-800">Expenses by Reason</h2>
                     <span class="px-4 py-1.5 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-full">
-                        <i class="fas fa-chart-pie mr-2"></i>Analysis
+                        <i class="fas fa-list mr-2"></i>Breakdown
                     </span>
-                    <button @click="isOpen = !isOpen" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas" :class="isOpen ? 'fa-eye' : 'fa-eye-slash'"></i>
-                    </button>
                 </div>
             </div>
-            <div class="p-6" x-show="isOpen" x-transition>
-                <div class="h-[400px]">
-                    <canvas id="reasonChart"></canvas>
+            <div class="p-6">
+                <div class="overflow-x-auto rounded-xl">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr class="bg-gradient-to-r from-gray-50 to-gray-100">
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Reason
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Total Amount (EGP)
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-100">
+                            @forelse($reasonTotals as $reasonTotal)
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900">{{ $reasonTotal->reason }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900">{{ number_format($reasonTotal->total, 2) }}</div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="2" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
+                                        No expenses recorded.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -293,80 +321,6 @@
                     }
                 });
             }
-
-            // Add Chart initialization
-            document.addEventListener('DOMContentLoaded', function () {
-                const ctx = document.getElementById('reasonChart').getContext('2d');
-                const reasonTotals = @json($reasonTotals);
-
-                const chartData = {
-                    labels: reasonTotals.map(item => item.reason),
-                    datasets: [{
-                        label: 'Total Amount (EGP)',
-                        data: reasonTotals.map(item => item.total),
-                        backgroundColor: [
-                            'rgba(59, 130, 246, 0.7)', // Blue
-                            'rgba(16, 185, 129, 0.7)', // Green
-                            'rgba(139, 92, 246, 0.7)', // Purple
-                            'rgba(239, 68, 68, 0.7)', // Red
-                            'rgba(245, 158, 11, 0.7)', // Yellow
-                            'rgba(107, 114, 128, 0.7)', // Gray
-                            'rgba(206, 147, 216, 0.7)', // Light Purple
-                            'rgba(85, 172, 238, 0.7)', // Light Blue
-                            'rgba(255, 193, 7, 0.7)', // Amber
-                            'rgba(147, 197, 114, 0.7)' // Light Green
-                        ],
-                        borderColor: [
-                            'rgba(59, 130, 246, 1)',
-                            'rgba(16, 185, 129, 1)',
-                            'rgba(139, 92, 246, 1)',
-                            'rgba(239, 68, 68, 1)',
-                            'rgba(245, 158, 11, 1)',
-                            'rgba(107, 114, 128, 1)',
-                            'rgba(206, 147, 216, 1)',
-                            'rgba(85, 172, 238, 1)',
-                            'rgba(255, 193, 7, 1)',
-                            'rgba(147, 197, 114, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
-                };
-
-                new Chart(ctx, {
-                    type: 'doughnut', // Changed to doughnut chart
-                    data: chartData,
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'right', // Display legend on the right
-                                align: 'center',
-                                labels: {
-                                    boxWidth: 20,
-                                    padding: 20,
-                                    font: {
-                                        size: 14
-                                    }
-                                }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function (context) {
-                                        const label = context.label || '';
-                                        const value = context.parsed || 0;
-                                        const total = chartData.datasets[0].data.reduce((acc, cur) => acc + cur,
-                                            0);
-                                        const percentage = total > 0 ? (value / total * 100).toFixed(2) + '%' :
-                                            '0.00%';
-                                        return `${label}: ${value.toFixed(2)} EGP (${percentage})`;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            });
         </script>
     @endpush
 @endsection
