@@ -198,7 +198,9 @@
                 </div>
                 @if(isset($selectedItem))
                     <div class="badge badge-blue">
-                        Tracking: {{ $selectedItem->name }}
+                        <h1
+                            class="text-3xl font-bold text-gray-900 flex items-center gap-3 animate__animated animate__fadeInDown">
+                            Tracking: {{ $selectedItem->name }}</h1>
                     </div>
                 @endif
             </div>
@@ -280,14 +282,6 @@
                             <div class="text-2xl font-bold text-green-600">
                                 {{ $sales->sum(function ($sale) {
                         return $sale->items->first()->pivot->quantity ?? 0; }) }}
-                            </div>
-                        </div>
-                        <div class="stats-card">
-                            <div class="text-sm text-gray-600">Average Price</div>
-                            <div class="text-2xl font-bold text-purple-600">
-                                {{ number_format($sales->avg(function ($sale) {
-                        return $sale->items->first()->pivot->price ?? 0;
-                    }), 2) }} EGP
                             </div>
                         </div>
                         <div class="stats-card">
