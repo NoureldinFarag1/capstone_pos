@@ -41,16 +41,13 @@ class Item extends Model
 
     public function priceAfterSale()
     {
-        // Calculate discount amount if applied sale exists
-        $discountAmount = 0;
-        if ($this->discount_value && $this->discount_type === 'percentage') {
-            $discountAmount = $this->selling_price * ($this->discount_value / 100);
-        } elseif ($this->discount_value && $this->discount_type === 'fixed') {
-            $discountAmount = min($this->discount_value, $this->selling_price);  // Ensure the discount is not greater than the selling price
+        $sellingPrice = $this->selling_price;
+        if ($this->discount_type == 'percentage') {
+            return $sellingPrice - ($sellingPrice * ($this->discount_value / 100));
+        } elseif ($this->discount_type == 'fixed') {
+            return max(0, $sellingPrice - $this->discount_value);
         }
-
-        // Calculate selling price after discount
-        return $this->selling_price - $discountAmount;
+        return $sellingPrice;
     }
 
     public function sales()

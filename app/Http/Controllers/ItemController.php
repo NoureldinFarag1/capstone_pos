@@ -310,9 +310,12 @@ class ItemController extends BaseController
                 ->when($search, function ($query) use ($search) {
                     return $query->where(function($q) use ($search) {
                         $q->where('name', 'like', '%' . $search . '%')
-                          ->orWhere('code', 'like', '%' . $search . '%')
-                          ->orWhereHas('brand', function($q) use ($search) {
-                              $q->where('name', 'like', '%' . $search . '%');
+                          ->orWhere('code', $search)
+                          ->orWhereHas('variants', function($vq) use ($search) {
+                              $vq->where('code', $search);
+                          })
+                          ->orWhereHas('brand', function($bq) use ($search) {
+                              $bq->where('name', 'like', '%' . $search . '%');
                           });
                     });
                 });

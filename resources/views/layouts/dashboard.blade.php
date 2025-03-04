@@ -249,7 +249,7 @@ $user = auth()->user();
                                 <span class="font-medium">View Inventory</span>
                             </a>
 
-                            <a href="/items/export"
+                            <a href="{{ route('items.exportCSV') }}"
                                 class="group flex items-center justify-center p-4 bg-gray-700 hover:bg-gray-800 text-white rounded-lg shadow-md transition-colors duration-300 no-underline">
                                 <i class="fas fa-file-download text-xl mr-2"></i>
                                 <span class="font-medium">Export Inventory</span>
