@@ -259,19 +259,19 @@ $(document).ready(function() {
 
         listItem.innerHTML =
             `
-                                                                                                                                            ${itemEntry.name} - EGP ${itemEntry.price.toFixed(2)}
-                                                                                                                                            <div class="d-flex align-items-center">
-                                                                                                                                                <span class="badge bg-primary rounded-pill me-2">
-                                                                                                                                                    Qty: ${itemEntry.quantity}
-                                                                                                                                                </span>
-                                                                                                                                                <button type="button" class="btn btn-danger btn-sm remove-item">
-                                                                                                                                                    Remove
-                                                                                                                                                </button>
-                                                                                                                                                <input type="hidden" name="items[${itemEntry.id}][item_id]" value="${itemEntry.id}">
-                                                                                                                                                <input type="hidden" name="items[${itemEntry.id}][quantity]" value="${itemEntry.quantity}">
-                                                                                                                                                <input type="hidden" name="items[${itemEntry.id}][price]" value="${itemEntry.price}">
-                                                                                                                                            </div>
-                                                                                                                                        `;
+                                                                                                                                                    ${itemEntry.name} - EGP ${itemEntry.price.toFixed(2)}
+                                                                                                                                                    <div class="d-flex align-items-center">
+                                                                                                                                                        <span class="badge bg-primary rounded-pill me-2">
+                                                                                                                                                            Qty: ${itemEntry.quantity}
+                                                                                                                                                        </span>
+                                                                                                                                                        <button type="button" class="btn btn-danger btn-sm remove-item">
+                                                                                                                                                            Remove
+                                                                                                                                                        </button>
+                                                                                                                                                        <input type="hidden" name="items[${itemEntry.id}][item_id]" value="${itemEntry.id}">
+                                                                                                                                                        <input type="hidden" name="items[${itemEntry.id}][quantity]" value="${itemEntry.quantity}">
+                                                                                                                                                        <input type="hidden" name="items[${itemEntry.id}][price]" value="${itemEntry.price}">
+                                                                                                                                                    </div>
+                                                                                                                                                `;
 
         itemList.appendChild(listItem);
 
@@ -406,9 +406,8 @@ $(document).ready(function() {
             // Reset inputs
             itemSelect.value = '';
             quantityInput.value = 1;
-        } else {
-            alert('Please select an item.');
         }
+
     });
 
     // Barcode Input Handler
