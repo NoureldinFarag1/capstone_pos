@@ -529,4 +529,8 @@
         </script>
     @endpush
     <meta name="csrf-token" content="{{ csrf_token() }}">
+<<<<<<< HEAD
 @endsection
+=======
+@endsection
+>>>>>>> 9cf6f94bab26ca9a6205a4505d1df2b3c000ae55
