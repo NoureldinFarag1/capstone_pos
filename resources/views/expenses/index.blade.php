@@ -7,9 +7,9 @@
 @section('content')
     <div class="container mx-auto px-4 py-8">
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div
-                class="bg-gradient-to-br from-blue-600 via-blue-500 to-blue-700 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300">
+                class="bg-gradient-to-br from-red-600 via-red-500 to-red-700 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold">Today's Expenses</h3>
                     <div class="w-12 h-12 rounded-xl bg-white/25 backdrop-blur-sm flex items-center justify-center">
@@ -40,70 +40,11 @@
                 @endif
             </div>
 
-            <div
-                class="bg-gradient-to-br from-purple-600 via-purple-500 to-purple-700 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold">Average Expense</h3>
-                    <div class="w-12 h-12 rounded-xl bg-white/25 backdrop-blur-sm flex items-center justify-center">
-                        <i class="fas fa-chart-line text-2xl"></i>
-                    </div>
-                </div>
-                <div class="text-4xl font-bold mb-3">{{ number_format($averageExpense ?? 0, 2) }} EGP</div>
-                <div class="text-sm bg-white/30 backdrop-blur-sm rounded-lg px-4 py-2 inline-block">
-                    Based on all transactions
-                </div>
-            </div>
         </div>
 
-        <!-- Reason Totals Display -->
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 mb-8">
-            <div class="border-b border-gray-100 p-6 bg-gradient-to-r from-gray-50 to-white">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-bold text-gray-800">Expenses by Reason</h2>
-                    <span class="px-4 py-1.5 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-full">
-                        <i class="fas fa-list mr-2"></i>Breakdown
-                    </span>
-                </div>
-            </div>
-            <div class="p-6">
-                <div class="overflow-x-auto rounded-xl">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead>
-                            <tr class="bg-gradient-to-r from-gray-50 to-gray-100">
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Reason
-                                </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Total Amount (EGP)
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-100">
-                            @forelse($reasonTotals as $reasonTotal)
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ $reasonTotal->reason }}</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ number_format($reasonTotal->total, 2) }}</div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="2" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
-                                        No expenses recorded.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+        <div class="grid grid-cols-1 md:grid-cols-1 gap-8">
             <!-- Expense Form -->
             <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
                 <div class="border-b border-gray-100 p-6 bg-gradient-to-r from-gray-50 to-white">
@@ -117,40 +58,47 @@
                 <div class="p-8">
                     <form action="{{ route('expenses.store') }}" method="POST"
                         class="transform transition-all duration-300 hover:scale-[1.01] space-y-6">
-                        @csrf
-                        <div class="space-y-2">
-                            <label for="amount" class="block text-sm font-medium text-gray-700">Amount (EGP)</label>
-                            <div class="relative group">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-500">
-                                    </span>
+                        <div class="grid grid-cols-2 md:grid-cols-2 gap-8">
+                            @csrf
+                            <div class="space-y-2">
+                                <label for="amount" class="block text-sm font-medium text-gray-700">Amount (EGP)</label>
+                                <div class="relative group">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="text-gray-500">
+                                        </span>
+                                    </div>
+                                    <input type="number" step="0.01" name="amount" id="amount"
+                                        class="pl-10 w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 @error('amount') border-red-500 @enderror"
+                                        required placeholder="Enter amount...">
                                 </div>
-                                <input type="number" step="0.01" name="amount" id="amount"
-                                    class="pl-10 w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 @error('amount') border-red-500 @enderror"
-                                    required placeholder="Enter amount...">
+                                @error('amount')
+                                    <p class="mt-1 text-sm text-red-500"><i
+                                            class="fas fa-exclamation-circle mr-2"></i>{{ $message }}</p>
+                                @enderror
                             </div>
-                            @error('amount')
-                                <p class="mt-1 text-sm text-red-500"><i
-                                        class="fas fa-exclamation-circle mr-2"></i>{{ $message }}</p>
-                            @enderror
-                        </div>
 
-                        <div class="space-y-2">
-                            <label for="reason" class="block text-sm font-medium text-gray-700">Reason</label>
-                            <div class="relative group">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <div class="space-y-2">
+                                <label for="reason" class="block text-sm font-medium text-gray-700">Reason</label>
+                                <div class="relative group">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
 
+                                    </div>
+                                    <input type="text" name="reason" id="reason" list="reason-suggestions"
+                                        class="pl-10 w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 @error('reason') border-red-500 @enderror"
+                                        required placeholder="Enter expense reason...">
+                                    <datalist id="reason-suggestions">
+                                        @foreach($previousReasons as $reason)
+                                            <option value="{{ $reason }}">
+                                        @endforeach
+                                    </datalist>
                                 </div>
-                                <input type="text" name="reason" id="reason" rows="3"
-                                    class="pl-10 w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 @error('reason') border-red-500 @enderror"
-                                    required placeholder="Enter expense reason...">
+                                @error('reason')
+                                    <p class="mt-1 text-sm text-red-500"><i
+                                            class="fas fa-exclamation-circle mr-2"></i>{{ $message }}</p>
+                                @enderror
                             </div>
-                            @error('reason')
-                                <p class="mt-1 text-sm text-red-500"><i
-                                        class="fas fa-exclamation-circle mr-2"></i>{{ $message }}</p>
-                            @enderror
                         </div>
-
+                        <!-- ------------------------------------- -->
                         <button type="submit"
                             class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-xl hover:from-blue-700 hover:to-blue-800 focus:ring-4 focus:ring-blue-200 font-medium transition-all duration-300 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl">
                             <i class="fas fa-plus-circle text-lg"></i>
@@ -250,6 +198,123 @@
                     </div>
                 </div>
             </div>
+            <!-- Reason Totals Display -->
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 mb-8">
+                <div class="border-b border-gray-100 p-6 bg-gradient-to-r from-gray-50 to-white">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-2xl font-bold text-gray-800">Expenses by Reason</h2>
+                        <span class="px-4 py-1.5 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-full">
+                            <i class="fas fa-list mr-2"></i>Breakdown
+                        </span>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="overflow-x-auto rounded-xl">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr class="bg-gradient-to-r from-gray-50 to-gray-100">
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Reason
+                                    </th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Total Amount (EGP)
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                @forelse($reasonTotals as $reasonTotal)
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">{{ $reasonTotal->reason }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">{{ number_format($reasonTotal->total, 2) }}</div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="2" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
+                                            No expenses recorded.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- Monthly Breakdown -->
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 mb-8">
+                <div class="border-b border-gray-100 p-6 bg-gradient-to-r from-gray-50 to-white">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold text-gray-800">Monthly Breakdown</h2>
+                        <span class="px-4 py-1.5 text-sm font-medium text-emerald-700 bg-emerald-50 rounded-full">
+                            <i class="fas fa-calendar-alt mr-2"></i>Monthly Summary
+                        </span>
+                    </div>
+                    <div class="flex gap-4 items-center">
+                        <select id="monthSelector"
+                            class="rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500">
+                            @foreach($monthlyBreakdown as $month)
+                                <option value="{{ $month['month_name'] }}">{{ $month['month_name'] }}</option>
+                            @endforeach
+                        </select>
+                        <button onclick="showMonthlyReasons()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                            <i class="fas fa-filter mr-2"></i>Show Reasons
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="overflow-x-auto rounded-xl">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr class="bg-gradient-to-r from-gray-50 to-gray-100">
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Month
+                                    </th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Total Amount (EGP)
+                                    </th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Transactions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                @forelse($monthlyBreakdown as $month)
+                                    <tr class="hover:bg-gray-50 transition-all duration-200">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900">{{ $month['month_name'] }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900 font-semibold">
+                                                {{ number_format($month['total_amount'], 2) }}
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">
+                                                {{ $month['transaction_count'] }}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
+                                            No monthly data available.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -320,6 +385,57 @@
                         button.closest('form').submit();
                     }
                 });
+            }
+
+            function showMonthlyReasons() {
+                const selectedMonth = document.getElementById('monthSelector').value;
+
+                Swal.fire({
+                    title: `Expenses for ${selectedMonth}`,
+                    html: '<div class="text-center">Loading...</div>',
+                    showConfirmButton: false,
+                    allowOutsideClick: true,
+                    showCloseButton: true,
+                    width: '600px'
+                });
+
+                fetch(`/expenses/monthly-reasons/${selectedMonth}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        let html = `
+                                    <div class="overflow-x-auto">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead>
+                                                <tr>
+                                                    <th class="px-4 py-2 text-left">Reason</th>
+                                                    <th class="px-4 py-2 text-right">Amount (EGP)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                `;
+
+                        data.forEach(item => {
+                            html += `
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-2 text-left">${item.reason}</td>
+                                            <td class="px-4 py-2 text-right">${Number(item.total).toFixed(2)}</td>
+                                        </tr>
+                                    `;
+                        });
+
+                        html += '</tbody></table></div>';
+
+                        Swal.update({
+                            html: html
+                        });
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: 'Something went wrong!'
+                        });
+                    });
             }
         </script>
     @endpush

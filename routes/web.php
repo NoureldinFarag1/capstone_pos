@@ -206,4 +206,8 @@ Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.ind
 Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
 Route::resource('expenses', ExpenseController::class);
 
+// Add this with your other expense routes
+Route::get('/expenses/monthly-reasons/{month}', [ExpenseController::class, 'getMonthlyReasons'])->name('expenses.monthly-reasons');
+
+
 require __DIR__ . '/auth.php';

@@ -27,6 +27,26 @@ class ExpenseController extends Controller
             ->orderBy('total', 'desc')
             ->get();
 
+        $previousReasons = Expense::select('reason')
+            ->distinct()
+            ->pluck('reason')
+            ->toArray();
+
+        $monthlyBreakdown = Expense::selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, 
+            SUM(amount) as total_amount, 
+            COUNT(*) as transaction_count')
+            ->groupBy('month')
+            ->orderBy('month', 'desc')
+            ->get()
+            ->map(function ($item) {
+                $date = Carbon::createFromFormat('Y-m', $item->month);
+                return [
+                    'month_name' => $date->format('F Y'),
+                    'total_amount' => $item->total_amount,
+                    'transaction_count' => $item->transaction_count
+                ];
+            });
+
         return view('expenses.index', compact(
             'expenses',
             'todayTotal',
@@ -34,7 +54,9 @@ class ExpenseController extends Controller
             'monthlyTotal',
             'monthlyCount',
             'averageExpense',
-            'reasonTotals'
+            'reasonTotals',
+            'previousReasons',
+            'monthlyBreakdown'  // Add this line
         ));
     }
 
@@ -71,5 +93,20 @@ class ExpenseController extends Controller
     {
         $expense->delete();
         return redirect()->route('expenses.index')->with('success', 'Expense deleted successfully!');
+    }
+
+    // Add this new method to the ExpenseController class
+    public function getMonthlyReasons($month)
+    {
+        $date = Carbon::createFromFormat('F Y', $month);
+
+        $reasons = Expense::selectRaw('reason, SUM(amount) as total')
+            ->whereYear('created_at', $date->year)
+            ->whereMonth('created_at', $date->month)
+            ->groupBy('reason')
+            ->orderBy('total', 'desc')
+            ->get();
+
+        return response()->json($reasons);
     }
 }
