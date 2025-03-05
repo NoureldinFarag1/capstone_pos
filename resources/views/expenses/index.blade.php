@@ -56,7 +56,7 @@
                     </div>
                 </div>
                 <div class="p-8">
-                    <form action="{{ route('expenses.store') }}" method="POST"
+                    <form action="{{ route('expenses.store') }}" method="POST" id="expenseForm"
                         class="transform transition-all duration-300 hover:scale-[1.01] space-y-6">
                         <div class="grid grid-cols-2 md:grid-cols-2 gap-8">
                             @csrf
@@ -99,10 +99,19 @@
                             </div>
                         </div>
                         <!-- ------------------------------------- -->
-                        <button type="submit"
-                            class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-xl hover:from-blue-700 hover:to-blue-800 focus:ring-4 focus:ring-blue-200 font-medium transition-all duration-300 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl">
-                            <i class="fas fa-plus-circle text-lg"></i>
-                            <span>Add Expense</span>
+                        <button type="submit" id="submitExpenseBtn"
+                            class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-xl hover:from-blue-700 hover:to-blue-800 focus:ring-4 focus:ring-blue-200 font-medium transition-all duration-300 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span class="flex items-center">
+                                <i class="fas fa-plus-circle text-lg mr-2"></i>
+                                <span class="normal-state">Add Expense</span>
+                                <span class="loading-state hidden">
+                                    <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Processing...
+                                </span>
+                            </span>
                         </button>
                     </form>
                 </div>
@@ -320,6 +329,16 @@
 
     @push('scripts')
         <script>
+            document.getElementById('expenseForm').addEventListener('submit', function(e) {
+                const button = document.getElementById('submitExpenseBtn');
+                const normalState = button.querySelector('.normal-state');
+                const loadingState = button.querySelector('.loading-state');
+                
+                button.disabled = true;
+                normalState.classList.add('hidden');
+                loadingState.classList.remove('hidden');
+            });
+
             function toggleEdit(id) {
                 const row = document.getElementById(`expense-${id}`);
                 row.querySelector('.amount-display').classList.toggle('hidden');

@@ -349,8 +349,18 @@ class SaleController extends Controller
                 $itemName = $saleItem->item->name;
                 $quantity = $saleItem->quantity;
                 $price = $saleItem->item->selling_price;
-                $discount = ($saleItem->item->discount_value / 100) * $price;
-                $lineTotal = $quantity * ($price - $discount);
+                
+                // Calculate discount based on discount type
+                $discount = 0;
+                $item = $saleItem->item;
+                if ($item->discount_type === 'percentage') {
+                    $discount = ($item->discount_value / 100) * $price;
+                } else if ($item->discount_type === 'fixed') {
+                    $discount = min($item->discount_value, $price); // Cannot discount more than price
+                }
+                
+                $priceAfterDiscount = $price - $discount;
+                $lineTotal = $quantity * $priceAfterDiscount;
 
                 // Split item name into two lines if it's too long
                 if (strlen($itemName) > 20) {
@@ -360,38 +370,49 @@ class SaleController extends Controller
                         str_pad($quantity, 5, ' ', STR_PAD_LEFT) .
                         str_pad(number_format($price, 2), 12, ' ', STR_PAD_LEFT) .
                         str_pad(number_format($lineTotal, 2), 11, ' ', STR_PAD_LEFT) . "\n" .
-                        str_pad("Discount: -" . number_format($discount, 2), 48, ' ', STR_PAD_LEFT);
+                        str_pad("Discount: -" . number_format($discount * $quantity, 2), 48, ' ', STR_PAD_LEFT);
                 } else {
                     return str_pad($itemName, 20) .
                         str_pad($quantity, 5, ' ', STR_PAD_LEFT) .
                         str_pad(number_format($price, 2), 12, ' ', STR_PAD_LEFT) .
                         str_pad(number_format($lineTotal, 2), 11, ' ', STR_PAD_LEFT) . "\n" .
-                        str_pad("Discount: -" . number_format($discount, 2), 48, ' ', STR_PAD_LEFT);
+                        str_pad("Discount: -" . number_format($discount * $quantity, 2), 48, ' ', STR_PAD_LEFT);
                 }
             })->implode("\n");
 
-            // Calculate discounts
-            $totalDiscount = $sale->saleItems->sum(function ($item) {
-                return ($item->item->discount_value / 100) * $item->quantity * $item->item->selling_price;
+            // Calculate total discounts with correct discount type handling
+            $totalDiscount = $sale->saleItems->sum(function ($saleItem) {
+                $item = $saleItem->item;
+                $price = $item->selling_price;
+                if ($item->discount_type === 'percentage') {
+                    return ($item->discount_value / 100) * $price * $saleItem->quantity;
+                } else if ($item->discount_type === 'fixed') {
+                    return min($item->discount_value, $price) * $saleItem->quantity;
+                }
+                return 0;
             });
 
-            $additionalDiscount = 0;
             $subtotalBeforeDiscount = $sale->saleItems->sum(function ($item) {
                 return $item->quantity * $item->item->selling_price;
             });
 
             $subtotal = $sale->saleItems->sum(function ($item) {
-                return $item->quantity * ($item->item->selling_price - ($item->item->discount_value / 100) * $item->item->selling_price);
+                $price = $item->selling_price;
+                $discount = 0;
+                if ($item->item->discount_type === 'percentage') {
+                    $discount = ($item->item->discount_value / 100) * $price;
+                } else if ($item->item->discount_type === 'fixed') {
+                    $discount = $item->item->discount_value;
+                }
+                return $item->quantity * ($price - $discount);
             });
 
-            if ($sale->discount_type !== 'none' && $sale->discount_value > 0) {
-                $afterItemDiscounts = $subtotal - $totalDiscount;
-
-                if ($sale->discount_type === 'percentage') {
-                    $additionalDiscount = $afterItemDiscounts * ($sale->discount_value / 100);
-                } else if ($sale->discount_type === 'fixed') {
-                    $additionalDiscount = $sale->discount_value;
-                }
+            // Calculate additional discount from the sale level
+            $additionalDiscount = 0;
+            if ($sale->discount_type === 'percentage') {
+                $additionalDiscount = $subtotal * ($sale->discount_value / 100);
+            } elseif ($sale->discount_type === 'fixed') {
+                $additionalDiscount = $sale->discount_value;
             }
 
             // Prepare base data array
