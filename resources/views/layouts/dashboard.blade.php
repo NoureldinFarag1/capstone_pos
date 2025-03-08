@@ -30,7 +30,7 @@ $user = auth()->user();
             <div class="flex justify-between h-16">
                 <!-- Logo Section -->
                 <div class="flex items-center">
-                    <a href="#" class="flex items-center">
+                    <a href="#" class="flex items-center no-underline">
                         <img src="{{ asset('images/logo.png') }}" alt="LocalHUB Logo" class="h-10 w-auto">
                         <span class="ml-3 text-xl font-bold text-gray-800">
                             <span class="text-black">LOCAL</span>

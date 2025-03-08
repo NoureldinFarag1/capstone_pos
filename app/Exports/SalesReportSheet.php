@@ -31,6 +31,7 @@ class SalesReportSheet implements FromCollection, WithHeadings, WithMapping, Wit
     {
         $query = DB::table('sale_items')
             ->join('items', 'sale_items.item_id', '=', 'items.id')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id') // Added join to fix sales.shipping_fees column error
             ->join('brands', 'items.brand_id', '=', 'brands.id')
             ->whereBetween('sale_items.created_at', [
                 $this->startDate . ' 00:00:00',
@@ -39,11 +40,13 @@ class SalesReportSheet implements FromCollection, WithHeadings, WithMapping, Wit
             ->select(
                 'brands.name as brand',
                 'items.name as item',
-                'sale_items.quantity as quantity_sold',
+                DB::raw('SUM(sale_items.quantity) as quantity_sold'),
                 'items.quantity as stock_quantity',
                 'sale_items.price as sale_price',
-                DB::raw('(sale_items.quantity * sale_items.price) as line_total')
-            );
+                DB::raw('SUM(sale_items.quantity * sale_items.price) as line_total'),
+                DB::raw('SUM(sales.shipping_fees) as shipping_total') // Add shipping total
+            )
+            ->groupBy('brands.name', 'items.name', 'items.quantity', 'sale_items.price');
 
         if ($this->brandId) {
             $query->where('items.brand_id', $this->brandId);
@@ -58,6 +61,7 @@ class SalesReportSheet implements FromCollection, WithHeadings, WithMapping, Wit
             'quantity_sold' => 'Quantity Sold',
             'stock_quantity' => 'Stock Quantity',
             'sale_price' => 'Sale Price',
+            'shipping_total' => 'Shipping', // Add shipping heading
             'line_total' => 'Total'
         ]);
 
@@ -67,6 +71,7 @@ class SalesReportSheet implements FromCollection, WithHeadings, WithMapping, Wit
             'quantity_sold' => '',
             'stock_quantity' => '',
             'sale_price' => '',
+            'shipping_total' => '', // Add empty shipping row
             'line_total' => ''
         ]);
 
@@ -81,6 +86,7 @@ class SalesReportSheet implements FromCollection, WithHeadings, WithMapping, Wit
             'Quantity Sold',
             'Current Stock',
             'Price',
+            'Shipping', // Add shipping heading
             'Total'
         ];
     }
@@ -91,8 +97,9 @@ class SalesReportSheet implements FromCollection, WithHeadings, WithMapping, Wit
             $row->brand,
             $row->item,
             $row->quantity_sold,
-            $row->stock_quantity,
+            ($row->stock_quantity === 0 ? 0 : $row->stock_quantity), // Ensuring 0 is shown as 0
             $row->sale_price,
+            $row->shipping_total, // Add shipping total
             $row->line_total
         ];
     }
@@ -108,7 +115,7 @@ class SalesReportSheet implements FromCollection, WithHeadings, WithMapping, Wit
             1 => ['font' => ['bold' => true, 'size' => 16]], // Style for custom heading row
             2 => ['font' => ['bold' => true, 'size' => 12]], // Style for date row
             3 => ['font' => ['bold' => true]], // Style for column headings
-            'A2:F2' => [
+            'A2:G2' => [ // Adjust range to include new column
                 'fill' => [
                     'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
                     'startColor' => ['rgb' => 'E2E8F0']
@@ -130,19 +137,20 @@ class SalesReportSheet implements FromCollection, WithHeadings, WithMapping, Wit
                 $sheet->setCellValue('A2', "Date: {$this->startDate} to {$this->endDate}");
 
                 // Merge cells for header
-                $sheet->mergeCells('A1:F1');
-                $sheet->mergeCells('A2:F2');
+                $sheet->mergeCells('A1:G1'); // Adjust range to include new column
+                $sheet->mergeCells('A2:G2'); // Adjust range to include new column
 
                 // Center align headers
-                $sheet->getStyle('A1:F2')->getAlignment()->setHorizontal('center');
+                $sheet->getStyle('A1:G2')->getAlignment()->setHorizontal('center'); // Adjust range to include new column
 
                 // Add totals row
                 $sheet->setCellValue("A{$totalRow}", 'TOTAL');
                 $sheet->setCellValue("C{$totalRow}", "=SUM(C4:C{$lastRow})");
                 $sheet->setCellValue("F{$totalRow}", "=SUM(F4:F{$lastRow})");
+                $sheet->setCellValue("G{$totalRow}", "=SUM(G4:G{$lastRow})"); // Add shipping total
 
                 // Style totals row
-                $sheet->getStyle("A{$totalRow}:F{$totalRow}")->applyFromArray([
+                $sheet->getStyle("A{$totalRow}:G{$totalRow}")->applyFromArray([ // Adjust range to include new column
                     'font' => ['bold' => true],
                     'fill' => [
                         'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -153,9 +161,10 @@ class SalesReportSheet implements FromCollection, WithHeadings, WithMapping, Wit
                 // Format numbers in totals row
                 $sheet->getStyle("C{$totalRow}")->getNumberFormat()->setFormatCode('#,##0');
                 $sheet->getStyle("F{$totalRow}")->getNumberFormat()->setFormatCode('#,##0.00');
+                $sheet->getStyle("G{$totalRow}")->getNumberFormat()->setFormatCode('#,##0.00'); // Format shipping total
 
                 // Add borders to the entire table
-                $sheet->getStyle('A3:F' . $totalRow)->applyFromArray([
+                $sheet->getStyle('A3:G' . $totalRow)->applyFromArray([ // Adjust range to include new column
                     'borders' => [
                         'allBorders' => [
                             'borderStyle' => Border::BORDER_THIN,

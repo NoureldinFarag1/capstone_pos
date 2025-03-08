@@ -40,14 +40,8 @@ class SaleController extends Controller
             'items.*.price' => 'required|numeric|min:0',
             'discount_type' => 'nullable|in:none,percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
-            'subtotal' => 'required|numeric|min:0',
-            'total' => 'required|numeric|min:0',
-            'customer_name' => 'nullable|string|max:255',
-            'customer_phone' => 'nullable|string|max:20',
-            'payment_method' => 'required|string',
-            'payment_reference' => 'nullable|string',
             'shipping_fees' => 'nullable|numeric|min:0',
-            'address' => 'nullable|string|max:255',
+            // Remove validation for subtotal and total as we'll calculate these
         ]);
 
         $userRole = $request->user()->role; // Assuming role is available in the user object
@@ -97,12 +91,6 @@ class SaleController extends Controller
             }
         }
 
-        // Calculate the total amount including shipping fees if applicable
-        $totalAmount = $request->total;
-        if ($request->shipping_fees) {
-            $totalAmount += $request->shipping_fees;
-        }
-
         // Get today's date
         $today = now()->toDateString();
 
@@ -110,36 +98,45 @@ class SaleController extends Controller
         $lastSale = Sale::where('sale_date', $today)->orderBy('display_id', 'desc')->first();
         $displayId = $lastSale ? $lastSale->display_id + 1 : 1;
 
-        // Create sale with display_id and sale_date
+        // Create sale record
         $sale = Sale::create([
-            'user_id' => \Illuminate\Support\Facades\Auth::user()->id, // Attach the currently authenticated user
-            'total_amount' => $totalAmount, // Use the calculated total including shipping fees
-            'subtotal' => $request->subtotal,
+            'user_id' => \Illuminate\Support\Facades\Auth::user()->id,
+            'total_amount' => 0,  // Set initial value
+            'subtotal' => 0,      // Set initial value
             'customer_name' => $request->customer_name,
             'customer_phone' => $request->customer_phone,
             'payment_method' => $request->payment_method,
             'payment_reference' => $request->payment_reference,
             'discount_type' => $validated['discount_type'],
             'discount_value' => $validated['discount_value'],
-            'shipping_fees' => $request->shipping_fees,
+            'shipping_fees' => $request->shipping_fees ?? 0,
             'address' => $request->address,
             'display_id' => $displayId,
             'sale_date' => $today,
         ]);
 
+        // Track the computed subtotal from sale items
+        $computedSubtotal = 0;
+
+        // Add sale items and update inventory
         foreach ($request->items as $itemData) {
             $item = Item::find($itemData['item_id']);
 
+            // Double-check stock availability
             if ($item->quantity < $itemData['quantity']) {
                 return redirect()->back()->with('error', 'Insufficient stock for ' . $item->name);
             }
+
+            // Calculate item subtotal
+            $itemSubtotal = $itemData['price'] * $itemData['quantity'];
+            $computedSubtotal += $itemSubtotal;
 
             // Create sale item with the price from the form
             $sale->saleItems()->create([
                 'item_id' => $item->id,
                 'quantity' => $itemData['quantity'],
                 'price' => $itemData['price'],
-                'subtotal' => $itemData['price'] * $itemData['quantity'],
+                'subtotal' => $itemSubtotal,
             ]);
 
             // Update inventory
@@ -153,14 +150,53 @@ class SaleController extends Controller
             }
         }
 
-        // Calculate and store the actual discount amount
+        // Log the computed subtotal for debugging
+        Log::info('Computed Subtotal: ' . $computedSubtotal);
+
+        // Calculate actual discount amount
+        $discountAmount = 0;
         if ($request->discount_type !== 'none' && $request->discount_value > 0) {
-            $discountAmount = $request->subtotal - $request->total;
-            $sale->update(['discount' => $discountAmount]);
+            if ($request->discount_type === 'percentage') {
+                $discountAmount = $computedSubtotal * ($request->discount_value / 100);
+            } else if ($request->discount_type === 'fixed') {
+                $discountAmount = min($request->discount_value, $computedSubtotal);
+            }
         }
 
-        // Open the cash drawer and Print the thermal receipt
+        // Log the discount calculation for debugging
+        Log::info('Discount Calculation: ', [
+            'type' => $request->discount_type,
+            'value' => $request->discount_value,
+            'amount' => $discountAmount
+        ]);
+
+        // Calculate the total amount including shipping fees and discount
+        $shippingFees = $request->shipping_fees ?? 0;
+        $totalAmount = $computedSubtotal - $discountAmount + $shippingFees;
+
+        // Ensure total is not negative
+        $totalAmount = max($totalAmount, 0);
+
+        // Log the final calculated amounts
+        Log::info('Final Calculations: ', [
+            'subtotal' => $computedSubtotal,
+            'discount' => $discountAmount,
+            'shipping' => $shippingFees,
+            'total' => $totalAmount
+        ]);
+
+        // Update the sale with the correct calculated values
+        $sale->update([
+            'subtotal' => $computedSubtotal,
+            'total_amount' => $totalAmount
+        ]);
+
+        // Log the final sale record for debugging
+        Log::info('Final Sale Record: ', $sale->toArray());
+
+        // Print the thermal receipt and open cash drawer
         $this->printThermalReceipt($sale->id);
+
         return redirect()->route('sales.index')->with('success', 'Sale created successfully.');
     }
     private function getPrinterConnector()
@@ -279,7 +315,6 @@ class SaleController extends Controller
             $printer->close();
 
             return response()->json(['success' => true]);
-
         } catch (\Exception $e) {
             Log::error('Gift receipt error: ' . $e->getMessage());
             Log::error('Stack trace: ' . $e->getTraceAsString());
@@ -349,7 +384,7 @@ class SaleController extends Controller
                 $itemName = $saleItem->item->name;
                 $quantity = $saleItem->quantity;
                 $price = $saleItem->item->selling_price;
-                
+
                 // Calculate discount based on discount type
                 $discount = 0;
                 $item = $saleItem->item;
@@ -358,7 +393,7 @@ class SaleController extends Controller
                 } else if ($item->discount_type === 'fixed') {
                     $discount = min($item->discount_value, $price); // Cannot discount more than price
                 }
-                
+
                 $priceAfterDiscount = $price - $discount;
                 $lineTotal = $quantity * $priceAfterDiscount;
 
@@ -463,7 +498,7 @@ class SaleController extends Controller
                 $template = str_replace("%$key%", $value, $template);
             }
 
-             // Print the template
+            // Print the template
             $printer->setJustification(Printer::JUSTIFY_LEFT);
             $lines = explode("\n", $template);
             foreach ($lines as $line) {
@@ -480,7 +515,6 @@ class SaleController extends Controller
 
             Log::info('Receipt printed successfully');
             return redirect()->route('sales.index')->with('success', 'Receipt printed successfully');
-
         } catch (\Exception $e) {
             Log::error('Receipt printing error: ' . $e->getMessage());
             Log::error('Stack trace: ' . $e->getTraceAsString());
@@ -678,9 +712,11 @@ class SaleController extends Controller
         $format = $request->query('format', 'excel');
 
         $sales = Sale::where('sale_date', $date)
-            ->select('payment_method',
+            ->select(
+                'payment_method',
                 DB::raw('COUNT(*) as count'),
-                DB::raw('SUM(total_amount) as total_amount'))
+                DB::raw('SUM(total_amount) as total_amount')
+            )
             ->groupBy('payment_method')
             ->get();
 
@@ -699,9 +735,11 @@ class SaleController extends Controller
         $format = $request->query('format', 'excel');
 
         $sales = Sale::where('sale_date', $date)
-            ->select(DB::raw('HOUR(created_at) as hour'),
+            ->select(
+                DB::raw('HOUR(created_at) as hour'),
                 DB::raw('COUNT(*) as count'),
-                DB::raw('SUM(total_amount) as total_amount'))
+                DB::raw('SUM(total_amount) as total_amount')
+            )
             ->groupBy('hour')
             ->orderBy('hour')
             ->get();

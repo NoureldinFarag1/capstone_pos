@@ -300,8 +300,9 @@ $(document).ready(function() {
     function calculateTotal() {
         let subtotal = 0;
         let discountAmount = 0;
+        let shippingFees = parseFloat(document.getElementById('shippingFees').value) || 0;
 
-        // Calculate subtotal
+        // Calculate subtotal from added items
         addedItems.forEach((itemEntry) => {
             subtotal += itemEntry.price * itemEntry.quantity;
         });
@@ -316,19 +317,34 @@ $(document).ready(function() {
             discountAmount = Math.min(discountValue, subtotal);
         }
 
-        const total = subtotal - discountAmount;
+        // Calculate final total including shipping fees
+        const totalBeforeShipping = subtotal - discountAmount;
+        const finalTotal = Math.max(0, totalBeforeShipping + shippingFees);
 
         // Update display
         subtotalAmountDisplay.textContent = `EGP ${subtotal.toFixed(2)}`;
         discountAmountDisplay.textContent = `EGP ${discountAmount.toFixed(2)}`;
-        totalAmountDisplay.textContent = `EGP ${total.toFixed(2)}`;
+        totalAmountDisplay.textContent = `EGP ${finalTotal.toFixed(2)}`;
 
         // Update hidden fields
         document.getElementById('hiddenSubtotal').value = subtotal.toFixed(2);
-        document.getElementById('hiddenTotal').value = total.toFixed(2);
+        document.getElementById('hiddenTotal').value = finalTotal.toFixed(2);
         document.getElementById('hiddenDiscountType').value = discountType;
         document.getElementById('hiddenDiscountValue').value = discountValue;
+
+        // Log calculations for debugging
+        console.log({
+            subtotal: subtotal.toFixed(2),
+            discountType,
+            discountValue,
+            discountAmount: discountAmount.toFixed(2),
+            shippingFees: shippingFees.toFixed(2),
+            finalTotal: finalTotal.toFixed(2)
+        });
     }
+
+    // Add shipping fees change handler
+    document.getElementById('shippingFees').addEventListener('input', calculateTotal);
 
     function getSaleItemsFromForm() {
         // This is a example structure - adapt it to match your form
