@@ -31,11 +31,8 @@
                 <!-- Logo Section -->
                 <div class="flex items-center">
                     <a href="#" class="flex items-center no-underline">
-                        <img src="{{ asset('images/logo.png') }}" alt="LocalHUB Logo" class="h-10 w-auto">
-                        <span class="ml-3 text-xl font-bold text-gray-800">
-                            <span class="text-black">LOCAL</span>
-                            <span class="text-red-600">HUB</span>
-                        </span>
+                        <img src="{{ asset('images/logo.png') }}" alt="LocalHUB Logo" class="h-12 w-auto ml-1">
+                        <img src="{{ asset('images/logo-text.png') }}" alt="LocalHUB" class="h-8 w-auto mr-1">
                     </a>
                 </div>
                 <!-- Main Navigation -->
@@ -49,7 +46,7 @@
                     @endrole
 
                     <!-- Inventory Dropdown -->
-                    <div x-data="{ isOpen: false }" class="relative">
+                    <div x-data="{ isOpen: false }" class="relative no-underline">
                         <button @click="isOpen = !isOpen" @keydown.escape.window="isOpen = false"
                             class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors">
                             <i class="fas fa-box-open mr-2"></i>
@@ -200,37 +197,37 @@
             <div class="container mx-auto p-6">
 
                 <div class="mb-8">
-                    <div class="bg-gray-50 rounded-xl shadow-lg overflow-hidden">
-                        <div class="border-b border-gray-100 p-6">
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                        <div class="border-b border-gray-200 p-6">
                             <div class="flex items-center justify-between">
-                                <h3 class="text-2xl font-bold text-gray-900">Quick Actions</h3>
-                                <span class="px-3 py-1 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-full">
+                                <h3 class="text-2xl font-bold text-gray-800">Quick Actions</h3>
+                                <span class="px-3 py-1 text-sm font-medium text-teal-700 bg-teal-100 rounded-full">
                                     Frequently Used
                                 </span>
                             </div>
                         </div>
                         <div class="p-6">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                                 <div class="col-span-full sm:col-span-2 lg:col-span-4">
                                     <h4 class="text-lg font-semibold mb-2 text-gray-700">Sales</h4>
                                 </div>
                                 <a href="{{ route('sales.create') }}"
-                                    class="group flex items-center justify-center p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                    class="group flex items-center justify-center p-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                     <i class="fas fa-plus-circle text-xl mr-2"></i>
                                     <span class="font-medium">New Sale</span>
                                 </a>
                                 <a href="{{ route('items.trace') }}"
-                                    class="group flex items-center justify-center p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                    class="group flex items-center justify-center p-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                     <i class="fas fa-search-location text-xl mr-2"></i>
                                     <span class="font-medium">Trace Item</span>
                                 </a>
                                 <a href="{{ route('expenses.index') }}"
-                                    class="group flex items-center justify-center p-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                    class="group flex items-center justify-center p-4 bg-indigo-400 hover:bg-indigo-500 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                     <i class="fas fa-receipt text-xl mr-2"></i>
                                     <span class="font-medium">Expenses</span>
                                 </a>
                                 <a href="/sales"
-                                    class="group flex items-center justify-center p-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                    class="group flex items-center justify-center p-4 bg-indigo-300 hover:bg-indigo-400 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                     <i class="fas fa-chart-line text-xl mr-2"></i>
                                     <span class="font-medium">Sales Overview</span>
                                 </a>
@@ -239,7 +236,7 @@
                                     <h4 class="text-lg font-semibold mb-2 text-gray-700">Inventory</h4>
                                 </div>
                                 <a href="/items/create"
-                                    class="group flex items-center justify-center p-4 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                    class="group flex items-center justify-center p-4 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                     <i class="fas fa-box-open text-xl mr-2"></i>
                                     <span class="font-medium">Add Item</span>
                                 </a>
@@ -249,40 +246,38 @@
                                     <span class="font-medium">View Inventory</span>
                                 </a>
                                 <a href="{{ route('items.exportCSV') }}"
-                                    class="group flex items-center justify-center p-4 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                    class="group flex items-center justify-center p-4 bg-green-400 hover:bg-green-500 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                     <i class="fas fa-file-download text-xl mr-2"></i>
                                     <span class="font-medium">Export Inventory</span>
                                 </a>
 
-                                <!-- Admin Actions -->
                                 @can('admin')
                                     <div class="col-span-full sm:col-span-2 lg:col-span-4">
                                         <h4 class="text-lg font-semibold mb-2 text-gray-700">Administration</h4>
                                     </div>
                                     <a href="{{ route('store-settings.index') }}"
-                                        class="group flex items-center justify-center p-4 bg-orange-400 hover:bg-orange-500 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                        class="group flex items-center justify-center p-4 bg-orange-600 hover:bg-orange-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                         <i class="fas fa-store text-xl mr-2"></i>
                                         <span class="font-medium">Store Settings</span>
                                     </a>
                                     <a href="/users/create"
-                                        class="group flex items-center justify-center p-4 bg-orange-400 hover:bg-orange-500 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                        class="group flex items-center justify-center p-4 bg-orange-500 hover:bg-orange-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                         <i class="fas fa-users-cog text-xl mr-2"></i>
                                         <span class="font-medium">New User</span>
                                     </a>
                                 @endcan
 
-                                <!-- Tertiary Actions -->
                                 <div class="col-span-full sm:col-span-2 lg:col-span-4">
                                     <h4 class="text-lg font-semibold mb-2 text-gray-700">Other</h4>
                                 </div>
                                 <a href="/brands/create"
-                                    class="group flex items-center justify-center p-4 bg-gray-400 hover:bg-gray-500 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                    class="group flex items-center justify-center p-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                     <i class="fas fa-tag text-xl mr-2"></i>
                                     <span class="font-medium">Add Brand</span>
                                 </a>
 
                                 <a href="/categories/create"
-                                    class="group flex items-center justify-center p-4 bg-gray-400 hover:bg-gray-500 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                    class="group flex items-center justify-center p-4 bg-gray-500 hover:bg-gray-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                     <i class="fas fa-th-list text-xl mr-2"></i>
                                     <span class="font-medium">Add Category</span>
                                 </a>
@@ -420,16 +415,16 @@
                             <div class="space-y-2">
                                 @foreach ($peakHours as $hour)
                                     <div class="flex justify-between items-center">
-                                        <span
-                                            class="font-medium">{{ Carbon\Carbon::createFromFormat('H', $hour->hour)->format('g:i A') }}</span>
-                                        <div class="flex-1 mx-4">
+                                        <span class="font-medium w-20">{{ Carbon\Carbon::createFromFormat('H', $hour->hour)->format('g:i A') }}</span>
+                                        <div class="flex-1 mx-4 relative group">
                                             <div class="h-2 bg-blue-100 rounded-full">
-                                                <div class="h-2 bg-blue-500 rounded-full"
-                                                    style="width: {{ ($hour->count / $peakHours->max('count')) * 100 }}%">
-                                                </div>
+                                                <div class="h-2 bg-blue-500 rounded-full shadow-md" style="width: {{ ($hour->count / $peakHours->max('count')) * 100 }}%"></div>
+                                            </div>
+                                            <div class="absolute left-1/2 transform -translate-x-1/2 -translate-y-full bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                {{ $hour->count }} sales
                                             </div>
                                         </div>
-                                        <span class="text-sm">{{ $hour->count }} sales</span>
+                                        <span class="text-sm w-20 text-right">{{ $hour->count }} sales</span>
                                     </div>
                                 @endforeach
                             </div>
@@ -557,7 +552,7 @@
                     </div>
 
                     <div x-show="isOpen" x-transition>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <!-- Today's Refunds -->
                             <div class="p-4 bg-red-50 rounded-lg">
                                 <div class="text-sm text-red-600 font-medium">Today's Refunds</div>

@@ -67,11 +67,11 @@
 
                 <!-- Customer Details -->
                 <div class="col-md-6">
-                    <label for="customerName" class="form-label">Customer Name</label>
-                    <input type="text" id="customerName" name="customer_name" class="form-control">
+                    <label for="customerName" class="form-label" required>Customer Name</label>
+                    <input type="text" id="customerName" name="customer_name" class="form-control" required>
 
-                    <label for="customerPhone" class="form-label">Phone Number</label>
-                    <input type="text" id="customerPhone" name="customer_phone" class="form-control">
+                    <label for="customerPhone" class="form-label" required>Phone Number</label>
+                    <input type="text" id="customerPhone" name="customer_phone" class="form-control" required>
                 </div>
             </div>
 
@@ -307,6 +307,17 @@
                 });
 
                 discountValueInput.addEventListener('input', function() {
+                    const discountType = discountTypeSelect.value;
+                    const discountValue = parseFloat(discountValueInput.value) || 0;
+
+                    if (discountType === 'percentage' && discountValue > 100) {
+                        alert('Percentage discount cannot exceed 100%.');
+                        discountValueInput.value = 100;
+                    } else if (discountType === 'fixed' && discountValue > subtotal) {
+                        alert('Fixed amount discount cannot exceed the subtotal.');
+                        discountValueInput.value = subtotal;
+                    }
+
                     calculateTotal();
                 });
 

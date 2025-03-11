@@ -6,5 +6,5 @@ return array(
   'logo_path' => public_path('images/RECEIPTLOGO.png'),
   'store_name' => 'LOCAL HUB',
   'store_slogan' => 'Your favorite local destination',
-  'store_instagram' => '@localhub_egy',
+  'store_instagram' => '@localhub.egy',
 );

@@ -41,6 +41,8 @@ class SaleController extends Controller
             'discount_type' => 'nullable|in:none,percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
             'shipping_fees' => 'nullable|numeric|min:0',
+            'customer_name' => 'required|string|max:255',
+            'customer_phone' => 'required|string|max:255',
             // Remove validation for subtotal and total as we'll calculate these
         ]);
 
@@ -435,9 +437,12 @@ class SaleController extends Controller
                 $price = $item->selling_price;
                 $discount = 0;
                 if ($item->item->discount_type === 'percentage') {
-                    $discount = ($item->item->discount_value / 100) * $price;
+                    // Ensure percentage discount is between 0 and 100
+                    $discountPercentage = max(0, min(100, $item->item->discount_value));
+                    $discount = ($discountPercentage / 100) * $price;
                 } else if ($item->item->discount_type === 'fixed') {
-                    $discount = $item->item->discount_value;
+                    // Ensure fixed discount doesn't exceed item price
+                    $discount = max(0, min($price, $item->item->discount_value));
                 }
                 return $item->quantity * ($price - $discount);
             });
@@ -445,9 +450,12 @@ class SaleController extends Controller
             // Calculate additional discount from the sale level
             $additionalDiscount = 0;
             if ($sale->discount_type === 'percentage') {
-                $additionalDiscount = $subtotal * ($sale->discount_value / 100);
+                // Ensure percentage discount is between 0 and 100
+                $discountPercentage = max(0, min(100, $sale->discount_value));
+                $additionalDiscount = $subtotal * ($discountPercentage / 100);
             } elseif ($sale->discount_type === 'fixed') {
-                $additionalDiscount = $sale->discount_value;
+                // Ensure fixed discount doesn't exceed subtotal
+                $additionalDiscount = max(0, min($subtotal, $sale->discount_value));
             }
 
             // Prepare base data array

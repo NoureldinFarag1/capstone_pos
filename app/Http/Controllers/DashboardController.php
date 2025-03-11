@@ -10,12 +10,17 @@ use App\Models\Refund;
 use App\Models\SaleItem;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
+        // Get selected month and year from request
+        $selectedMonth = $request->input('month', Carbon::now()->month);
+        $selectedYear = $request->input('year', Carbon::now()->year);
+
         // Get brands with sales
         $topSellingBrands = SaleItem::select('items.brand_id', DB::raw('SUM(sale_items.quantity) as total_sales'))
             ->join('items', 'sale_items.item_id', '=', 'items.id')
@@ -45,18 +50,7 @@ class DashboardController extends Controller
             ->get();
 
         // Sales Metrics
-        $currentMonth = Carbon::now();
-        $monthlySales = Sale::whereMonth('created_at', $currentMonth->month)
-            ->whereYear('created_at', $currentMonth->year)
-            ->sum('total_amount');
-
-        $previousMonthSales = Sale::whereMonth('created_at', $currentMonth->subMonth()->month)
-            ->whereYear('created_at', $currentMonth->year)
-            ->sum('total_amount');
-
-        $salesGrowthPercentage = $previousMonthSales > 0
-            ? (($monthlySales - $previousMonthSales) / $previousMonthSales) * 100
-            : 0;
+        $monthlySales = $this->getMonthlySalesData($selectedMonth, $selectedYear);
 
         $cashPaymentsMonthly = Sale::whereMonth('created_at', now()->month)
                             ->whereYear('created_at', now()->year)
@@ -181,8 +175,8 @@ class DashboardController extends Controller
 
         return view('layouts.dashboard', [
             'lowStockItems' => $lowStockItems,
-            'monthlySales' => $monthlySales,
-            'salesGrowthPercentage' => $salesGrowthPercentage,
+            'monthlySales' => $monthlySales['total_sales'],
+            'salesGrowthPercentage' => $monthlySales['salesGrowthPercentage'],
             'totalItems' => $totalItems,
             'totalBrands' => $totalBrands,
             'totalCategories' => $totalCategories,
@@ -199,11 +193,11 @@ class DashboardController extends Controller
             'cashPayments'=>$cashPayments,
             'creditPayments' =>$creditPayments,
             'mobilePayments' => $mobilePayments,
-            'cashPaymentsMonthly' => $cashPaymentsMonthly,
-            'creditPaymentsMonthly' => $creditPaymentsMonthly,
-            'mobilePaymentsMonthly' => $mobilePaymentsMonthly,
+            'cashPaymentsMonthly' => $monthlySales['cashPaymentsMonthly'],
+            'creditPaymentsMonthly' => $monthlySales['creditPaymentsMonthly'],
+            'mobilePaymentsMonthly' => $monthlySales['mobilePaymentsMonthly'],
             'codPayments' => $codPayments,
-            'codPaymentsMonthly' => $codPaymentsMonthly,
+            'codPaymentsMonthly' => $monthlySales['codPaymentsMonthly'],
             'topSellingBrandDetails' => $topSellingBrandDetails,
             'salesAnalytics' => $salesAnalytics,
             'inventoryMetrics' => $inventoryMetrics,
@@ -213,6 +207,8 @@ class DashboardController extends Controller
             'peakHours' => $this->getPeakHours(),
             'customerMetrics' => $this->getCustomerMetrics(),
             'refundMetrics' => $refundMetrics,
+            'selectedMonth' => $selectedMonth,
+            'selectedYear' => $selectedYear,
         ]);
     }
 
@@ -261,12 +257,13 @@ class DashboardController extends Controller
     private function getBestSellingDays()
     {
         return Sale::select(
+            DB::raw('DAYOFWEEK(created_at) as day_of_week'),
             DB::raw('DAYNAME(created_at) as day'),
             DB::raw('COUNT(*) as count'),
             DB::raw('SUM(total_amount) as total')
         )
-        ->groupBy('day')
-        ->orderBy('total', 'desc')
+        ->groupBy('day_of_week', 'day')
+        ->orderByRaw('FIELD(DAYOFWEEK(created_at), 7, 1, 2, 3, 4, 5, 6)')
         ->get();
     }
 
@@ -327,5 +324,49 @@ class DashboardController extends Controller
             ->count();
 
         return $totalSales > 0 ? ($refundedSales / $totalSales) * 100 : 0;
+    }
+
+    private function getMonthlySalesData($month, $year)
+    {
+        $monthlySales = Sale::whereMonth('created_at', $month)
+            ->whereYear('created_at', $year)
+            ->sum('total_amount');
+
+        $previousMonthSales = Sale::whereMonth('created_at', Carbon::create($year, $month)->subMonth()->month)
+            ->whereYear('created_at', $year)
+            ->sum('total_amount');
+
+        $salesGrowthPercentage = $previousMonthSales > 0
+            ? (($monthlySales - $previousMonthSales) / $previousMonthSales) * 100
+            : 0;
+
+        $cashPaymentsMonthly = Sale::whereMonth('created_at', $month)
+            ->whereYear('created_at', $year)
+            ->where('payment_method', 'cash')
+            ->sum('total_amount');
+
+        $creditPaymentsMonthly = Sale::whereMonth('created_at', $month)
+            ->whereYear('created_at', $year)
+            ->where('payment_method', 'credit_card')
+            ->sum('total_amount');
+
+        $mobilePaymentsMonthly = Sale::whereMonth('created_at', $month)
+            ->whereYear('created_at', $year)
+            ->where('payment_method', 'mobile_pay')
+            ->sum('total_amount');
+
+        $codPaymentsMonthly = Sale::whereMonth('created_at', $month)
+            ->whereYear('created_at', $year)
+            ->where('payment_method', 'cod')
+            ->sum('total_amount');
+
+        return [
+            'total_sales' => $monthlySales,
+            'salesGrowthPercentage' => $salesGrowthPercentage,
+            'cashPaymentsMonthly' => $cashPaymentsMonthly,
+            'creditPaymentsMonthly' => $creditPaymentsMonthly,
+            'mobilePaymentsMonthly' => $mobilePaymentsMonthly,
+            'codPaymentsMonthly' => $codPaymentsMonthly,
+        ];
     }
 }
