@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ItemTraceController;
+use App\Http\Controllers\VerificationController;
 
 Route::get('/connection-test', function () {
     try {
@@ -209,5 +210,6 @@ Route::resource('expenses', ExpenseController::class);
 // Add this with your other expense routes
 Route::get('/expenses/monthly-reasons/{month}', [ExpenseController::class, 'getMonthlyReasons'])->name('expenses.monthly-reasons');
 
+Route::post('/verify-access', [VerificationController::class, 'verify'])->name('verify.access');
 
 require __DIR__ . '/auth.php';

@@ -9,6 +9,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>local HUB</title>
     @vite('resources/js/app.js')
     @vite('resources/css/app.css')
@@ -195,7 +196,6 @@
         @if (Request::routeIs('dashboard'))
             <!-- Dashboard Widgets -->
             <div class="container mx-auto p-6">
-
                 <div class="mb-8">
                     <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                         <div class="border-b border-gray-200 p-6">
@@ -285,124 +285,215 @@
                         </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8" x-data="{
+                    verified: false,
+                    showVerifyModal: false,
+                    password: '',
+                    visibleSection: null,
+                    currentSection: null,
+                    showAllSections: false,
 
-                    <div
-                        class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                    async verifyAccess() {
+                        try {
+                            const response = await fetch('/verify-access', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                },
+                                body: JSON.stringify({ password: this.password })
+                            });
+
+                            const result = await response.json();
+                            if (result.success) {
+                                this.verified = true;
+                                this.visibleSection = this.currentSection;
+                                this.showVerifyModal = false;
+                                this.password = '';
+                            } else {
+                                alert('Invalid password');
+                            }
+                        } catch (error) {
+                            alert('Verification failed');
+                        }
+                    },
+
+                    toggleVisibility(section) {
+                        if (this.verified) {
+                            this.visibleSection = this.visibleSection === section ? null : section;
+                        } else {
+                            this.currentSection = section;
+                            this.showVerifyModal = true;
+                        }
+                    },
+                }">
+
+                    <!-- Today's Earnings -->
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
                         <div class="relative z-10">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-medium">Today's Earnings</h3>
-                                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                                    <i class="fas fa-dollar-sign text-2xl"></i>
+                            <button @click="toggleVisibility('earnings')" class="text-white hover:text-white/80">
+                                <i class="fas" :class="visibleSection === 'earnings' ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                            <!-- Added user-select-none to prevent text selection when blurred -->
+                            <div :class="{ 'blur-lg pointer-events-none user-select-none': visibleSection !== 'earnings' && !showAllSections }">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-medium">Today's Earnings</h3>
+                                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                        <i class="fas fa-dollar-sign text-2xl"></i>
+                                    </div>
+                                </div>
+                                <div class="text-3xl font-bold mb-2">{{ number_format($todayRevenue ?? 0, 2) }} EGP</div>
+                                @if (isset($revenueGrowth) && $revenueGrowth > 0)
+                                    <div class="text-sm bg-white/20 rounded-lg px-3 py-1.5 inline-block">
+                                        <i class="fas fa-arrow-up mr-1"></i>
+                                        {{ number_format($revenueGrowth, 1) }}% from yesterday
+                                    </div>
+                                @endif
+                                <div class="mt-6 space-y-3">
+                                    <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'cash']) }}"
+                                        class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                        :class="{ 'pointer-events-none': visibleSection !== 'earnings' && !showAllSections }">
+                                        <span class="font-medium">Cash</span>
+                                        <span class="font-bold">{{ number_format($cashPayments, 2) }} EGP</span>
+                                    </a>
+                                    <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'credit_card']) }}"
+                                        class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                        :class="{ 'pointer-events-none': visibleSection !== 'earnings' && !showAllSections }">
+                                        <span class="font-medium">Visa</span>
+                                        <span class="font-bold">{{ number_format($creditPayments, 2) }} EGP</span>
+                                    </a>
+                                    <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'mobile_pay']) }}"
+                                        class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                        :class="{ 'pointer-events-none': visibleSection !== 'earnings' && !showAllSections }">
+                                        <span class="font-medium">Mobile Payment</span>
+                                        <span class="font-bold">{{ number_format($mobilePayments, 2) }} EGP</span>
+                                    </a>
+                                    <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'cod']) }}"
+                                        class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                        :class="{ 'pointer-events-none': visibleSection !== 'earnings' && !showAllSections }">
+                                        <span class="font-medium">COD</span>
+                                        <span class="font-bold">{{ number_format($codPayments, 2) }} EGP</span>
+                                    </a>
                                 </div>
                             </div>
-                            <div class="text-3xl font-bold mb-2">{{ number_format($todayRevenue ?? 0, 2) }} EGP</div>
-                            @if (isset($revenueGrowth) && $revenueGrowth > 0)
+                        </div>
+                    </div>
+
+                    <!-- Monthly Sales -->
+                    <div class="bg-gradient-to-br from-green-500 to-green-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                        <div class="relative z-10">
+                            <button @click="toggleVisibility('monthly')" class="text-white hover:text-white/80">
+                                <i class="fas" :class="visibleSection === 'monthly' ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                            <!-- Added user-select-none to prevent text selection when blurred -->
+                            <div :class="{ 'blur-lg pointer-events-none user-select-none': visibleSection !== 'monthly' && !showAllSections }">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-medium">Monthly Sales</h3>
+                                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                        <i class="fas fa-chart-bar text-2xl"></i>
+                                    </div>
+                                </div>
+                                <div class="text-3xl font-bold mb-2">{{ number_format($monthlySales, 2) }} EGP</div>
                                 <div class="text-sm bg-white/20 rounded-lg px-3 py-1.5 inline-block">
-                                    <i class="fas fa-arrow-up mr-1"></i>
-                                    {{ number_format($revenueGrowth, 1) }}% from yesterday
+                                    {{ $salesGrowthPercentage >= 0 ? '+' : '' }}{{ number_format($salesGrowthPercentage, 2) }}%
+                                    from last month
                                 </div>
-                            @endif
-                            <div class="mt-6 space-y-3">
-                                <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'cash']) }}"
-                                    class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
-                                    <span class="font-medium">Cash</span>
-                                    <span class="font-bold">{{ number_format($cashPayments, 2) }} EGP</span>
-                                </a>
-                                <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'credit_card']) }}"
-                                    class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
-                                    <span class="font-medium">Visa</span>
-                                    <span class="font-bold">{{ number_format($creditPayments, 2) }} EGP</span>
-                                </a>
-                                <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'mobile_pay']) }}"
-                                    class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
-                                    <span class="font-medium">Mobile Payment</span>
-                                    <span class="font-bold">{{ number_format($mobilePayments, 2) }} EGP</span>
-                                </a>
-                                <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'cod']) }}"
-                                    class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
-                                    <span class="font-medium">COD</span>
-                                    <span class="font-bold">{{ number_format($codPayments, 2) }} EGP</span>
-                                </a>
+                                <div class="mt-6 space-y-3">
+                                    <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'cash']) }}"
+                                        class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                        :class="{ 'pointer-events-none': visibleSection !== 'monthly' && !showAllSections }">
+                                        <span class="font-medium">Cash</span>
+                                        <span class="font-bold">{{ number_format($cashPaymentsMonthly, 2) }} EGP</span>
+                                    </a>
+                                    <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'credit_card']) }}"
+                                        class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                        :class="{ 'pointer-events-none': visibleSection !== 'monthly' && !showAllSections }">
+                                        <span class="font-medium">Visa</span>
+                                        <span class="font-bold">{{ number_format($creditPaymentsMonthly, 2) }} EGP</span>
+                                    </a>
+                                    <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'mobile_pay']) }}"
+                                        class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                        :class="{ 'pointer-events-none': visibleSection !== 'monthly' && !showAllSections }">
+                                        <span class="font-medium">Mobile Payment</span>
+                                        <span class="font-bold">{{ number_format($mobilePaymentsMonthly, 2) }} EGP</span>
+                                    </a>
+                                    <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'cod']) }}"
+                                        class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                        :class="{ 'pointer-events-none': visibleSection !== 'monthly' && !showAllSections }">
+                                        <span class="font-medium">COD</span>
+                                        <span class="font-bold">{{ number_format($codPaymentsMonthly, 2) }} EGP</span>
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-16 -mt-16"></div>
                     </div>
 
-                    <div
-                        class="bg-gradient-to-br from-green-500 to-green-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                    <!-- Top Payment Method -->
+                    <div class="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
                         <div class="relative z-10">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-medium">Monthly Sales</h3>
-                                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                                    <i class="fas fa-chart-bar text-2xl"></i>
+                            <button @click="toggleVisibility('payment')" class="text-white hover:text-white/80">
+                                <i class="fas" :class="visibleSection === 'payment' ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                            <!-- Added user-select-none to prevent text selection when blurred -->
+                            <div :class="{ 'blur-lg pointer-events-none user-select-none': visibleSection !== 'payment' && !showAllSections }">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-medium">Top Payment Method</h3>
+                                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                        @if ($topPaymentMethod === 'cash')
+                                            <i class="fas fa-cash-register text-2xl"></i>
+                                        @elseif ($topPaymentMethod === 'credit_card')
+                                            <i class="fas fa-credit-card text-2xl"></i>
+                                        @elseif($topPaymentMethod === 'mobile_pay')
+                                            <i class="fas fa-mobile-alt text-2xl"></i>
+                                        @endif
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="text-3xl font-bold mb-2">{{ number_format($monthlySales, 2) }} EGP</div>
-                            <div class="text-sm bg-white/20 rounded-lg px-3 py-1.5 inline-block">
-                                {{ $salesGrowthPercentage >= 0 ? '+' : '' }}{{ number_format($salesGrowthPercentage, 2) }}%
-                                from last month
-                            </div>
-                            <div class="mt-6 space-y-3">
-                                <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'cash']) }}"
-                                    class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
-                                    <span class="font-medium">Cash</span>
-                                    <span class="font-bold">{{ number_format($cashPaymentsMonthly, 2) }} EGP</span>
-                                </a>
-                                <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'credit_card']) }}"
-                                    class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
-                                    <span class="font-medium">Visa</span>
-                                    <span class="font-bold">{{ number_format($creditPaymentsMonthly, 2) }} EGP</span>
-                                </a>
-                                <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'mobile_pay']) }}"
-                                    class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
-                                    <span class="font-medium">Mobile Payment</span>
-                                    <span class="font-bold">{{ number_format($mobilePaymentsMonthly, 2) }} EGP</span>
-                                </a>
-                                <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'cod']) }}"
-                                    class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white">
-                                    <span class="font-medium">COD</span>
-                                    <span class="font-bold">{{ number_format($codPaymentsMonthly, 2) }} EGP</span>
-                                </a>
-                            </div>
-                        </div>
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-16 -mt-16"></div>
-                    </div>
-
-                    <div
-                        class="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
-                        <div class="relative z-10">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-medium">Top Payment Method</h3>
-                                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                                    @if ($topPaymentMethod === 'cash')
-                                        <i class="fas fa-cash-register text-2xl"></i>
-                                    @elseif ($topPaymentMethod === 'credit_card')
-                                        <i class="fas fa-credit-card text-2xl"></i>
-                                    @elseif($topPaymentMethod === 'mobile_pay')
-                                        <i class="fas fa-mobile-alt text-2xl"></i>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="text-3xl font-bold mb-4">{{ ucfirst($topPaymentMethod) }}</div>
-                            <div class="bg-white/20 rounded-lg p-4 text-sm">
-                                <div class="mb-2 flex justify-between">
-                                    <span class="font-medium">Top Payment Method</span>
-                                    <span
-                                        class="font-bold">{{ number_format($topPaymentMethodPercentage, 2) }}%</span>
-                                </div>
-                                <div class="w-full bg-white/30 rounded-full h-2 mb-4">
-                                    <div class="bg-white h-2 rounded-full"
-                                        style="width: {{ $topPaymentMethodPercentage }}%"></div>
-                                </div>
-                                <div class="text-white/80">
-                                    {{ $topPaymentMethodCount }} out of {{ $AllSalesCount }} transactions
+                                <div class="text-3xl font-bold mb-4">{{ ucfirst($topPaymentMethod) }}</div>
+                                <div class="bg-white/20 rounded-lg p-4 text-sm">
+                                    <div class="mb-2 flex justify-between">
+                                        <span class="font-medium">Top Payment Method</span>
+                                        <span class="font-bold">{{ number_format($topPaymentMethodPercentage, 2) }}%</span>
+                                    </div>
+                                    <div class="w-full bg-white/30 rounded-full h-2 mb-4">
+                                        <div class="bg-white h-2 rounded-full" style="width: {{ $topPaymentMethodPercentage }}%"></div>
+                                    </div>
+                                    <div class="text-white/80">
+                                        {{ $topPaymentMethodCount }} out of {{ $AllSalesCount }} transactions
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-16 -mt-16"></div>
                     </div>
 
+                    <!-- Single Verify Modal for all sections -->
+                    <div x-show="showVerifyModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+                        <div class="flex items-center justify-center min-h-screen px-4">
+                            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+                            <div class="relative bg-white rounded-lg max-w-md w-full p-6">
+                                <div class="mb-4">
+                                    <h3 class="text-lg font-medium text-gray-900">Verify Access</h3>
+                                    <p class="text-sm text-gray-600 mt-1">Please enter your password to view sensitive data</p>
+                                </div>
+                                <form @submit.prevent="verifyAccess">
+                                    <div class="mb-4">
+                                        <input type="password" x-model="password"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Enter your password">
+                                    </div>
+                                    <div class="flex justify-end space-x-3">
+                                        <button type="button" @click="showVerifyModal = false"
+                                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                                            Cancel
+                                        </button>
+                                        <button type="submit"
+                                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                                            Verify
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <!-- Add after existing metrics -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -415,12 +506,16 @@
                             <div class="space-y-2">
                                 @foreach ($peakHours as $hour)
                                     <div class="flex justify-between items-center">
-                                        <span class="font-medium w-20">{{ Carbon\Carbon::createFromFormat('H', $hour->hour)->format('g:i A') }}</span>
+                                        <span
+                                            class="font-medium w-20">{{ Carbon\Carbon::createFromFormat('H', $hour->hour)->format('g:i A') }}</span>
                                         <div class="flex-1 mx-4 relative group">
                                             <div class="h-2 bg-blue-100 rounded-full">
-                                                <div class="h-2 bg-blue-500 rounded-full shadow-md" style="width: {{ ($hour->count / $peakHours->max('count')) * 100 }}%"></div>
+                                                <div class="h-2 bg-blue-500 rounded-full shadow-md"
+                                                    style="width: {{ ($hour->count / $peakHours->max('count')) * 100 }}%">
+                                                </div>
                                             </div>
-                                            <div class="absolute left-1/2 transform -translate-x-1/2 -translate-y-full bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            <div
+                                                class="absolute left-1/2 transform -translate-x-1/2 -translate-y-full bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                                 {{ $hour->count }} sales
                                             </div>
                                         </div>
@@ -472,32 +567,250 @@
                         </div>
                     </div>
                 </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8" x-data="{
+                    verified: false,
+                    showVerifyModal: false,
+                    password: '',
+                    visibleSection: null,
+                    currentSection: null,
+                    showAllSections: false,
+
+                    async verifyAccess() {
+                        try {
+                            const response = await fetch('/verify-access', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                },
+                                body: JSON.stringify({ password: this.password })
+                            });
+
+                            const result = await response.json();
+                            if (result.success) {
+                                this.verified = true;
+                                this.visibleSection = this.currentSection;
+                                this.showVerifyModal = false;
+                                this.password = '';
+                            } else {
+                                alert('Invalid password');
+                            }
+                        } catch (error) {
+                            alert('Verification failed');
+                        }
+                    },
+
+                    toggleVisibility(section) {
+                        if (this.verified) {
+                            this.visibleSection = this.visibleSection === section ? null : section;
+                        } else {
+                            this.currentSection = section;
+                            this.showVerifyModal = true;
+                        }
+                    },
+                }">
+
+                    <!-- Today's Earnings -->
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                        <div class="relative z-10">
+                            <button @click="toggleVisibility('earnings')" class="text-white hover:text-white/80">
+                                <i class="fas" :class="visibleSection === 'earnings' ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                            <div :class="{ 'blur-lg pointer-events-none user-select-none': visibleSection !== 'earnings' && !showAllSections }">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-medium">Today's Earnings</h3>
+                                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                        <i class="fas fa-dollar-sign text-2xl"></i>
+                                    </div>
+                                </div>
+                                <div class="text-3xl font-bold mb-2">{{ number_format($todayRevenue ?? 0, 2) }} EGP</div>
+                                @if (isset($revenueGrowth) && $revenueGrowth > 0)
+                                    <div class="text-sm bg-white/20 rounded-lg px-3 py-1.5 inline-block">
+                                        <i class="fas fa-arrow-up mr-1"></i>
+                                        {{ number_format($revenueGrowth, 1) }}% from yesterday
+                                    </div>
+                                @endif
+                                <div class="mt-6 space-y-3">
+                                    <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'cash']) }}"
+                                        class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                        :class="{ 'pointer-events-none': visibleSection !== 'earnings' && !showAllSections }">
+                                        <span class="font-medium">Cash</span>
+                                        <span class="font-bold">{{ number_format($cashPayments, 2) }} EGP</span>
+                                    </a>
+                                    <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'credit_card']) }}"
+                                        class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                        :class="{ 'pointer-events-none': visibleSection !== 'earnings' && !showAllSections }">
+                                        <span class="font-medium">Visa</span>
+                                        <span class="font-bold">{{ number_format($creditPayments, 2) }} EGP</span>
+                                    </a>
+                                    <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'mobile_pay']) }}"
+                                        class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                        :class="{ 'pointer-events-none': visibleSection !== 'earnings' && !showAllSections }">
+                                        <span class="font-medium">Mobile Payment</span>
+                                        <span class="font-bold">{{ number_format($mobilePayments, 2) }} EGP</span>
+                                    </a>
+                                    <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'cod']) }}"
+                                        class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                        :class="{ 'pointer-events-none': visibleSection !== 'earnings' && !showAllSections }">
+                                        <span class="font-medium">COD</span>
+                                        <span class="font-bold">{{ number_format($codPayments, 2) }} EGP</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Sales -->
+                    <div class="bg-gradient-to-br from-green-500 to-green-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                        <div class="relative z-10">
+                            <button @click="toggleVisibility('monthly')" class="text-white hover:text-white/80">
+                                <i class="fas" :class="visibleSection === 'monthly' ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                            <div :class="{ 'blur-lg pointer-events-none user-select-none': visibleSection !== 'monthly' && !showAllSections }">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-medium">Monthly Sales</h3>
+                                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                        <i class="fas fa-chart-bar text-2xl"></i>
+                                    </div>
+                                </div>
+                                <div class="text-3xl font-bold mb-2">{{ number_format($monthlySales, 2) }} EGP</div>
+                                <div class="text-sm bg-white/20 rounded-lg px-3 py-1.5 inline-block">
+                                    {{ $salesGrowthPercentage >= 0 ? '+' : '' }}{{ number_format($salesGrowthPercentage, 2) }}%
+                                    from last month
+                                </div>
+                                <div class="mt-6 space-y-3">
+                                    <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'cash']) }}"
+                                        class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                        :class="{ 'pointer-events-none': visibleSection !== 'monthly' && !showAllSections }">
+                                        <span class="font-medium">Cash</span>
+                                        <span class="font-bold">{{ number_format($cashPaymentsMonthly, 2) }} EGP</span>
+                                    </a>
+                                    <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'credit_card']) }}"
+                                        class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                        :class="{ 'pointer-events-none': visibleSection !== 'monthly' && !showAllSections }">
+                                        <span class="font-medium">Visa</span>
+                                        <span class="font-bold">{{ number_format($creditPaymentsMonthly, 2) }} EGP</span>
+                                    </a>
+                                    <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'mobile_pay']) }}"
+                                        class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                        :class="{ 'pointer-events-none': visibleSection !== 'monthly' && !showAllSections }">
+                                        <span class="font-medium">Mobile Payment</span>
+                                        <span class="font-bold">{{ number_format($mobilePaymentsMonthly, 2) }} EGP</span>
+                                    </a>
+                                    <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'cod']) }}"
+                                        class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                        :class="{ 'pointer-events-none': visibleSection !== 'monthly' && !showAllSections }">
+                                        <span class="font-medium">COD</span>
+                                        <span class="font-bold">{{ number_format($codPaymentsMonthly, 2) }} EGP</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Payment Method -->
+                    <div class="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                        <div class="relative z-10">
+                            <button @click="toggleVisibility('payment')" class="text-white hover:text-white/80">
+                                <i class="fas" :class="visibleSection === 'payment' ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                            <div :class="{ 'blur-lg pointer-events-none user-select-none': visibleSection !== 'payment' && !showAllSections }">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-medium">Top Payment Method</h3>
+                                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                        @if ($topPaymentMethod === 'cash')
+                                            <i class="fas fa-cash-register text-2xl"></i>
+                                        @elseif ($topPaymentMethod === 'credit_card')
+                                            <i class="fas fa-credit-card text-2xl"></i>
+                                        @elseif($topPaymentMethod === 'mobile_pay')
+                                            <i class="fas fa-mobile-alt text-2xl"></i>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="text-3xl font-bold mb-4">{{ ucfirst($topPaymentMethod) }}</div>
+                                <div class="bg-white/20 rounded-lg p-4 text-sm">
+                                    <div class="mb-2 flex justify-between">
+                                        <span class="font-medium">Top Payment Method</span>
+                                        <span class="font-bold">{{ number_format($topPaymentMethodPercentage, 2) }}%</span>
+                                    </div>
+                                    <div class="w-full bg-white/30 rounded-full h-2 mb-4">
+                                        <div class="bg-white h-2 rounded-full" style="width: {{ $topPaymentMethodPercentage }}%"></div>
+                                    </div>
+                                    <div class="text-white/80">
+                                        {{ $topPaymentMethodCount }} out of {{ $AllSalesCount }} transactions
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Single Verify Modal for all sections -->
+                    <div x-show="showVerifyModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+                        <div class="flex items-center justify-center min-h-screen px-4">
+                            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+                            <div class="relative bg-white rounded-lg max-w-md w-full p-6">
+                                <div class="mb-4">
+                                    <h3 class="text-lg font-medium text-gray-900">Verify Access</h3>
+                                    <p class="text-sm text-gray-600 mt-1">Please enter your password to view sensitive data</p>
+                                </div>
+                                <form @submit.prevent="verifyAccess">
+                                    <div class="mb-4">
+                                        <input type="password" x-model="password"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Enter your password">
+                                    </div>
+                                    <div class="flex justify-end space-x-3">
+                                        <button type="button" @click="showVerifyModal = false"
+                                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                                            Cancel
+                                        </button>
+                                        <button type="submit"
+                                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                                            Verify
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Inventory Status -->
-                <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                    <h3 class="text-xl font-bold mb-4">Inventory Insights</h3>
-                    <div class="grid grid-cols-4 gap-4">
-                        <div class="p-4 bg-green-50 rounded-lg">
-                            <div class="text-sm text-green-600 font-medium">Total Value</div>
-                            <div class="text-2xl font-bold text-green-700">
-                                {{ number_format($inventoryMetrics['total_value'], 2) }} EGP
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-8 relative" x-data="{
+                    isInventoryVisible: false
+                }">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold">Inventory Insights</h3>
+                        <button @click="toggleVisibility('inventory')" class="text-gray-600 hover:text-gray-900">
+                            <i class="fas" :class="visibleSection === 'inventory' ? 'fa-eye-slash' : 'fa-eye'"></i>
+                        </button>
+                    </div>
+
+                    <div :class="{ 'blur-lg pointer-events-none user-select-none': visibleSection !== 'inventory' && !showAllSections }">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div class="p-4 bg-green-50 rounded-lg">
+                                <div class="text-sm text-green-600 font-medium">Total Value</div>
+                                <div class="text-2xl font-bold text-green-700">
+                                    {{ number_format($inventoryMetrics['total_value'], 2) }} EGP
+                                </div>
                             </div>
-                        </div>
-                        <div class="p-4 bg-yellow-50 rounded-lg">
-                            <div class="text-sm text-yellow-600 font-medium">Avg Item Price</div>
-                            <div class="text-2xl font-bold text-yellow-700">
-                                {{ number_format($inventoryMetrics['avg_item_price'], 2) }} EGP
+                            <div class="p-4 bg-yellow-50 rounded-lg">
+                                <div class="text-sm text-yellow-600 font-medium">Avg Item Price</div>
+                                <div class="text-2xl font-bold text-yellow-700">
+                                    {{ number_format($inventoryMetrics['avg_item_price'], 2) }} EGP
+                                </div>
                             </div>
-                        </div>
-                        <div class="p-4 bg-red-50 rounded-lg">
-                            <div class="text-sm text-red-600 font-medium">Out of Stock</div>
-                            <div class="text-2xl font-bold text-red-700">
-                                {{ $inventoryMetrics['out_of_stock'] }}
+                            <div class="p-4 bg-red-50 rounded-lg">
+                                <div class="text-sm text-red-600 font-medium">Out of Stock</div>
+                                <div class="text-2xl font-bold text-red-700">
+                                    {{ $inventoryMetrics['out_of_stock'] }}
+                                </div>
                             </div>
-                        </div>
-                        <div class="p-4 bg-blue-50 rounded-lg">
-                            <div class="text-sm text-blue-600 font-medium">Inventory Turnover</div>
-                            <div class="text-2xl font-bold text-blue-700">
-                                {{ number_format($inventoryMetrics['inventory_turnover'], 2) }}x
+                            <div class="p-4 bg-blue-50 rounded-lg">
+                                <div class="text-sm text-blue-600 font-medium">Inventory Turnover</div>
+                                <div class="text-2xl font-bold text-blue-700">
+                                    {{ number_format($inventoryMetrics['inventory_turnover'], 2) }}x
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -723,7 +1036,8 @@
                                     </div>
                                     <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
                                         <div class="bg-green-500 h-2.5 rounded-full transition-all duration-500"
-                                            style="width: {{ ($stockLevels['healthy'] / $totalItems) * 100 }}%"></div>
+                                            style="width: {{ ($stockLevels['healthy'] / $totalItems) * 100 }}%">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
