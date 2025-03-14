@@ -9,6 +9,7 @@ use App\Http\Controllers\SizeController;
 use App\Http\Controllers\RefundController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\BrandTraceController;
 use App\Http\Controllers\CashDrawerController;
 use App\Http\Controllers\ColorController;
 use App\Http\Controllers\CustomerController;
@@ -173,6 +174,10 @@ Route::middleware(['auth'])->group(function () {
     // Add trace items routes at the beginning of the auth middleware group
     Route::get('/trace-items', [ItemTraceController::class, 'index'])->name('items.trace');
     Route::post('/trace-items', [ItemTraceController::class, 'trace'])->name('items.trace.search');
+
+    // Add these routes with the other trace routes
+    Route::get('/trace-brands', [BrandTraceController::class, 'index'])->name('brands.trace');
+    Route::post('/trace-brands', [BrandTraceController::class, 'trace'])->name('brands.trace.search');
 
     // Routes accessible by all authenticated users
     Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
