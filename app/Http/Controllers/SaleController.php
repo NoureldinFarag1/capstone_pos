@@ -43,6 +43,7 @@ class SaleController extends Controller
             'shipping_fees' => 'nullable|numeric|min:0',
             'customer_name' => 'required|string|max:255',
             'customer_phone' => 'required|string|max:255',
+            'notes' => 'nullable|string|max:1000',
             // Remove validation for subtotal and total as we'll calculate these
         ]);
 
@@ -113,6 +114,7 @@ class SaleController extends Controller
             'discount_value' => $validated['discount_value'],
             'shipping_fees' => $request->shipping_fees ?? 0,
             'address' => $request->address,
+            'notes' => $request->notes,
             'display_id' => $displayId,
             'sale_date' => $today,
         ]);
@@ -458,6 +460,14 @@ class SaleController extends Controller
                 $additionalDiscount = max(0, min($subtotal, $sale->discount_value));
             }
 
+            // Log discount values for debugging
+            Log::info('Discount values:', [
+                'total_discount' => $totalDiscount,
+                'additional_discount' => $additionalDiscount,
+                'discount_type' => $sale->discount_type,
+                'discount_value' => $sale->discount_value
+            ]);
+
             // Prepare base data array
             $data = [
                 'store_name' => $storeName,
@@ -474,6 +484,8 @@ class SaleController extends Controller
                 'subtotal' => number_format($subtotal, 2),
                 'total_discount' => number_format($totalDiscount, 2),
                 'additional_discount' => number_format($additionalDiscount, 2),
+                'sale_discount_type' => $sale->discount_type,
+                'sale_discount_value' => $sale->discount_value,
                 'total_amount' => number_format($sale->total_amount, 2),
                 'shipping_fees' => $sale->shipping_fees ? number_format($sale->shipping_fees, 2) : '0.00',
             ];
@@ -496,6 +508,10 @@ class SaleController extends Controller
 
             // Add discount details if applicable
             if ($sale->discount_type !== 'none' && $sale->discount_value > 0) {
+                $discountLine = $sale->discount_type === 'percentage'
+                    ? "Additional Discount ({$sale->discount_value}%)"
+                    : "Additional Discount (Fixed)";
+                $data['discount_line'] = $discountLine;
                 $template = str_replace(['%if_discount_start%', '%if_discount_end%'], '', $template);
             } else {
                 $template = preg_replace('/%if_discount_start%.*?%if_discount_end%\n?/s', '', $template);

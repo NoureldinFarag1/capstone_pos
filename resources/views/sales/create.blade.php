@@ -134,6 +134,14 @@
                 </div>
             </div>
 
+            <!-- Notes Field -->
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <label for="notes" class="form-label">Notes</label>
+                    <textarea id="notes" name="notes" class="form-control" rows="3" placeholder="Add any notes about this sale"></textarea>
+                </div>
+            </div>
+
             <input type="hidden" name="subtotal" id="hiddenSubtotal">
             <input type="hidden" name="total" id="hiddenTotal">
             <input type="hidden" name="discount_type" id="hiddenDiscountType">

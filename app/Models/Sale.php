@@ -26,7 +26,8 @@ class Sale extends Model
         'shipping_fees',
         'address',
         'display_id',
-        'sale_date'
+        'sale_date',
+        'notes'
     ];
     public $timestamps = true;
 

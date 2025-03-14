@@ -64,6 +64,17 @@
                             </div>
                         </div>
 
+                        @if($sale->notes)
+                        <div class="mb-4">
+                            <h3 class="card-title text-secondary mb-3">Notes</h3>
+                            <div class="card bg-light">
+                                <div class="card-body p-3">
+                                    <p class="mb-0">{{ $sale->notes }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         <div class="row justify-content-end mb-4">
                             <div class="col-md-6">
                                 <div class="card bg-light">
