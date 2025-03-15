@@ -116,8 +116,7 @@
             <div class="row mb-3">
                 <div class="col-md-6" id="shippingFeesContainer" style="display: none;">
                     <label for="shippingFees" class="form-label">Shipping Fees</label>
-                    <input type="number" id="shippingFees" name="shipping_fees" class="form-control" min="0"
-                        value="0">
+                    <input type="number" id="shippingFees" name="shipping_fees" class="form-control" min="0" value="0">
                 </div>
                 <div class="col-md-6" id="addressContainer" style="display: none;">
                     <label for="address" class="form-label">Address</label>
@@ -138,7 +137,8 @@
             <div class="row mb-3">
                 <div class="col-md-12">
                     <label for="notes" class="form-label">Notes</label>
-                    <textarea id="notes" name="notes" class="form-control" rows="3" placeholder="Add any notes about this sale"></textarea>
+                    <textarea id="notes" name="notes" class="form-control" rows="3"
+                        placeholder="Add any notes about this sale"></textarea>
                 </div>
             </div>
 
@@ -170,7 +170,7 @@
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script>
-            $(document).ready(function() {
+            $(document).ready(function () {
                 $('#itemSelect').select2({
                     placeholder: 'Select an item',
                     allowClear: true
@@ -194,7 +194,7 @@
                 const shippingFeesContainer = document.getElementById('shippingFeesContainer');
                 const addressContainer = document.getElementById('addressContainer');
 
-                customerPhoneInput.addEventListener('blur', function() {
+                customerPhoneInput.addEventListener('blur', function () {
                     const phoneNumber = customerPhoneInput.value.trim();
                     if (phoneNumber) {
                         fetch(`/customers/fetch-name?phone=${phoneNumber}`)
@@ -268,26 +268,47 @@
                     listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
                     listItem.setAttribute('data-item-id', itemEntry.id);
 
-                    listItem.innerHTML =
-                        `
-                                                                                                                                                    ${itemEntry.name} - EGP ${itemEntry.price.toFixed(2)}
-                                                                                                                                                    <div class="d-flex align-items-center">
-                                                                                                                                                        <span class="badge bg-primary rounded-pill me-2">
-                                                                                                                                                            Qty: ${itemEntry.quantity}
-                                                                                                                                                        </span>
-                                                                                                                                                        <button type="button" class="btn btn-danger btn-sm remove-item">
-                                                                                                                                                            Remove
-                                                                                                                                                        </button>
-                                                                                                                                                        <input type="hidden" name="items[${itemEntry.id}][item_id]" value="${itemEntry.id}">
-                                                                                                                                                        <input type="hidden" name="items[${itemEntry.id}][quantity]" value="${itemEntry.quantity}">
-                                                                                                                                                        <input type="hidden" name="items[${itemEntry.id}][price]" value="${itemEntry.price}">
-                                                                                                                                                    </div>
-                                                                                                                                                `;
+                    listItem.innerHTML = `
+                                                                                                <div class="d-flex align-items-center">
+                                                                                                    <input type="checkbox" class="item-checkbox me-2" checked>
+                                                                                                    ${itemEntry.name} - EGP ${itemEntry.price.toFixed(2)}
+                                                                                                </div>
+                                                                                                <div class="d-flex align-items-center">
+                                                                                                    <span class="badge bg-primary rounded-pill me-2">
+                                                                                                        Qty: ${itemEntry.quantity}
+                                                                                                    </span>
+                                                                                                    <button type="button" class="btn btn-danger btn-sm remove-item">
+                                                                                                        Remove
+                                                                                                    </button>
+                                                                                                    <input type="hidden" name="items[${itemEntry.id}][item_id]" value="${itemEntry.id}">
+                                                                                                    <input type="hidden" name="items[${itemEntry.id}][quantity]" value="${itemEntry.quantity}">
+                                                                                                    <input type="hidden" name="items[${itemEntry.id}][price]" value="${itemEntry.price}">
+                                                                                                </div>
+                                                                                            `;
 
                     itemList.appendChild(listItem);
 
+                    // Add checkbox change event listener
+                    const checkbox = listItem.querySelector('.item-checkbox');
+                    checkbox.addEventListener('change', function () {
+                        if (!this.checked) {
+                            // Add item price to discount value when unchecked
+                            const currentDiscount = parseFloat(discountValueInput.value) || 0;
+                            const itemTotal = itemEntry.price * itemEntry.quantity;
+                            discountValueInput.value = (currentDiscount + itemTotal).toFixed(2);
+                            discountTypeSelect.value = 'fixed'; // Switch to fixed discount
+                        } else {
+                            // Remove item price from discount when checked
+                            const currentDiscount = parseFloat(discountValueInput.value) || 0;
+                            const itemTotal = itemEntry.price * itemEntry.quantity;
+                            discountValueInput.value = Math.max(0, (currentDiscount - itemTotal)).toFixed(2);
+                        }
+                        calculateTotal();
+                        updateNotesWithCheckedItems(); // Add this line
+                    });
+
                     // Add remove item event listener
-                    listItem.querySelector('.remove-item').addEventListener('click', function() {
+                    listItem.querySelector('.remove-item').addEventListener('click', function () {
                         const itemId = listItem.getAttribute('data-item-id');
                         addedItems.delete(itemId);
                         listItem.remove();
@@ -307,14 +328,14 @@
                     }
                 }
 
-                discountTypeSelect.addEventListener('change', function() {
+                discountTypeSelect.addEventListener('change', function () {
                     // Preserve the current discount value when changing type
                     const currentValue = parseFloat(discountValueInput.value) || 0;
                     discountValueInput.value = currentValue;
                     calculateTotal();
                 });
 
-                discountValueInput.addEventListener('input', function() {
+                discountValueInput.addEventListener('input', function () {
                     const discountType = discountTypeSelect.value;
                     const discountValue = parseFloat(discountValueInput.value) || 0;
 
@@ -336,40 +357,75 @@
                     const currentDiscountValue = parseFloat(discountValueInput.value) || 0;
 
                     let subtotal = 0;
+                    let uncheckedItemsTotal = 0;
                     let discountAmount = 0;
                     let shippingFees = parseFloat(document.getElementById('shippingFees').value) || 0;
 
-                    addedItems.forEach((itemEntry) => {
-                        subtotal += itemEntry.price * itemEntry.quantity;
+                    // Calculate subtotal and handle unchecked items
+                    itemList.querySelectorAll('li').forEach((item) => {
+                        const checkbox = item.querySelector('.item-checkbox');
+                        const itemId = item.getAttribute('data-item-id');
+                        const itemEntry = addedItems.get(itemId);
+
+                        if (itemEntry) {
+                            const itemTotal = itemEntry.price * itemEntry.quantity;
+                            if (checkbox && checkbox.checked) {
+                                subtotal += itemTotal;
+                            } else {
+                                uncheckedItemsTotal += itemTotal;
+                            }
+                        }
                     });
 
+                    // Calculate regular discount
                     if (currentDiscountType === 'percentage') {
-                        discountAmount = subtotal * (currentDiscountValue / 100);
+                        discountAmount = subtotal * (Math.min(currentDiscountValue, 100) / 100);
                     } else if (currentDiscountType === 'fixed') {
-                        discountAmount = Math.min(currentDiscountValue, subtotal);
+                        discountAmount = Math.min(currentDiscountValue, subtotal + uncheckedItemsTotal);
                     }
 
-                    const totalBeforeShipping = subtotal - discountAmount;
-                    const finalTotal = Math.max(0, totalBeforeShipping + shippingFees);
+                    // Calculate final totals
+                    const totalBeforeShipping = Math.max(0, (subtotal + uncheckedItemsTotal) - discountAmount);
+                    const finalTotal = totalBeforeShipping + shippingFees;
 
-                    subtotalAmountDisplay.textContent = `EGP ${subtotal.toFixed(2)}`;
+                    // Update display values
+                    subtotalAmountDisplay.textContent = `EGP ${(subtotal + uncheckedItemsTotal).toFixed(2)}`;
                     discountAmountDisplay.textContent = `EGP ${discountAmount.toFixed(2)}`;
                     totalAmountDisplay.textContent = `EGP ${finalTotal.toFixed(2)}`;
 
-                    document.getElementById('hiddenSubtotal').value = subtotal.toFixed(2);
+                    // Update hidden inputs
+                    document.getElementById('hiddenSubtotal').value = (subtotal + uncheckedItemsTotal).toFixed(2);
                     document.getElementById('hiddenTotal').value = finalTotal.toFixed(2);
                     document.getElementById('hiddenDiscountType').value = currentDiscountType;
                     document.getElementById('hiddenDiscountValue').value = currentDiscountValue;
 
+                    // Debug logging
                     console.log('Calculation details:', {
-                        discountType: currentDiscountType,
-                        discountValue: currentDiscountValue,
                         subtotal: subtotal.toFixed(2),
+                        uncheckedItemsTotal: uncheckedItemsTotal.toFixed(2),
                         discountAmount: discountAmount.toFixed(2),
+                        shippingFees: shippingFees.toFixed(2),
                         finalTotal: finalTotal.toFixed(2)
                     });
                 }
 
+                // Add this new function after calculateTotal
+                function updateNotesWithCheckedItems() {
+                    const checkedItems = [];
+                    itemList.querySelectorAll('li').forEach((item) => {
+                        const checkbox = item.querySelector('.item-checkbox');
+                        if (checkbox && !checkbox.checked) {
+                            const itemName = item.querySelector('.d-flex').textContent.trim().split(' (')[0];
+                            checkedItems.push(itemName);
+                        }
+                    });
+
+                    const notesField = document.getElementById('notes');
+                    const existingNotes = notesField.value.split('\n').filter(line => !line.startsWith('Free Items:')).join('\n');
+                    const checkedItemsText = checkedItems.length > 0 ? `Free Items: ${checkedItems.join(' / ')}` : '';
+
+                    notesField.value = existingNotes.trim() + (existingNotes.trim() && checkedItemsText ? '\n' : '') + checkedItemsText;
+                }
 
                 // Add shipping fees change handler
                 document.getElementById('shippingFees').addEventListener('input', calculateTotal);
@@ -424,7 +480,7 @@
                 }
 
                 // Prevent form submission on Enter key and refocus barcode input
-                saleForm.addEventListener('keydown', function(e) {
+                saleForm.addEventListener('keydown', function (e) {
                     if (e.key === 'Enter' && e.target === barcodeInput) {
                         e.preventDefault(); // Prevent form submission
                         barcodeInput.value = ''; // Clear the input
@@ -433,7 +489,7 @@
                 });
 
                 // Add Item Button Handler
-                addItemButton.addEventListener('click', function() {
+                addItemButton.addEventListener('click', function () {
                     const selectedOption = itemSelect.options[itemSelect.selectedIndex];
 
                     if (selectedOption.value) {
@@ -455,7 +511,7 @@
                 });
 
                 // Barcode Input Handler
-                barcodeInput.addEventListener('input', function(e) {
+                barcodeInput.addEventListener('input', function (e) {
                     const barcode = e.target.value.trim();
 
                     // Trigger barcode search immediately after input
@@ -468,14 +524,14 @@
                 });
 
                 // Discount and Total Calculation Handlers
-                discountTypeSelect.addEventListener('change', function() {
+                discountTypeSelect.addEventListener('change', function () {
                     // Preserve the current discount value when changing type
                     const currentValue = parseFloat(discountValueInput.value) || 0;
                     discountValueInput.value = currentValue;
                     calculateTotal();
                 });
 
-                discountValueInput.addEventListener('input', function() {
+                discountValueInput.addEventListener('input', function () {
                     calculateTotal();
                 });
 
@@ -506,16 +562,16 @@
                     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
                     fetch('{{ route('sales.print-gift-receipt') }}', {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': csrfToken,
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                items: saleItems // Changed saleItems to items
-                            })
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            items: saleItems // Changed saleItems to items
                         })
+                    })
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
@@ -530,7 +586,7 @@
                         });
                 }
 
-                paymentMethodSelect.addEventListener('change', function() {
+                paymentMethodSelect.addEventListener('change', function () {
                     if (paymentMethodSelect.value === 'cod') {
                         shippingFeesContainer.style.display = 'block';
                         addressContainer.style.display = 'block';
@@ -541,7 +597,7 @@
                 });
 
                 // Add validation for discount value based on user role
-                saleForm.addEventListener('submit', function(event) {
+                saleForm.addEventListener('submit', function (event) {
                     event.preventDefault(); // Prevent default form submission
 
                     // Get the clicked button
