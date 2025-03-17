@@ -38,6 +38,8 @@ class SaleController extends Controller
             'items.*.item_id' => 'required|exists:items,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
+            'items.*.special_discount' => 'nullable|numeric|min:0|max:100', // Add this line
+            'items.*.as_gift' => 'required|boolean', // Updated this rule
             'discount_type' => 'nullable|in:none,percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
             'shipping_fees' => 'nullable|numeric|min:0',
@@ -126,21 +128,26 @@ class SaleController extends Controller
         foreach ($request->items as $itemData) {
             $item = Item::find($itemData['item_id']);
 
-            // Double-check stock availability
-            if ($item->quantity < $itemData['quantity']) {
-                return redirect()->back()->with('error', 'Insufficient stock for ' . $item->name);
-            }
+            // Set price to 0 if item is marked as gift
+            $basePrice = $itemData['as_gift'] ? 0 : $itemData['price'];
 
-            // Calculate item subtotal
-            $itemSubtotal = $itemData['price'] * $itemData['quantity'];
+            // Calculate special discount
+            $specialDiscount = isset($itemData['special_discount']) ? floatval($itemData['special_discount']) : 0;
+            $specialDiscountAmount = $basePrice * ($specialDiscount / 100);
+            $finalPrice = $basePrice - $specialDiscountAmount;
+
+            // Calculate item subtotal after special discount
+            $itemSubtotal = $finalPrice * $itemData['quantity'];
             $computedSubtotal += $itemSubtotal;
 
-            // Create sale item with the price from the form
+            // Create sale item with the price, special discount and gift status
             $sale->saleItems()->create([
                 'item_id' => $item->id,
                 'quantity' => $itemData['quantity'],
-                'price' => $itemData['price'],
+                'price' => $basePrice,
+                'special_discount' => $specialDiscount,
                 'subtotal' => $itemSubtotal,
+                'as_gift' => $itemData['as_gift'],
             ]);
 
             // Update inventory
@@ -278,7 +285,7 @@ class SaleController extends Controller
 
                 // Format with fixed widths - allowing more space for the combined name
                 $formattedName = str_pad(substr($fullName, 0, 30), 30);
-                $formattedQty = str_pad((string)$qty, 8, ' ', STR_PAD_LEFT);
+                $formattedQty = str_pad((string) $qty, 8, ' ', STR_PAD_LEFT);
 
                 $line = $formattedName . $formattedQty;
                 Log::info('Formatted receipt line:', ['line' => $line]);
@@ -385,38 +392,54 @@ class SaleController extends Controller
 
             // Prepare data for template
             $items = $sale->saleItems->map(function ($saleItem) {
-                $itemName = $saleItem->item->name;
+                $itemName = $saleItem->item->brand->name . " - " . $saleItem->item->name;
                 $quantity = $saleItem->quantity;
-                $price = $saleItem->item->selling_price;
+                $basePrice = $saleItem->price;
 
-                // Calculate discount based on discount type
-                $discount = 0;
-                $item = $saleItem->item;
-                if ($item->discount_type === 'percentage') {
-                    $discount = ($item->discount_value / 100) * $price;
-                } else if ($item->discount_type === 'fixed') {
-                    $discount = min($item->discount_value, $price); // Cannot discount more than price
+                // Calculate special discount first
+                $specialDiscountAmount = 0;
+                if ($saleItem->special_discount > 0) {
+                    $specialDiscountAmount = ($saleItem->special_discount / 100) * $basePrice;
                 }
 
-                $priceAfterDiscount = $price - $discount;
-                $lineTotal = $quantity * $priceAfterDiscount;
+                // Then calculate regular item discount
+                $regularDiscount = 0;
+                $item = $saleItem->item;
+                if ($item->discount_type === 'percentage') {
+                    $regularDiscount = ($item->discount_value / 100) * ($basePrice - $specialDiscountAmount);
+                } else if ($item->discount_type === 'fixed') {
+                    $regularDiscount = min($item->discount_value, $basePrice - $specialDiscountAmount);
+                }
 
-                // Split item name into two lines if it's too long
+                $finalPrice = $basePrice - $specialDiscountAmount - $regularDiscount;
+                $lineTotal = $quantity * $finalPrice;
+
+                // Format the output with both special and regular discounts
                 if (strlen($itemName) > 20) {
                     $itemNamePart1 = substr($itemName, 0, 20);
                     $itemNamePart2 = substr($itemName, 20);
-                    return str_pad($itemNamePart1, 20) . "\n" . str_pad($itemNamePart2, 20) .
+                    $output = str_pad($itemNamePart1, 20) . "\n" . str_pad($itemNamePart2, 20) .
                         str_pad($quantity, 5, ' ', STR_PAD_LEFT) .
-                        str_pad(number_format($price, 2), 12, ' ', STR_PAD_LEFT) .
-                        str_pad(number_format($lineTotal, 2), 11, ' ', STR_PAD_LEFT) . "\n" .
-                        str_pad("Discount: -" . number_format($discount * $quantity, 2), 48, ' ', STR_PAD_LEFT);
+                        str_pad(number_format($basePrice, 2), 12, ' ', STR_PAD_LEFT) .
+                        str_pad(number_format($lineTotal, 2), 11, ' ', STR_PAD_LEFT) . "\n";
                 } else {
-                    return str_pad($itemName, 20) .
+                    $output = str_pad($itemName, 20) .
                         str_pad($quantity, 5, ' ', STR_PAD_LEFT) .
-                        str_pad(number_format($price, 2), 12, ' ', STR_PAD_LEFT) .
-                        str_pad(number_format($lineTotal, 2), 11, ' ', STR_PAD_LEFT) . "\n" .
-                        str_pad("Discount: -" . number_format($discount * $quantity, 2), 48, ' ', STR_PAD_LEFT);
+                        str_pad(number_format($basePrice, 2), 12, ' ', STR_PAD_LEFT) .
+                        str_pad(number_format($lineTotal, 2), 11, ' ', STR_PAD_LEFT) . "\n";
                 }
+
+                if ($saleItem->special_discount > 0) {
+                    $output .= str_pad("S Discount ({$saleItem->special_discount}%): -" .
+                        number_format($specialDiscountAmount * $quantity, 2), 48, ' ', STR_PAD_LEFT) . "\n";
+                }
+
+                if ($regularDiscount > 0) {
+                    $output .= str_pad("Discount: -" .
+                        number_format($regularDiscount * $quantity, 2), 48, ' ', STR_PAD_LEFT);
+                }
+
+                return $output;
             })->implode("\n");
 
             // Calculate total discounts with correct discount type handling
@@ -473,6 +496,7 @@ class SaleController extends Controller
                 'store_name' => $storeName,
                 'store_slogan' => $storeSlogan,
                 'store_instagram' => $storeInstagram,
+                'sale_id' => $sale->id,
                 'sale_date' => $sale->sale_date->format('d/m'),
                 'display_id' => str_pad($sale->display_id, 4, '0', STR_PAD_LEFT),
                 'created_at' => $sale->created_at->format('d M Y'),
@@ -515,6 +539,35 @@ class SaleController extends Controller
                 $template = str_replace(['%if_discount_start%', '%if_discount_end%'], '', $template);
             } else {
                 $template = preg_replace('/%if_discount_start%.*?%if_discount_end%\n?/s', '', $template);
+            }
+
+            // Format gift items separately
+            $giftItems = $sale->saleItems->where('as_gift', true)->map(function ($saleItem) {
+                $itemName = $saleItem->item->brand->name . " - " . $saleItem->item->name;
+                $quantity = $saleItem->quantity;
+
+                // Split item name into two lines if it's too long
+                if (strlen($itemName) > 20) {
+                    $itemNamePart1 = substr($itemName, 0, 20);
+                    $itemNamePart2 = substr($itemName, 20);
+                    return str_pad($itemNamePart1, 20) . "\n" . str_pad($itemNamePart2, 20) .
+                        str_pad("Qty: " . $quantity, 8, ' ', STR_PAD_LEFT);
+                } else {
+                    return str_pad($itemName, 20) .
+                        str_pad("Qty: " . $quantity, 8, ' ', STR_PAD_LEFT);
+                }
+            })->implode("\n");
+
+            // Add gift items data to template data
+            $data['gift_items'] = $giftItems;
+
+            // Handle gift items section visibility
+            if ($sale->saleItems->where('as_gift', true)->count() > 0) {
+                // Remove the conditional sections markers for gifts
+                $template = str_replace(['%if_gifts_start%', '%if_gifts_end%'], '', $template);
+            } else {
+                // Remove the entire gifts section if there are no gift items
+                $template = preg_replace('/%if_gifts_start%.*?%if_gifts_end%\n?/s', '', $template);
             }
 
             // Replace placeholders in the template

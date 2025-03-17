@@ -17,6 +17,7 @@
                         @endif
 
                         <div class="table-responsive mb-4">
+                            <h3 class="card-title text-secondary mb-3">Receipt No: {{ $sale->id }}</h3>
                             <h3 class="card-title text-secondary mb-3">Items Sold</h3>
                             <table class="table table-hover align-middle">
                                 <thead class="table-light">
@@ -65,36 +66,49 @@
                         </div>
 
                         @if($sale->notes)
-                        <div class="mb-4">
-                            <h3 class="card-title text-secondary mb-3">Notes</h3>
-                            <div class="card bg-light">
-                                <div class="card-body p-3">
-                                    <p class="mb-0">{{ $sale->notes }}</p>
+                            <div class="mb-4">
+                                <h3 class="card-title text-secondary mb-3">Notes</h3>
+                                <div class="card bg-light">
+                                    <div class="card-body p-3">
+                                        <p class="mb-0">{{ $sale->notes }}</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                         @endif
 
                         <div class="row justify-content-end mb-4">
                             <div class="col-md-6">
                                 <div class="card bg-light">
                                     <div class="card-body p-3">
-                                        @if($sale->shipping_fees)
-                                            <div class="d-flex justify-content-between mb-2">
-                                                <span>Shipping Fees:</span>
-                                                <span>+ EGP{{ number_format($sale->shipping_fees, 2) }}</span>
-                                            </div>
-                                        @endif
+
                                         @if($sale->address)
                                             <div class="d-flex justify-content-between mb-2">
                                                 <span>Address:</span>
                                                 <span>{{ $sale->address }}</span>
                                             </div>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Shipping Fees:</span>
+                                                <span>+ EGP{{ number_format($sale->shipping_fees, 2) }}</span>
+                                            </div>
                                         @endif
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span class="text-danger">Discount:</span>
-                                            <span class="text-danger">- EGP{{ number_format($sale->discount, 2) }}</span>
+                                        <div class="d-flex justify-content-between">
+                                            <h6 class="mb-0">Subtotal:</h6>
+                                            <h6 class="mb-0">EGP {{ number_format($sale->subtotal, 2) }}</h6>
                                         </div>
+                                        @if ($sale->discount_type !== 'none')
+                                                                        <div class="d-flex justify-content-between">
+                                                                            <h6 class="mb-0">Discount type:</h6>
+                                                                            <h6 class="mb-0">{{ $sale->discount_type }}</h6>
+                                                                        </div>
+
+                                                                        <div class="d-flex justify-content-between">
+                                                                            <h6 class="mb-0">Additional Discount:</h6>
+                                                                            <h6 class="mb-0 color=red">- EGP
+                                                                                {{ $sale->discount_type === 'percentage' ? $sale->discount
+                                            . " (" . $sale->discount_value . "%)" : number_format($sale->discount_value, 2) }}
+                                                                            </h6>
+                                                                        </div>
+                                        @endif
                                         <div class="d-flex justify-content-between">
                                             <h4 class="mb-0">Total Amount:</h4>
                                             <h4 class="mb-0">EGP {{ number_format($sale->total_amount, 2) }}</h4>

@@ -41,7 +41,7 @@ $user = auth()->user();
                     <!-- Dashboard -->
                     @role('admin|moderator')
                     <a href="{{ route('dashboard') }}"
-                        class="{{ request()->is('dashboard*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                        class="{{ request()->is('dashboard*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium no-underline">
                         <i class="fas fa-home mr-2"></i>Dashboard
                     </a>
                     @endrole
@@ -64,23 +64,23 @@ $user = auth()->user();
                             class="absolute z-10 mt-2 w-48 rounded-md shadow-lg origin-top-right right-0">
                             <div class="py-1 bg-white rounded-md shadow-xs">
                                 <a href="{{ route('brands.index') }}"
-                                    class="{{ request()->routeIs('brands.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100">
+                                    class="{{ request()->routeIs('brands.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
                                     <i class="fas fa-tags mr-2"></i>Brands
                                 </a>
                                 <a href="{{ route('categories.index') }}"
-                                    class="{{ request()->routeIs('categories.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100">
+                                    class="{{ request()->routeIs('categories.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
                                     <i class="fas fa-th-list mr-2"></i>Categories
                                 </a>
                                 <a href="{{ route('items.index') }}"
-                                    class="{{ request()->routeIs('items.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100">
+                                    class="{{ request()->routeIs('items.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
                                     <i class="fas fa-box mr-2"></i>Items
                                 </a>
                                 <a href="{{ route('sizes.index') }}"
-                                    class="{{ request()->routeIs('sizes.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100">
+                                    class="{{ request()->routeIs('sizes.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
                                     <i class="fas fa-ruler mr-2"></i>Sizes
                                 </a>
                                 <a href="{{ route('colors.index') }}"
-                                    class="{{ request()->routeIs('colors.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100">
+                                    class="{{ request()->routeIs('colors.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
                                     <i class="fas fa-tint mr-2"></i>Colors
                                 </a>
                             </div>
@@ -105,11 +105,11 @@ $user = auth()->user();
                             class="absolute z-10 mt-2 w-48 rounded-md shadow-lg origin-top-right right-0">
                             <div class="py-1 bg-white rounded-md shadow-xs">
                                 <a href="{{ route('sales.index') }}"
-                                    class="{{ request()->routeIs('sales.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100">
+                                    class="{{ request()->routeIs('sales.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
                                     <i class="fas fa-list mr-2"></i>Sales List
                                 </a>
                                 <a href="{{ route('sales.create') }}"
-                                    class="{{ request()->routeIs('sales.create') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100">
+                                    class="{{ request()->routeIs('sales.create') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
                                     <i class="fas fa-plus-circle mr-2"></i>Create Sale
                                 </a>
                             </div>

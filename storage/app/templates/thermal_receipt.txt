@@ -1,5 +1,5 @@
 ――――――――――――――――――――――――――――――――――――――――――――――――
-RECEIPT %sale_date% - #%display_id%
+RECEIPT %sale_id% - %sale_date% - #%display_id%
 Date: %created_at%
 Time: %created_at_time%
 Payment Method: %payment_method%
@@ -22,6 +22,11 @@ Shipping Fees:                      %shipping_fees%
 ================================================
 TOTAL:                              %total_amount%
 ================================================
+%if_gifts_start%
+                GIFT ITEMS
+------------------------------------------------
+%gift_items%
+%if_gifts_end%
 %if_shipping_start%
 Customer Name:  %customer_name%
 Customer Phone: %customer_phone%

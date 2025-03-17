@@ -6,7 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class SaleItem extends Model
 {
-    protected $fillable = ['sale_id', 'item_id', 'quantity', 'price','code','refunded_quantity'];
+    protected $fillable = [
+        'sale_id',
+        'item_id',
+        'quantity',
+        'price',
+        'code',
+        'refunded_quantity',
+        'as_gift',
+        'special_discount'  // Add this line
+    ];
 
     public function item()
     {
@@ -28,6 +37,7 @@ class SaleItem extends Model
             'item_id' => $newItemId,
             'quantity' => $newQuantity,
             'price' => $newPrice,
+            'special_discount' => 0  // Reset special discount on exchange
         ]);
 
         // Update inventory for the new item
