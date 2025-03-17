@@ -38,6 +38,7 @@ class SaleController extends Controller
             'items.*.item_id' => 'required|exists:items,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
+            'items.*.special_discount' => 'nullable|numeric|min:0|max:100', // Add this line
             'items.*.as_gift' => 'required|boolean', // Updated this rule
             'discount_type' => 'nullable|in:none,percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
@@ -128,17 +129,23 @@ class SaleController extends Controller
             $item = Item::find($itemData['item_id']);
 
             // Set price to 0 if item is marked as gift
-            $price = $itemData['as_gift'] ? 0 : $itemData['price'];
+            $basePrice = $itemData['as_gift'] ? 0 : $itemData['price'];
 
-            // Calculate item subtotal
-            $itemSubtotal = $price * $itemData['quantity'];
+            // Calculate special discount
+            $specialDiscount = isset($itemData['special_discount']) ? floatval($itemData['special_discount']) : 0;
+            $specialDiscountAmount = $basePrice * ($specialDiscount / 100);
+            $finalPrice = $basePrice - $specialDiscountAmount;
+
+            // Calculate item subtotal after special discount
+            $itemSubtotal = $finalPrice * $itemData['quantity'];
             $computedSubtotal += $itemSubtotal;
 
-            // Create sale item with the price and gift status
+            // Create sale item with the price, special discount and gift status
             $sale->saleItems()->create([
                 'item_id' => $item->id,
                 'quantity' => $itemData['quantity'],
-                'price' => $price,
+                'price' => $basePrice,
+                'special_discount' => $specialDiscount,
                 'subtotal' => $itemSubtotal,
                 'as_gift' => $itemData['as_gift'],
             ]);
@@ -387,36 +394,52 @@ class SaleController extends Controller
             $items = $sale->saleItems->map(function ($saleItem) {
                 $itemName = $saleItem->item->brand->name . " - " . $saleItem->item->name;
                 $quantity = $saleItem->quantity;
-                $price = $saleItem->item->selling_price;
+                $basePrice = $saleItem->price;
 
-                // Calculate discount based on discount type
-                $discount = 0;
-                $item = $saleItem->item;
-                if ($item->discount_type === 'percentage') {
-                    $discount = ($item->discount_value / 100) * $price;
-                } else if ($item->discount_type === 'fixed') {
-                    $discount = min($item->discount_value, $price); // Cannot discount more than price
+                // Calculate special discount first
+                $specialDiscountAmount = 0;
+                if ($saleItem->special_discount > 0) {
+                    $specialDiscountAmount = ($saleItem->special_discount / 100) * $basePrice;
                 }
 
-                $priceAfterDiscount = $price - $discount;
-                $lineTotal = $quantity * $priceAfterDiscount;
+                // Then calculate regular item discount
+                $regularDiscount = 0;
+                $item = $saleItem->item;
+                if ($item->discount_type === 'percentage') {
+                    $regularDiscount = ($item->discount_value / 100) * ($basePrice - $specialDiscountAmount);
+                } else if ($item->discount_type === 'fixed') {
+                    $regularDiscount = min($item->discount_value, $basePrice - $specialDiscountAmount);
+                }
 
-                // Split item name into two lines if it's too long
+                $finalPrice = $basePrice - $specialDiscountAmount - $regularDiscount;
+                $lineTotal = $quantity * $finalPrice;
+
+                // Format the output with both special and regular discounts
                 if (strlen($itemName) > 20) {
                     $itemNamePart1 = substr($itemName, 0, 20);
                     $itemNamePart2 = substr($itemName, 20);
-                    return str_pad($itemNamePart1, 20) . "\n" . str_pad($itemNamePart2, 20) .
+                    $output = str_pad($itemNamePart1, 20) . "\n" . str_pad($itemNamePart2, 20) .
                         str_pad($quantity, 5, ' ', STR_PAD_LEFT) .
-                        str_pad(number_format($price, 2), 12, ' ', STR_PAD_LEFT) .
-                        str_pad(number_format($lineTotal, 2), 11, ' ', STR_PAD_LEFT) . "\n" .
-                        str_pad("Discount: -" . number_format($discount * $quantity, 2), 48, ' ', STR_PAD_LEFT);
+                        str_pad(number_format($basePrice, 2), 12, ' ', STR_PAD_LEFT) .
+                        str_pad(number_format($lineTotal, 2), 11, ' ', STR_PAD_LEFT) . "\n";
                 } else {
-                    return str_pad($itemName, 20) .
+                    $output = str_pad($itemName, 20) .
                         str_pad($quantity, 5, ' ', STR_PAD_LEFT) .
-                        str_pad(number_format($price, 2), 12, ' ', STR_PAD_LEFT) .
-                        str_pad(number_format($lineTotal, 2), 11, ' ', STR_PAD_LEFT) . "\n" .
-                        str_pad("Discount: -" . number_format($discount * $quantity, 2), 48, ' ', STR_PAD_LEFT);
+                        str_pad(number_format($basePrice, 2), 12, ' ', STR_PAD_LEFT) .
+                        str_pad(number_format($lineTotal, 2), 11, ' ', STR_PAD_LEFT) . "\n";
                 }
+
+                if ($saleItem->special_discount > 0) {
+                    $output .= str_pad("S Discount ({$saleItem->special_discount}%): -" .
+                        number_format($specialDiscountAmount * $quantity, 2), 48, ' ', STR_PAD_LEFT) . "\n";
+                }
+
+                if ($regularDiscount > 0) {
+                    $output .= str_pad("Discount: -" .
+                        number_format($regularDiscount * $quantity, 2), 48, ' ', STR_PAD_LEFT);
+                }
+
+                return $output;
             })->implode("\n");
 
             // Calculate total discounts with correct discount type handling

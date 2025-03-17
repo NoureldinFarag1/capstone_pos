@@ -374,23 +374,35 @@
                     listItem.setAttribute('data-item-id', itemEntry.id);
 
                     listItem.innerHTML = `
-                                                                                                                                                                                                                                                                                <div class="d-flex align-items-center">
-                                                                                                                                                                                                                                                                                    <input type="checkbox" class="item-checkbox me-2" checked>
-                                                                                                                                                                                                                                                                                    ${itemEntry.name} - EGP ${itemEntry.price.toFixed(2)}
-                                                                                                                                                                                                                                                                                </div>
-                                                                                                                                                                                                                                                                                <div class="d-flex align-items-center">
-                                                                                                                                                                                                                                                                                    <span class="bg-primary rounded-pill me-2">
-                                                                                                                                                                                                                                                                                        Qty: ${itemEntry.quantity}
-                                                                                                                                                                                                                                                                                    </span>
-                                                                                                                                                                                                                                                                                    <button type="button" class="btn btn-danger btn-sm remove-item">
-                                                                                                                                                                                                                                                                                        Remove
-                                                                                                                                                                                                                                                                                    </button>
-                                                                                                                                                                                                                                                                                    <input type="hidden" name="items[${itemEntry.id}][item_id]" value="${itemEntry.id}">
-                                                                                                                                                                                                                                                                                    <input type="hidden" name="items[${itemEntry.id}][quantity]" value="${itemEntry.quantity}">
-                                                                                                                                                                                                                                                                                    <input type="hidden" name="items[${itemEntry.id}][price]" value="${itemEntry.price}">
-                                                                                                                                                                                                                                                                                    <input type="hidden" name="items[${itemEntry.id}][as_gift]" value="0">
-                                                                                                                                                                                                                                                                                </div>
-                                                                                                                                                                                                                                                                            `;
+                                <div class="d-flex align-items-center">
+                                    <input type="checkbox" class="item-checkbox me-2" checked>
+                                    ${itemEntry.name} - EGP ${itemEntry.price.toFixed(2)}
+                                    <div class="ms-3">
+                                        <label class="me-2">Special Discount:</label>
+                                        <input type="number" 
+                                            class="special-discount form-control form-control-sm d-inline-block" 
+                                            style="width: 80px;"
+                                            min="0" 
+                                            max="100" 
+                                            value="0"
+                                            onchange="updateSpecialDiscount(this, ${itemEntry.id})">
+                                        <span>%</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-primary rounded-pill me-2">
+                                        Qty: ${itemEntry.quantity}
+                                    </span>
+                                    <button type="button" class="btn btn-danger btn-sm remove-item">
+                                        Remove
+                                    </button>
+                                    <input type="hidden" name="items[${itemEntry.id}][item_id]" value="${itemEntry.id}">
+                                    <input type="hidden" name="items[${itemEntry.id}][quantity]" value="${itemEntry.quantity}">
+                                    <input type="hidden" name="items[${itemEntry.id}][price]" value="${itemEntry.price}">
+                                    <input type="hidden" name="items[${itemEntry.id}][special_discount]" value="0">
+                                    <input type="hidden" name="items[${itemEntry.id}][as_gift]" value="0">
+                                </div>
+                            `;
 
                     itemList.appendChild(listItem);
 
@@ -461,6 +473,7 @@
                     let subtotal = 0;
                     let giftTotal = 0;
                     let regularTotal = 0;
+                    let specialDiscountTotal = 0;
                     let shippingFees = parseFloat(document.getElementById('shippingFees').value) || 0;
 
                     // Calculate subtotal and handle gift items
@@ -468,15 +481,18 @@
                         const checkbox = item.querySelector('.item-checkbox');
                         const itemId = item.getAttribute('data-item-id');
                         const itemEntry = addedItems.get(itemId);
+                        const specialDiscount = parseFloat(item.querySelector('input[name$="[special_discount]"]').value) || 0;
 
                         if (itemEntry) {
-                            const itemTotal = itemEntry.price * itemEntry.quantity;
+                            const baseItemTotal = itemEntry.price * itemEntry.quantity;
+                            const specialDiscountAmount = baseItemTotal * (specialDiscount / 100);
+                            const itemTotal = baseItemTotal - specialDiscountAmount;
+
                             if (checkbox && !checkbox.checked) {
-                                // This is a gift item
                                 giftTotal += itemTotal;
                             } else {
-                                // This is a regular item
                                 regularTotal += itemTotal;
+                                specialDiscountTotal += specialDiscountAmount;
                             }
                         }
                     });
@@ -753,6 +769,18 @@
                 });
 
             });
+
+            // Add this new function to handle special discount updates
+            function updateSpecialDiscount(input, itemId) {
+                const value = Math.min(100, Math.max(0, parseFloat(input.value) || 0));
+                input.value = value;
+
+                const listItem = input.closest('li');
+                const specialDiscountInput = listItem.querySelector(`input[name="items[${itemId}][special_discount]"]`);
+                specialDiscountInput.value = value;
+
+                calculateTotal();
+            }
         </script>
     @endpush
     <meta name="csrf-token" content="{{ csrf_token() }}">
