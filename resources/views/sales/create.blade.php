@@ -5,8 +5,84 @@
         use Illuminate\Support\Facades\Auth;
     @endphp
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
+    <style>
+        .sale-header {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.5rem;
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            font-size: 1.0rem;
+            font-weight: 500;
+            color: #34495e;
+        }
+
+        .form-control,
+        .form-select {
+            font-size: 1.0rem;
+            padding: 0.75rem;
+        }
+
+        .btn-lg {
+            font-size: 1.0rem;
+            padding: 0.75rem 1.5rem;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background-color: #1a237e;
+            padding: 1rem 1.5rem;
+        }
+
+        .card-header h5 {
+            font-size: 1.3rem;
+            font-weight: 500;
+        }
+
+        .price-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.5rem;
+        }
+
+        .total-amount {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .discount-amount {
+            color: #e74c3c;
+        }
+
+        .list-group-item {
+            padding: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .badge {
+            font-size: 1rem;
+            padding: 0.5rem 0.75rem;
+        }
+
+        #itemList {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .select2-container .select2-selection--single {
+            height: 45px;
+            font-size: 1.1rem;
+        }
+    </style>
     <div class="container">
-        <h1 class="mb-4">Create New Sale</h1>
+        <h1 class="sale-header">Create New Sale</h1>
 
         @if ($errors->any())
             <div class="alert alert-danger">
@@ -21,124 +97,158 @@
         <form id="saleForm" action="{{ route('sales.store') }}" method="POST">
             @csrf
 
-            <div class="row mb-3">
-                <!-- Item Selection -->
-                <div class="col-md-6">
-                    <label for="itemSelect" class="form-label">Item</label>
-                    <select id="itemSelect" class="form-select">
-                        <option value="">Select an item</option>
-                        @php
-                            $sortedItems = $items->sortBy(function ($item) {
-                                return $item->brand->name ?? 'No Brand';
-                            });
-                        @endphp
-                        @foreach ($sortedItems as $item)
-                            @if (!$item->is_parent)
-                                <option value="{{ $item->id }}" data-price="{{ $item->priceAfterSale() }}"
-                                    data-original-price="{{ $item->selling_price }}" data-code="{{ $item->code }}"
-                                    data-stock="{{ $item->quantity }}" {{ $item->quantity <= 0 ? 'disabled' : '' }}>
-                                    {{ $item->brand->name ?? 'No Brand' }} - {{ $item->name }} (Stock:
-                                    {{ $item->quantity }})
-                                    {{ $item->quantity <= 0 ? '- Out of Stock' : '' }}
-                                </option>
-                            @endif
-                        @endforeach
-                    </select>
+            <!-- Item Selection Card -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Add Items</h5>
                 </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="barcode" class="form-label fw-bold">Scan Barcode</label>
+                            <input type="text" id="barcode" class="form-control form-control-lg" placeholder="Scan barcode"
+                                autofocus>
+                        </div>
+                    </div>
 
-                <!-- Quantity Selection -->
-                <div class="col-md-4">
-                    <label for="quantity" class="form-label">Quantity</label>
-                    <input type="number" id="quantity" class="form-control" min="1" value="1">
-                </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="itemSelect" class="form-label fw-bold">Select Item</label>
+                            <select id="itemSelect" class="form-select">
+                                <option value="">Select an item</option>
+                                @php
+                                    $sortedItems = $items->sortBy(function ($item) {
+                                        return $item->brand->name ?? 'No Brand';
+                                    });
+                                @endphp
+                                @foreach ($sortedItems as $item)
+                                    @if (!$item->is_parent)
+                                        <option value="{{ $item->id }}" data-price="{{ $item->priceAfterSale() }}"
+                                            data-original-price="{{ $item->selling_price }}" data-code="{{ $item->code }}"
+                                            data-stock="{{ $item->quantity }}" {{ $item->quantity <= 0 ? 'disabled' : '' }}>
+                                            {{ $item->brand->name ?? 'No Brand' }} - {{ $item->name }} (Stock:
+                                            {{ $item->quantity }})
+                                            {{ $item->quantity <= 0 ? '- Out of Stock' : '' }}
+                                        </option>
+                                    @endif
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="quantity" class="form-label fw-bold">Quantity</label>
+                            <input type="number" id="quantity" class="form-control" min="1" value="1">
+                        </div>
+                        <div class="col-md-2 align-self-end">
+                            <button type="button" id="addItemButton" class="btn btn-success btn-lg w-100">Add</button>
+                        </div>
+                    </div>
 
-                <!-- Add Button -->
-                <div class="col-md-2 align-self-end">
-                    <button type="button" id="addItemButton" class="btn btn-success w-100">Add</button>
+                    <ul id="itemList" class="list-group"></ul>
                 </div>
             </div>
 
-            <div class="row mb-3">
-                <!-- Barcode Scan -->
-                <div class="col-md-6">
-                    <label for="barcode" class="form-label">Scan Barcode</label>
-                    <input type="text" id="barcode" class="form-control" placeholder="Scan barcode" autofocus>
+            <!-- Customer Details Card -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Customer Information</h5>
                 </div>
-
-                <!-- Customer Details -->
-                <div class="col-md-6">
-                    <label for="customerName" class="form-label" required>Customer Name</label>
-                    <input type="text" id="customerName" name="customer_name" class="form-control" required>
-
-                    <label for="customerPhone" class="form-label" required>Phone Number</label>
-                    <input type="text" id="customerPhone" name="customer_phone" class="form-control" required>
-                </div>
-            </div>
-
-            <!-- Item List -->
-            <ul id="itemList" class="list-group mb-3"></ul>
-
-            <!-- Discount Section -->
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <label for="discountType" class="form-label">Discount Type</label>
-                    <select id="discountType" class="form-select">
-                        <option value="none">No Discount</option>
-                        <option value="percentage">Percentage</option>
-                        <option value="fixed">Fixed Amount</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label for="discountValue" class="form-label">Discount Value</label>
-                    <input type="number" id="discountValue" class="form-control" min="0" value="0">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="customerPhone" class="form-label fw-bold">Phone Number</label>
+                            <input type="text" id="customerPhone" name="customer_phone" class="form-control form-control-lg"
+                                required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="customerName" class="form-label fw-bold">Customer Name</label>
+                            <input type="text" id="customerName" name="customer_name" class="form-control form-control-lg"
+                                required>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Payment Methods -->
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label for="paymentMethod" class="form-label">Payment Method</label>
-                    <select id="paymentMethod" name="payment_method" class="form-select" required>
-                        <option value="">Select Payment Method</option>
-                        <option value="cash">Cash</option>
-                        <option value="credit_card">Visa</option>
-                        <option value="mobile_pay">Mobile Payment</option>
-                        <option value="cod">Cash On Delivery (COD)</option>
-                    </select>
+            <!-- Payment Details Card -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Payment Details</h5>
                 </div>
-                <div class="col-md-6">
-                    <label for="paymentReference" class="form-label">Payment Reference</label>
-                    <input type="text" id="paymentReference" name="payment_reference" class="form-control"
-                        placeholder="Transaction ID, etc.">
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <!-- Discount Section -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Discount</label>
+                            <div class="input-group">
+                                <select id="discountType" class="form-select">
+                                    <option value="none">No Discount</option>
+                                    <option value="percentage">Percentage</option>
+                                    <option value="fixed">Fixed Amount</option>
+                                </select>
+                                <input type="number" id="discountValue" class="form-control" min="0" value="0">
+                            </div>
+                        </div>
+                        <!-- Payment Method -->
+                        <div class="col-md-6">
+                            <label for="paymentMethod" class="form-label fw-bold">Payment Method</label>
+                            <select id="paymentMethod" name="payment_method" class="form-select form-select-lg" required>
+                                <option value="">Select Payment Method</option>
+                                <option value="cash">Cash</option>
+                                <option value="credit_card">Visa</option>
+                                <option value="mobile_pay">Mobile Payment</option>
+                                <option value="cod">Cash On Delivery (COD)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row" id="codDetails">
+                        <div class="col-md-6" id="shippingFeesContainer" style="display: none;">
+                            <label for="shippingFees" class="form-label">Shipping Fees</label>
+                            <input type="number" id="shippingFees" name="shipping_fees" class="form-control" min="0"
+                                value="0">
+                        </div>
+                        <div class="col-md-6" id="addressContainer" style="display: none;">
+                            <label for="address" class="form-label">Address</label>
+                            <input type="text" id="address" name="address" class="form-control">
+                        </div>
+                    </div>
+
+                    <!-- Totals Section -->
+                    <div class="card bg-light mt-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <p class="mb-1 text-muted">Subtotal:</p>
+                                    <h4 id="subtotalAmount" class="price-display">EGP 0.00</h4>
+                                </div>
+                                <div class="col-md-4">
+                                    <p class="mb-1 text-muted">Discount:</p>
+                                    <h4 id="discountAmount" class="price-display discount-amount">EGP 0.00</h4>
+                                </div>
+                                <div class="col-md-4">
+                                    <p class="mb-1 text-muted">Total:</p>
+                                    <h4 id="totalAmount" class="price-display total-amount">EGP 0.00</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="row mb-3">
-                <div class="col-md-6" id="shippingFeesContainer" style="display: none;">
-                    <label for="shippingFees" class="form-label">Shipping Fees</label>
-                    <input type="number" id="shippingFees" name="shipping_fees" class="form-control" min="0" value="0">
-                </div>
-                <div class="col-md-6" id="addressContainer" style="display: none;">
-                    <label for="address" class="form-label">Address</label>
-                    <input type="text" id="address" name="address" class="form-control">
-                </div>
-            </div>
+            <!-- Notes and Submit -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="notes" class="form-label fw-bold">Notes</label>
+                            <textarea id="notes" name="notes" class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>
 
-            <!-- Total Amount -->
-            <div class="row mb-3">
-                <div class="col-md-12">
-                    <h4>Subtotal: <span id="subtotalAmount" class="text">EGP 0.00</span></h4>
-                    <h4>Discount: <span id="discountAmount" class="text-danger">EGP 0.00</span></h4>
-                    <h4>Total: <span id="totalAmount" class="text">EGP 0.00</span></h4>
-                </div>
-            </div>
-
-            <!-- Notes Field -->
-            <div class="row mb-3">
-                <div class="col-md-12">
-                    <label for="notes" class="form-label">Notes</label>
-                    <textarea id="notes" name="notes" class="form-control" rows="3"
-                        placeholder="Add any notes about this sale"></textarea>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">Create Sale</button>
+                        <button type="button" id="printGiftReceiptBtn" class="btn btn-secondary btn-lg">Print Gift
+                            Receipt</button>
+                    </div>
                 </div>
             </div>
 
@@ -146,27 +256,22 @@
             <input type="hidden" name="total" id="hiddenTotal">
             <input type="hidden" name="discount_type" id="hiddenDiscountType">
             <input type="hidden" name="discount_value" id="hiddenDiscountValue">
-
-            <!-- Submit Button -->
-            <button type="submit" class="btn btn-primary">Create Sale</button>
-            <button type="button" id="printGiftReceiptBtn" class="btn btn-secondary">
-                Print Gift Receipt
-            </button>
         </form>
     </div>
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay"
-        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999;">
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999;">
         <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
-            <div class="spinner-border" role="status">
+            <div class="spinner-border" style="width: 3rem; height: 3rem;" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
-            <h5 class="mt-2">Processing Sale...</h5>
+            <h4 class="mt-3">Processing Sale...</h4>
         </div>
     </div>
 
     @push('scripts')
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script>
@@ -269,42 +374,39 @@
                     listItem.setAttribute('data-item-id', itemEntry.id);
 
                     listItem.innerHTML = `
-                                                                                                <div class="d-flex align-items-center">
-                                                                                                    <input type="checkbox" class="item-checkbox me-2" checked>
-                                                                                                    ${itemEntry.name} - EGP ${itemEntry.price.toFixed(2)}
-                                                                                                </div>
-                                                                                                <div class="d-flex align-items-center">
-                                                                                                    <span class="badge bg-primary rounded-pill me-2">
-                                                                                                        Qty: ${itemEntry.quantity}
-                                                                                                    </span>
-                                                                                                    <button type="button" class="btn btn-danger btn-sm remove-item">
-                                                                                                        Remove
-                                                                                                    </button>
-                                                                                                    <input type="hidden" name="items[${itemEntry.id}][item_id]" value="${itemEntry.id}">
-                                                                                                    <input type="hidden" name="items[${itemEntry.id}][quantity]" value="${itemEntry.quantity}">
-                                                                                                    <input type="hidden" name="items[${itemEntry.id}][price]" value="${itemEntry.price}">
-                                                                                                </div>
-                                                                                            `;
+                                                                                                                                                                                                                                                                                <div class="d-flex align-items-center">
+                                                                                                                                                                                                                                                                                    <input type="checkbox" class="item-checkbox me-2" checked>
+                                                                                                                                                                                                                                                                                    ${itemEntry.name} - EGP ${itemEntry.price.toFixed(2)}
+                                                                                                                                                                                                                                                                                </div>
+                                                                                                                                                                                                                                                                                <div class="d-flex align-items-center">
+                                                                                                                                                                                                                                                                                    <span class="bg-primary rounded-pill me-2">
+                                                                                                                                                                                                                                                                                        Qty: ${itemEntry.quantity}
+                                                                                                                                                                                                                                                                                    </span>
+                                                                                                                                                                                                                                                                                    <button type="button" class="btn btn-danger btn-sm remove-item">
+                                                                                                                                                                                                                                                                                        Remove
+                                                                                                                                                                                                                                                                                    </button>
+                                                                                                                                                                                                                                                                                    <input type="hidden" name="items[${itemEntry.id}][item_id]" value="${itemEntry.id}">
+                                                                                                                                                                                                                                                                                    <input type="hidden" name="items[${itemEntry.id}][quantity]" value="${itemEntry.quantity}">
+                                                                                                                                                                                                                                                                                    <input type="hidden" name="items[${itemEntry.id}][price]" value="${itemEntry.price}">
+                                                                                                                                                                                                                                                                                    <input type="hidden" name="items[${itemEntry.id}][as_gift]" value="0">
+                                                                                                                                                                                                                                                                                </div>
+                                                                                                                                                                                                                                                                            `;
 
                     itemList.appendChild(listItem);
 
                     // Add checkbox change event listener
                     const checkbox = listItem.querySelector('.item-checkbox');
                     checkbox.addEventListener('change', function () {
+                        const itemId = listItem.getAttribute('data-item-id');
+                        const asGiftInput = listItem.querySelector(`input[name="items[${itemId}][as_gift]"]`);
+
                         if (!this.checked) {
-                            // Add item price to discount value when unchecked
-                            const currentDiscount = parseFloat(discountValueInput.value) || 0;
-                            const itemTotal = itemEntry.price * itemEntry.quantity;
-                            discountValueInput.value = (currentDiscount + itemTotal).toFixed(2);
-                            discountTypeSelect.value = 'fixed'; // Switch to fixed discount
+                            asGiftInput.value = "1"; // Mark as gift
                         } else {
-                            // Remove item price from discount when checked
-                            const currentDiscount = parseFloat(discountValueInput.value) || 0;
-                            const itemTotal = itemEntry.price * itemEntry.quantity;
-                            discountValueInput.value = Math.max(0, (currentDiscount - itemTotal)).toFixed(2);
+                            asGiftInput.value = "0"; // Mark as regular item
                         }
-                        calculateTotal();
-                        updateNotesWithCheckedItems(); // Add this line
+                        calculateTotal(); // Just recalculate total without modifying discount
+                        updateNotesWithGiftItems();
                     });
 
                     // Add remove item event listener
@@ -357,11 +459,11 @@
                     const currentDiscountValue = parseFloat(discountValueInput.value) || 0;
 
                     let subtotal = 0;
-                    let uncheckedItemsTotal = 0;
-                    let discountAmount = 0;
+                    let giftTotal = 0;
+                    let regularTotal = 0;
                     let shippingFees = parseFloat(document.getElementById('shippingFees').value) || 0;
 
-                    // Calculate subtotal and handle unchecked items
+                    // Calculate subtotal and handle gift items
                     itemList.querySelectorAll('li').forEach((item) => {
                         const checkbox = item.querySelector('.item-checkbox');
                         const itemId = item.getAttribute('data-item-id');
@@ -369,44 +471,61 @@
 
                         if (itemEntry) {
                             const itemTotal = itemEntry.price * itemEntry.quantity;
-                            if (checkbox && checkbox.checked) {
-                                subtotal += itemTotal;
+                            if (checkbox && !checkbox.checked) {
+                                // This is a gift item
+                                giftTotal += itemTotal;
                             } else {
-                                uncheckedItemsTotal += itemTotal;
+                                // This is a regular item
+                                regularTotal += itemTotal;
                             }
                         }
                     });
 
-                    // Calculate regular discount
+                    subtotal = regularTotal + giftTotal;
+
+                    // Calculate regular discount (only applied to regular items)
+                    let regularDiscount = 0;
                     if (currentDiscountType === 'percentage') {
-                        discountAmount = subtotal * (Math.min(currentDiscountValue, 100) / 100);
+                        regularDiscount = regularTotal * (Math.min(currentDiscountValue, 100) / 100);
                     } else if (currentDiscountType === 'fixed') {
-                        discountAmount = Math.min(currentDiscountValue, subtotal + uncheckedItemsTotal);
+                        regularDiscount = Math.min(currentDiscountValue, regularTotal);
                     }
 
+                    // Gift items are always 100% discounted
+                    const totalDiscount = regularDiscount + giftTotal;
+
                     // Calculate final totals
-                    const totalBeforeShipping = Math.max(0, (subtotal + uncheckedItemsTotal) - discountAmount);
+                    const totalBeforeShipping = Math.max(0, subtotal - totalDiscount);
                     const finalTotal = totalBeforeShipping + shippingFees;
 
                     // Update display values
-                    subtotalAmountDisplay.textContent = `EGP ${(subtotal + uncheckedItemsTotal).toFixed(2)}`;
-                    discountAmountDisplay.textContent = `EGP ${discountAmount.toFixed(2)}`;
+                    subtotalAmountDisplay.textContent = `EGP ${subtotal.toFixed(2)}`;
+                    discountAmountDisplay.textContent = `EGP ${totalDiscount.toFixed(2)}`;
                     totalAmountDisplay.textContent = `EGP ${finalTotal.toFixed(2)}`;
 
                     // Update hidden inputs
-                    document.getElementById('hiddenSubtotal').value = (subtotal + uncheckedItemsTotal).toFixed(2);
+                    document.getElementById('hiddenSubtotal').value = subtotal.toFixed(2);
                     document.getElementById('hiddenTotal').value = finalTotal.toFixed(2);
                     document.getElementById('hiddenDiscountType').value = currentDiscountType;
                     document.getElementById('hiddenDiscountValue').value = currentDiscountValue;
+                }
 
-                    // Debug logging
-                    console.log('Calculation details:', {
-                        subtotal: subtotal.toFixed(2),
-                        uncheckedItemsTotal: uncheckedItemsTotal.toFixed(2),
-                        discountAmount: discountAmount.toFixed(2),
-                        shippingFees: shippingFees.toFixed(2),
-                        finalTotal: finalTotal.toFixed(2)
+                function updateNotesWithGiftItems() {
+                    const giftItems = [];
+                    itemList.querySelectorAll('li').forEach((item) => {
+                        const checkbox = item.querySelector('.item-checkbox');
+                        if (checkbox && !checkbox.checked) {
+                            const itemName = item.querySelector('.d-flex').textContent.trim().split(' - EGP')[0];
+                            const quantity = item.querySelector('.badge').textContent.match(/\d+/)[0];
+                            giftItems.push(`${itemName} (${quantity})`);
+                        }
                     });
+
+                    const notesField = document.getElementById('notes');
+                    const existingNotes = notesField.value.split('\n').filter(line => !line.startsWith('Gift Items:')).join('\n');
+                    const giftItemsText = giftItems.length > 0 ? `Gift Items: ${giftItems.join(' | ')}` : '';
+
+                    notesField.value = existingNotes.trim() + (existingNotes.trim() && giftItemsText ? '\n' : '') + giftItemsText;
                 }
 
                 // Add this new function after calculateTotal
