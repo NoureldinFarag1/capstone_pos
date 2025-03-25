@@ -199,7 +199,8 @@ class SaleController extends Controller
         // Update the sale with the correct calculated values
         $sale->update([
             'subtotal' => $computedSubtotal,
-            'total_amount' => $totalAmount
+            'total_amount' => $totalAmount,
+            'discount' => $discountAmount
         ]);
 
         // Log the final sale record for debugging
@@ -394,7 +395,7 @@ class SaleController extends Controller
             $items = $sale->saleItems->map(function ($saleItem) {
                 $itemName = $saleItem->item->brand->name . " - " . $saleItem->item->name;
                 $quantity = $saleItem->quantity;
-                $basePrice = $saleItem->price;
+                $basePrice = $saleItem->item->selling_price;
 
                 // Calculate special discount first
                 $specialDiscountAmount = 0;
@@ -487,6 +488,7 @@ class SaleController extends Controller
             Log::info('Discount values:', [
                 'total_discount' => $totalDiscount,
                 'additional_discount' => $additionalDiscount,
+                'stored_discount' => $sale->discount,
                 'discount_type' => $sale->discount_type,
                 'discount_value' => $sale->discount_value
             ]);
@@ -507,7 +509,7 @@ class SaleController extends Controller
                 'subtotal_before_discount' => number_format($subtotalBeforeDiscount, 2),
                 'subtotal' => number_format($subtotal, 2),
                 'total_discount' => number_format($totalDiscount, 2),
-                'additional_discount' => number_format($additionalDiscount, 2),
+                'additional_discount' => number_format($sale->discount ?? 0, 2),
                 'sale_discount_type' => $sale->discount_type,
                 'sale_discount_value' => $sale->discount_value,
                 'total_amount' => number_format($sale->total_amount, 2),
@@ -533,8 +535,8 @@ class SaleController extends Controller
             // Add discount details if applicable
             if ($sale->discount_type !== 'none' && $sale->discount_value > 0) {
                 $discountLine = $sale->discount_type === 'percentage'
-                    ? "Additional Discount ({$sale->discount_value}%)"
-                    : "Additional Discount (Fixed)";
+                    ? "Additional Discount: EGP " . number_format($sale->discount, 2) . " ({$sale->discount_value}%)"
+                    : "Additional Discount: EGP " . number_format($sale->discount, 2) . " (Fixed)";
                 $data['discount_line'] = $discountLine;
                 $template = str_replace(['%if_discount_start%', '%if_discount_end%'], '', $template);
             } else {
