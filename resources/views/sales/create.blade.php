@@ -4,89 +4,21 @@
     @php
         use Illuminate\Support\Facades\Auth;
     @endphp
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
-    <style>
-        .sale-header {
-            font-family: 'Roboto Mono', monospace;
-            font-size: 1.5rem;
-            color: #2c3e50;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-        }
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-        .form-label {
-            font-size: 1.0rem;
-            font-weight: 500;
-            color: #34495e;
-        }
-
-        .form-control,
-        .form-select {
-            font-size: 1.0rem;
-            padding: 0.75rem;
-        }
-
-        .btn-lg {
-            font-size: 1.0rem;
-            padding: 0.75rem 1.5rem;
-        }
-
-        .card {
-            border: none;
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
-        }
-
-        .card-header {
-            background-color: #1a237e;
-            padding: 1rem 1.5rem;
-        }
-
-        .card-header h5 {
-            font-size: 1.3rem;
-            font-weight: 500;
-        }
-
-        .price-display {
-            font-family: 'Roboto Mono', monospace;
-            font-size: 1.5rem;
-        }
-
-        .total-amount {
-            font-size: 1.8rem;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .discount-amount {
-            color: #e74c3c;
-        }
-
-        .list-group-item {
-            padding: 1rem;
-            font-size: 1.1rem;
-        }
-
-        .badge {
-            font-size: 1rem;
-            padding: 0.5rem 0.75rem;
-        }
-
-        #itemList {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .select2-container .select2-selection--single {
-            height: 45px;
-            font-size: 1.1rem;
-        }
-    </style>
-    <div class="container">
-        <h1 class="sale-header">Create New Sale</h1>
+    <div class="container-fluid bg-light py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="create-sale-heading">Create New Sale</h1>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="keyboardShortcutsBtn">
+                <i class="fas fa-keyboard me-2"></i>Shortcuts
+            </button>
+        </div>
 
         @if ($errors->any())
-            <div class="alert alert-danger">
-                <ul>
+            <div class="alert alert-danger rounded-3">
+                <ul class="mb-0">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -94,169 +26,316 @@
             </div>
         @endif
 
-        <form id="saleForm" action="{{ route('sales.store') }}" method="POST">
-            @csrf
-
-            <!-- Item Selection Card -->
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">Add Items</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="barcode" class="form-label fw-bold">Scan Barcode</label>
-                            <input type="text" id="barcode" class="form-control form-control-lg" placeholder="Scan barcode"
-                                autofocus>
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="itemSelect" class="form-label fw-bold">Select Item</label>
-                            <select id="itemSelect" class="form-select">
-                                <option value="">Select an item</option>
-                                @php
-                                    $sortedItems = $items->sortBy(function ($item) {
-                                        return $item->brand->name ?? 'No Brand';
-                                    });
-                                @endphp
-                                @foreach ($sortedItems as $item)
-                                    @if (!$item->is_parent)
-                                        <option value="{{ $item->id }}" data-price="{{ $item->priceAfterSale() }}"
-                                            data-original-price="{{ $item->selling_price }}" data-code="{{ $item->code }}"
-                                            data-stock="{{ $item->quantity }}" {{ $item->quantity <= 0 ? 'disabled' : '' }}>
-                                            {{ $item->brand->name ?? 'No Brand' }} - {{ $item->name }} (Stock:
-                                            {{ $item->quantity }})
-                                            {{ $item->quantity <= 0 ? '- Out of Stock' : '' }}
-                                        </option>
-                                    @endif
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="quantity" class="form-label fw-bold">Quantity</label>
-                            <input type="number" id="quantity" class="form-control" min="1" value="1">
-                        </div>
-                        <div class="col-md-2 align-self-end">
-                            <button type="button" id="addItemButton" class="btn btn-success btn-lg w-100">Add</button>
-                        </div>
-                    </div>
-
-                    <ul id="itemList" class="list-group"></ul>
-                </div>
-            </div>
-
-            <!-- Customer Details Card -->
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">Customer Information</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label for="customerPhone" class="form-label fw-bold">Phone Number</label>
-                            <input type="text" id="customerPhone" name="customer_phone" class="form-control form-control-lg"
-                                required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="customerName" class="form-label fw-bold">Customer Name</label>
-                            <input type="text" id="customerName" name="customer_name" class="form-control form-control-lg"
-                                required>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Payment Details Card -->
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">Payment Details</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <!-- Discount Section -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Discount</label>
-                            <div class="input-group">
-                                <select id="discountType" class="form-select">
-                                    <option value="none">No Discount</option>
-                                    <option value="percentage">Percentage</option>
-                                    <option value="fixed">Fixed Amount</option>
-                                </select>
-                                <input type="number" id="discountValue" class="form-control" min="0" value="0">
+        <div class="row g-4">
+            <!-- Left side - Item selection and cart -->
+            <div class="col-lg-8">
+                <form id="saleForm" action="{{ route('sales.store') }}" method="POST">
+                    @csrf
+                    <!-- Item Selection Card -->
+                    <div class="card sale-card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Add Items</h5>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-danger" id="clearCartBtn" title="Clear cart">
+                                    <i class="fas fa-trash-alt me-1"></i> Clear Cart
+                                </button>
+                                <button type="button" class="btn btn-primary" id="printGiftReceiptBtn" title="Print gift receipt">
+                                    <i class="fas fa-gift me-1"></i> Gift Receipt
+                                </button>
                             </div>
                         </div>
-                        <!-- Payment Method -->
-                        <div class="col-md-6">
-                            <label for="paymentMethod" class="form-label fw-bold">Payment Method</label>
-                            <select id="paymentMethod" name="payment_method" class="form-select form-select-lg" required>
-                                <option value="">Select Payment Method</option>
-                                <option value="cash">Cash</option>
+                        <div class="card-body">
+                            <!-- Barcode Scanner -->
+                            <div class="mb-3">
+                                <div class="input-group barcode-scanner-group">
+                                    <span class="input-group-text bg-white border-end-0">
+                                        <i class="fas fa-barcode text-muted"></i>
+                                    </span>
+                                    <input type="text" id="barcode" class="form-control form-control-lg border-start-0"
+                                        placeholder="Scan barcode or press / to search" autofocus>
+                                    <button class="btn btn-outline-secondary" type="button" id="focusBarcode" title="Focus barcode (/)">
+                                        <i class="fas fa-qrcode"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Item Selection -->
+                            <div class="mb-3">
+                                <div class="row g-2">
+                                    <div class="col">
+                                        <select id="itemSelect" class="form-select">
+                                            <option value="">Select an item</option>
+                                            @php
+                                                $sortedItems = $items->sortBy(function ($item) {
+                                                    return $item->brand->name ?? 'No Brand';
+                                                });
+                                            @endphp
+                                            @foreach ($sortedItems as $item)
+                                                @if (!$item->is_parent)
+                                                    <option
+                                                        value="{{ $item->id }}"
+                                                        data-price="{{ $item->priceAfterSale() }}"
+                                                        data-original-price="{{ $item->selling_price }}"
+                                                        data-code="{{ $item->code }}"
+                                                        data-stock="{{ $item->quantity }}"
+                                                        {{ $item->quantity <= 0 ? 'disabled' : '' }}
+                                                    >
+                                                        {{ $item->brand->name ?? 'No Brand' }} - {{ $item->name }}
+                                                        ({{ $item->quantity }} in stock)
+                                                    </option>
+                                                @endif
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="input-group">
+                                            <input type="number" id="quantity" class="form-control" min="1" value="1" style="width: 70px;">
+                                            <button type="button" id="addItemButton" class="btn btn-success">
+                                                <i class="fas fa-plus me-1"></i> Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <small class="text-muted">Press Tab to navigate, Enter to add</small>
+                            </div>
+
+                            <!-- Quick Actions -->
+                            <div class="mb-3 d-flex flex-wrap gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary quick-action-btn" data-action="add-frequently-sold">
+                                    <i class="fas fa-star me-1"></i> Popular Items
+                                </button>
+                            </div>
+
+                            <!-- Cart Items -->
+                            <div class="cart-container">
+                                <ul id="itemList" class="list-group"></ul>
+                                <div id="emptyCart" class="text-center py-5">
+                                    <i class="fas fa-shopping-cart fa-3x mb-3 text-muted"></i>
+                                    <p class="text-muted">Cart is empty. Add items to begin.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="subtotal" id="hiddenSubtotal">
+                    <input type="hidden" name="total" id="hiddenTotal">
+                    <input type="hidden" name="discount_type" id="hiddenDiscountType">
+                    <input type="hidden" name="discount_value" id="hiddenDiscountValue">
+                </form>
+            </div>
+
+            <!-- Right side - Customer info & payment -->
+            <div class="col-lg-4">
+                <!-- Customer Details Card -->
+                <div class="card sale-card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Customer</h5>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="skipCustomerInfo">
+                            <label class="form-check-label" for="skipCustomerInfo">Walk-in customer</label>
+                        </div>
+                    </div>
+                    <div class="card-body customer-info-section">
+                        <div class="mb-3">
+                            <label for="customerPhone" class="form-label">Phone Number</label>
+                            <input type="text" id="customerPhone" name="customer_phone" class="form-control" form="saleForm">
+                        </div>
+                        <div class="mb-3">
+                            <label for="customerName" class="form-label">Customer Name</label>
+                            <input type="text" id="customerName" name="customer_name" class="form-control" form="saleForm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Details Card -->
+                <div class="card sale-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Payment</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="paymentMethod" class="form-label">Payment Method</label>
+                            <select id="paymentMethod" name="payment_method" class="form-select" required form="saleForm">
+                                <option value="cash" selected>Cash</option>
                                 <option value="credit_card">Visa</option>
                                 <option value="mobile_pay">Mobile Payment</option>
                                 <option value="cod">Cash On Delivery (COD)</option>
                             </select>
                         </div>
-                    </div>
 
-                    <div class="row" id="codDetails">
-                        <div class="col-md-6" id="shippingFeesContainer" style="display: none;">
-                            <label for="shippingFees" class="form-label">Shipping Fees</label>
-                            <input type="number" id="shippingFees" name="shipping_fees" class="form-control" min="0"
-                                value="0">
-                        </div>
-                        <div class="col-md-6" id="addressContainer" style="display: none;">
-                            <label for="address" class="form-label">Address</label>
-                            <input type="text" id="address" name="address" class="form-control">
-                        </div>
-                    </div>
-
-                    <!-- Totals Section -->
-                    <div class="card bg-light mt-4">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <p class="mb-1 text-muted">Subtotal:</p>
-                                    <h4 id="subtotalAmount" class="price-display">EGP 0.00</h4>
-                                </div>
-                                <div class="col-md-4">
-                                    <p class="mb-1 text-muted">Discount:</p>
-                                    <h4 id="discountAmount" class="price-display discount-amount">EGP 0.00</h4>
-                                </div>
-                                <div class="col-md-4">
-                                    <p class="mb-1 text-muted">Total:</p>
-                                    <h4 id="totalAmount" class="price-display total-amount">EGP 0.00</h4>
+                        <div id="codDetails" style="display: none;">
+                            <div class="mb-3" id="addressContainer">
+                                <label for="address" class="form-label">Delivery Address</label>
+                                <input type="text" id="address" name="address" class="form-control" form="saleForm">
+                            </div>
+                            <div class="mb-3" id="shippingFeesContainer">
+                                <label for="shippingFees" class="form-label">Shipping Fees</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">EGP</span>
+                                    <input type="number" id="shippingFees" name="shipping_fees" class="form-control" min="0" value="0" form="saleForm">
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Notes and Submit -->
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <label for="notes" class="form-label fw-bold">Notes</label>
-                            <textarea id="notes" name="notes" class="form-control" rows="3"></textarea>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label mb-0">Discount</label>
+                                <a href="#" class="text-decoration-none text-muted small" id="clearDiscountBtn">Clear</a>
+                            </div>
+                            <div class="input-group">
+                                <select id="discountType" class="form-select">
+                                    <option value="none" selected>No Discount</option>
+                                    <option value="percentage">Percentage</option>
+                                    <option value="fixed">Fixed Amount</option>
+                                </select>
+                                <input type="number" id="discountValue" class="form-control" min="0" value="0" style="max-width: 100px;">
+                            </div>
+                            <div id="discountLimitInfo" class="small text-muted"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea id="notes" name="notes" class="form-control" rows="2" form="saleForm"></textarea>
+                        </div>
+
+                        <!-- Totals Section -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Items:</span>
+                                    <span id="itemCount" class="fw-bold">0</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Subtotal:</span>
+                                    <span id="subtotalAmount" class="fw-bold">EGP 0.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Discount:</span>
+                                    <span id="discountAmount" class="fw-bold text-danger">- EGP 0.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 shipping-row" style="display: none;">
+                                    <span>Shipping:</span>
+                                    <span id="shippingAmount" class="fw-bold">EGP 0.00</span>
+                                </div>
+                                <hr class="my-2">
+                                <div class="d-flex justify-content-between">
+                                    <span class="fw-bold">Total:</span>
+                                    <span id="totalAmount" class="fw-bold fs-5">EGP 0.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" form="saleForm" class="btn btn-primary btn-lg">
+                                <i class="fas fa-check-circle me-2"></i>Complete Sale (F8)
+                            </button>
                         </div>
                     </div>
-
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">Create Sale</button>
-                        <button type="button" id="printGiftReceiptBtn" class="btn btn-secondary btn-lg">Print Gift
-                            Receipt</button>
-                    </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <input type="hidden" name="subtotal" id="hiddenSubtotal">
-            <input type="hidden" name="total" id="hiddenTotal">
-            <input type="hidden" name="discount_type" id="hiddenDiscountType">
-            <input type="hidden" name="discount_value" id="hiddenDiscountValue">
-        </form>
+    <!-- Compact floating summary box - just shows items count and total -->
+    <div class="floating-summary">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span><i class="fas fa-shopping-cart me-2"></i></span>
+            <span id="summaryItemCount" class="badge bg-primary">0</span>
+        </div>
+        <div>
+            <span class="d-block text-muted small">Total</span>
+            <span id="summaryTotal" class="fw-bold">EGP 0.00</span>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div class="modal fade" id="keyboardShortcutsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Keyboard Shortcuts</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <td><kbd>/</kbd></td>
+                                <td>Focus on barcode scanner</td>
+                            </tr>
+                            <tr>
+                                <td><kbd>F2</kbd></td>
+                                <td>Focus on item search</td>
+                            </tr>
+                            <tr>
+                                <td><kbd>F8</kbd></td>
+                                <td>Complete sale</td>
+                            </tr>
+                            <tr>
+                                <td><kbd>F9</kbd></td>
+                                <td>Switch payment method</td>
+                            </tr>
+                            <tr>
+                                <td><kbd>G</kbd></td>
+                                <td>Print gift receipt</td>
+                            </tr>
+                            <tr>
+                                <td><kbd>Esc</kbd></td>
+                                <td>Clear current input / focus</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Frequently Sold Items Modal -->
+    <div class="modal fade" id="frequentItemsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Popular Items</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row row-cols-2 row-cols-md-4 g-3 popular-items-container">
+                        @php
+                            $popularItems = \App\Models\SaleItem::with('item.brand')
+                                ->select('item_id', DB::raw('COUNT(*) as count'))
+                                ->groupBy('item_id')
+                                ->orderByDesc('count')
+                                ->limit(12)
+                                ->get();
+                        @endphp
+
+                        @foreach($popularItems as $item)
+                            @if($item->item && $item->item->quantity > 0)
+                                <div class="col">
+                                    <div class="card popular-item"
+                                         data-id="{{ $item->item->id }}"
+                                         data-price="{{ $item->item->priceAfterSale() }}"
+                                         data-original-price="{{ $item->item->selling_price }}"
+                                         data-name="{{ $item->item->brand->name ?? 'No Brand' }} - {{ $item->item->name }}">
+                                        <div class="card-body text-center p-3">
+                                            <h6 class="card-title mb-1">{{ $item->item->brand->name ?? 'No Brand' }}</h6>
+                                            <p class="card-text small mb-2">{{ $item->item->name }}</p>
+                                            <span class="badge bg-primary">{{ $item->item->priceAfterSale() }} EGP</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Loading Overlay -->
@@ -271,16 +350,20 @@
     </div>
 
     @push('scripts')
-        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script>
+            // Declare calculateTotal as a global function so it can be called from outside
+            let calculateTotal;
+
             $(document).ready(function () {
+                // Initialize Select2 on dropdowns
                 $('#itemSelect').select2({
                     placeholder: 'Select an item',
                     allowClear: true
                 });
 
+                // Define all DOM elements we'll work with
                 const itemSelect = document.getElementById('itemSelect');
                 const quantityInput = document.getElementById('quantity');
                 const addItemButton = document.getElementById('addItemButton');
@@ -289,6 +372,7 @@
                 const subtotalAmountDisplay = document.getElementById('subtotalAmount');
                 const discountAmountDisplay = document.getElementById('discountAmount');
                 const totalAmountDisplay = document.getElementById('totalAmount');
+                const shippingAmountDisplay = document.getElementById('shippingAmount');
                 const discountTypeSelect = document.getElementById('discountType');
                 const discountValueInput = document.getElementById('discountValue');
                 const saleForm = document.getElementById('saleForm');
@@ -296,9 +380,45 @@
                 const customerPhoneInput = document.getElementById('customerPhone');
                 const customerNameInput = document.getElementById('customerName');
                 const paymentMethodSelect = document.getElementById('paymentMethod');
-                const shippingFeesContainer = document.getElementById('shippingFeesContainer');
-                const addressContainer = document.getElementById('addressContainer');
+                const skipCustomerInfoCheckbox = document.getElementById('skipCustomerInfo');
+                const clearCartBtn = document.getElementById('clearCartBtn');
+                const keyboardShortcutsBtn = document.getElementById('keyboardShortcutsBtn');
+                const emptyCartMessage = document.getElementById('emptyCart');
+                const summaryItemCount = document.getElementById('summaryItemCount');
+                const summaryTotal = document.getElementById('summaryTotal');
+                const itemCountDisplay = document.getElementById('itemCount');
 
+                // Track items in cart
+                const addedItems = new Map();
+
+                // Initialize keyboard shortcuts
+                initializeKeyboardShortcuts();
+
+                // Set up quick action buttons
+                initializeQuickActionButtons();
+
+                // Customer information handling
+                initializeCustomerInfoHandling();
+
+                // Initialize cart clear button
+                clearCartBtn.addEventListener('click', function() {
+                    if (itemList.children.length === 0) return;
+
+                    if (confirm('Are you sure you want to clear the cart?')) {
+                        itemList.innerHTML = '';
+                        addedItems.clear();
+                        calculateTotal();
+                        updateEmptyCartVisibility();
+                    }
+                });
+
+                // Update empty cart message visibility
+                updateEmptyCartVisibility();
+
+                // Initialize discount limit info based on user role
+                updateDiscountLimitInfo();
+
+                // Auto-fetch customer name when phone number is entered
                 customerPhoneInput.addEventListener('blur', function () {
                     const phoneNumber = customerPhoneInput.value.trim();
                     if (phoneNumber) {
@@ -313,17 +433,190 @@
                     }
                 });
 
-                // Store items in a map to consolidate quantities
-                const addedItems = new Map();
+                // Initialize quick action buttons
+                function initializeQuickActionButtons() {
+                    document.querySelectorAll('.quick-action-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const action = this.getAttribute('data-action');
 
-                // Add item to list with quantity consolidation
+                            switch(action) {
+                                case 'add-frequently-sold':
+                                    const frequentItemsModal = new bootstrap.Modal(document.getElementById('frequentItemsModal'));
+                                    frequentItemsModal.show();
+                                    break;
+                            }
+                        });
+                    });
+
+                    // Add click handler for popular items in modal
+                    document.querySelectorAll('.popular-item').forEach(item => {
+                        item.addEventListener('click', function() {
+                            const id = this.getAttribute('data-id');
+                            const price = parseFloat(this.getAttribute('data-price'));
+                            const originalPrice = parseFloat(this.getAttribute('data-original-price'));
+                            const name = this.getAttribute('data-name');
+
+                            const item = {
+                                id: id,
+                                name: name,
+                                price: price,
+                                originalPrice: originalPrice
+                            };
+
+                            if (addItemToList(item, 1)) {
+                                // Close the modal that contains this item
+                                const modal = this.closest('.modal');
+                                bootstrap.Modal.getInstance(modal).hide();
+                            }
+                        });
+                    });
+                }
+
+                // Function to initialize keyboard shortcuts
+                function initializeKeyboardShortcuts() {
+                    // Show keyboard shortcuts modal
+                    keyboardShortcutsBtn.addEventListener('click', function() {
+                        // Use Bootstrap modal
+                        const modal = new bootstrap.Modal(document.getElementById('keyboardShortcutsModal'));
+                        modal.show();
+                    });
+
+                    // Global key press handlers
+                    document.addEventListener('keydown', function(e) {
+                        // Slash key for barcode focus
+                        if (e.key === '/' && !isInputFocused()) {
+                            e.preventDefault();
+                            barcodeInput.focus();
+                        }
+
+                        // F2 for item select focus
+                        if (e.key === 'F2') {
+                            e.preventDefault();
+                            $('#itemSelect').select2('open');
+                        }
+
+                        // F8 for complete sale
+                        if (e.key === 'F8') {
+                            e.preventDefault();
+                            if (validateForm()) {
+                                document.getElementById('loadingOverlay').style.display = 'block';
+                                saleForm.submit();
+                            }
+                        }
+
+                        // F9 to cycle through payment methods
+                        if (e.key === 'F9') {
+                            e.preventDefault();
+                            const options = paymentMethodSelect.options;
+                            let nextIndex = (paymentMethodSelect.selectedIndex + 1) % options.length;
+                            paymentMethodSelect.selectedIndex = nextIndex;
+                            paymentMethodSelect.dispatchEvent(new Event('change'));
+                        }
+
+                        // G for gift receipt
+                        if (e.key === 'g' || e.key === 'G') {
+                            if (!isInputFocused()) {
+                                e.preventDefault();
+                                handlePrintGiftReceipt();
+                            }
+                        }
+
+                        // Escape to clear current focus or input
+                        if (e.key === 'Escape') {
+                            const activeElement = document.activeElement;
+                            if (activeElement) {
+                                if (activeElement.tagName === 'INPUT') {
+                                    activeElement.value = '';
+                                }
+                                activeElement.blur();
+                            }
+                        }
+                    });
+                }
+
+                // Check if any input field is currently focused
+                function isInputFocused() {
+                    const activeElement = document.activeElement;
+                    return activeElement && (
+                        activeElement.tagName === 'INPUT' ||
+                        activeElement.tagName === 'TEXTAREA' ||
+                        activeElement.tagName === 'SELECT' ||
+                        activeElement.classList.contains('select2-search__field')
+                    );
+                }
+
+                // Initialize customer info section
+                function initializeCustomerInfoHandling() {
+                    // Handle walk-in customer checkbox
+                    skipCustomerInfoCheckbox.addEventListener('change', function() {
+                        const customerInfoSection = document.querySelector('.customer-info-section');
+
+                        if (this.checked) {
+                            customerInfoSection.style.opacity = '0.5';
+                            customerInfoSection.style.pointerEvents = 'none';
+                            customerPhoneInput.removeAttribute('required');
+                            customerNameInput.removeAttribute('required');
+                            customerPhoneInput.value = '';
+                            customerNameInput.value = '';
+                        } else {
+                            customerInfoSection.style.opacity = '1';
+                            customerInfoSection.style.pointerEvents = 'auto';
+                            customerPhoneInput.setAttribute('required', 'required');
+                            customerNameInput.setAttribute('required', 'required');
+                        }
+                    });
+                }
+
+                // Update the empty cart message visibility
+                function updateEmptyCartVisibility() {
+                    const itemCount = itemList.children.length;
+
+                    if (itemCount === 0) {
+                        emptyCartMessage.style.display = 'block';
+                    } else {
+                        emptyCartMessage.style.display = 'none';
+                    }
+
+                    // Update item count in summary and display
+                    summaryItemCount.textContent = itemCount;
+                    itemCountDisplay.textContent = itemCount;
+                }
+
+                // Update discount limit info based on user role
+                function updateDiscountLimitInfo() {
+                    const discountLimitInfo = document.getElementById('discountLimitInfo');
+                    const userRole = '{{ Auth::user()->role }}';
+
+                    if (userRole === 'cashier') {
+                        discountLimitInfo.textContent = 'Cashier limit: 20% or 100 EGP maximum';
+                    } else {
+                        discountLimitInfo.textContent = '';
+                    }
+                }
+
+                // Add item to the cart with quantity consolidation
                 function addItemToList(item, quantity) {
                     // Ensure quantity is a number
                     quantity = parseInt(quantity) || 1;
 
-                    // Get current stock quantity
-                    const stockQuantity = parseInt(itemSelect.options[itemSelect.selectedIndex].getAttribute(
-                        'data-stock'));
+                    // If we're using item from dropdown, check stock
+                    let stockQuantity = 0;
+                    const stockOption = Array.from(itemSelect.options).find(
+                        option => option.value === item.id
+                    );
+
+                    if (stockOption) {
+                        stockQuantity = parseInt(stockOption.getAttribute('data-stock'));
+                    } else {
+                        // If item is from quick add or other source, look through all options
+                        const allOptions = Array.from(itemSelect.options);
+                        for (const option of allOptions) {
+                            if (option.value === item.id) {
+                                stockQuantity = parseInt(option.getAttribute('data-stock'));
+                                break;
+                            }
+                        }
+                    }
 
                     // Check if item is in stock
                     if (stockQuantity <= 0) {
@@ -362,51 +655,67 @@
                         createNewItemListEntry(newEntry);
                     }
 
-                    // Recalculate total
+                    // Recalculate total and update UI
                     calculateTotal();
+                    updateEmptyCartVisibility();
+
+                    // Reset the select
+                    $('#itemSelect').val(null).trigger('change');
+
                     return true;
                 }
 
-                // Create a new list entry for an item
+                // Create a new list entry for an item with a simplified design
                 function createNewItemListEntry(itemEntry) {
                     const listItem = document.createElement('li');
-                    listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    listItem.className = 'list-group-item p-3 mb-2';
                     listItem.setAttribute('data-item-id', itemEntry.id);
 
+                    // Calculate the total for this item
+                    const itemTotal = itemEntry.price * itemEntry.quantity;
+
                     listItem.innerHTML = `
+                        <div class="row align-items-center">
+                            <div class="col-md-6 mb-2 mb-md-0">
                                 <div class="d-flex align-items-center">
-                                    <input type="checkbox" class="item-checkbox me-2" checked>
-                                    ${itemEntry.name} - EGP ${itemEntry.price.toFixed(2)}
-                                    <div class="ms-3">
-                                        <label class="me-2">Special Discount:</label>
-                                        <input type="number" 
-                                            class="special-discount form-control form-control-sm d-inline-block" 
-                                            style="width: 80px;"
-                                            min="0" 
-                                            max="100" 
-                                            value="0"
-                                            onchange="updateSpecialDiscount(this, ${itemEntry.id})">
-                                        <span>%</span>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input item-checkbox" checked id="cb-${itemEntry.id}">
+                                        <label for="cb-${itemEntry.id}" class="form-check-label fw-medium">
+                                            ${itemEntry.name}
+                                        </label>
                                     </div>
                                 </div>
-                                <div class="d-flex align-items-center">
-                                    <span class="badge bg-primary rounded-pill me-2">
-                                        Qty: ${itemEntry.quantity}
-                                    </span>
-                                    <button type="button" class="btn btn-danger btn-sm remove-item">
-                                        Remove
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center justify-content-end gap-3">
+                                    <div class="quantity-control">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary decrease-quantity">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <span class="quantity-text mx-2">${itemEntry.quantity}</span>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary increase-quantity">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <div class="price-info me-2">
+                                        <span class="item-price">EGP ${itemTotal.toFixed(2)}</span>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-item">
+                                        <i class="fas fa-times"></i>
                                     </button>
-                                    <input type="hidden" name="items[${itemEntry.id}][item_id]" value="${itemEntry.id}">
-                                    <input type="hidden" name="items[${itemEntry.id}][quantity]" value="${itemEntry.quantity}">
-                                    <input type="hidden" name="items[${itemEntry.id}][price]" value="${itemEntry.price}">
-                                    <input type="hidden" name="items[${itemEntry.id}][special_discount]" value="0">
-                                    <input type="hidden" name="items[${itemEntry.id}][as_gift]" value="0">
                                 </div>
-                            `;
+                            </div>
+                        </div>
+                        <input type="hidden" name="items[${itemEntry.id}][item_id]" value="${itemEntry.id}">
+                        <input type="hidden" name="items[${itemEntry.id}][quantity]" value="${itemEntry.quantity}">
+                        <input type="hidden" name="items[${itemEntry.id}][price]" value="${itemEntry.price}">
+                        <input type="hidden" name="items[${itemEntry.id}][special_discount]" value="0">
+                        <input type="hidden" name="items[${itemEntry.id}][as_gift]" value="0">
+                    `;
 
                     itemList.appendChild(listItem);
 
-                    // Add checkbox change event listener
+                    // Add checkbox change event listener (gift item)
                     const checkbox = listItem.querySelector('.item-checkbox');
                     checkbox.addEventListener('change', function () {
                         const itemId = listItem.getAttribute('data-item-id');
@@ -414,19 +723,74 @@
 
                         if (!this.checked) {
                             asGiftInput.value = "1"; // Mark as gift
+                            listItem.classList.add('gift-item');
                         } else {
                             asGiftInput.value = "0"; // Mark as regular item
+                            listItem.classList.remove('gift-item');
                         }
-                        calculateTotal(); // Just recalculate total without modifying discount
+                        calculateTotal();
                         updateNotesWithGiftItems();
                     });
 
-                    // Add remove item event listener
+                    // Remove item handler
                     listItem.querySelector('.remove-item').addEventListener('click', function () {
                         const itemId = listItem.getAttribute('data-item-id');
                         addedItems.delete(itemId);
                         listItem.remove();
                         calculateTotal();
+                        updateEmptyCartVisibility();
+                    });
+
+                    // Quantity control handlers
+                    const decreaseBtn = listItem.querySelector('.decrease-quantity');
+                    const increaseBtn = listItem.querySelector('.increase-quantity');
+                    const quantityText = listItem.querySelector('.quantity-text');
+                    const quantityInput = listItem.querySelector(`input[name="items[${itemEntry.id}][quantity]"]`);
+                    const priceInfo = listItem.querySelector('.item-price');
+
+                    decreaseBtn.addEventListener('click', function() {
+                        const itemId = listItem.getAttribute('data-item-id');
+                        const itemEntry = addedItems.get(itemId);
+                        if (itemEntry && itemEntry.quantity > 1) {
+                            itemEntry.quantity -= 1;
+                            quantityText.textContent = itemEntry.quantity;
+                            quantityInput.value = itemEntry.quantity;
+
+                            // Update the displayed price
+                            const newTotal = itemEntry.price * itemEntry.quantity;
+                            priceInfo.textContent = `EGP ${newTotal.toFixed(2)}`;
+
+                            calculateTotal();
+                        }
+                    });
+
+                    increaseBtn.addEventListener('click', function() {
+                        const itemId = listItem.getAttribute('data-item-id');
+                        const itemEntry = addedItems.get(itemId);
+                        if (itemEntry) {
+                            // Get current stock from any option with this ID
+                            const stockOption = Array.from(itemSelect.options).find(
+                                option => option.value === itemId
+                            );
+                            let stockQuantity = 0;
+                            if (stockOption) {
+                                stockQuantity = parseInt(stockOption.getAttribute('data-stock'));
+                            }
+
+                            if (itemEntry.quantity < stockQuantity) {
+                                itemEntry.quantity += 1;
+                                quantityText.textContent = itemEntry.quantity;
+                                quantityInput.value = itemEntry.quantity;
+
+                                // Update the displayed price
+                                const newTotal = itemEntry.price * itemEntry.quantity;
+                                priceInfo.textContent = `EGP ${newTotal.toFixed(2)}`;
+
+                                calculateTotal();
+                            } else {
+                                alert(`Cannot add more items. Only ${stockQuantity} available in stock.`);
+                            }
+                        }
                     });
                 }
 
@@ -434,46 +798,56 @@
                 function updateItemInList(item, newQuantity) {
                     const existingListItem = itemList.querySelector(`[data-item-id="${item.id}"]`);
                     if (existingListItem) {
-                        const badgeElement = existingListItem.querySelector('.badge');
-                        const quantityInput = existingListItem.querySelector('input[name$="[quantity]"]');
+                        const quantityText = existingListItem.querySelector('.quantity-text');
+                        const quantityInput = existingListItem.querySelector(`input[name="items[${item.id}][quantity]"]`);
+                        const priceInfo = existingListItem.querySelector('.item-price');
 
-                        if (badgeElement) badgeElement.textContent = `Qty: ${newQuantity}`;
+                        if (quantityText) quantityText.textContent = newQuantity;
                         if (quantityInput) quantityInput.value = newQuantity;
+
+                        // Update the displayed price
+                        const itemEntry = addedItems.get(item.id);
+                        if (itemEntry && priceInfo) {
+                            const newTotal = itemEntry.price * newQuantity;
+                            priceInfo.textContent = `EGP ${newTotal.toFixed(2)}`;
+                        }
                     }
                 }
 
-                discountTypeSelect.addEventListener('change', function () {
-                    // Preserve the current discount value when changing type
-                    const currentValue = parseFloat(discountValueInput.value) || 0;
-                    discountValueInput.value = currentValue;
+                // Discount change handlers
+                discountTypeSelect.addEventListener('change', function() {
                     calculateTotal();
                 });
 
-                discountValueInput.addEventListener('input', function () {
+                discountValueInput.addEventListener('input', function() {
                     const discountType = discountTypeSelect.value;
                     const discountValue = parseFloat(discountValueInput.value) || 0;
 
                     if (discountType === 'percentage' && discountValue > 100) {
                         alert('Percentage discount cannot exceed 100%.');
                         discountValueInput.value = 100;
-                    } else if (discountType === 'fixed' && discountValue > subtotal) {
-                        alert('Fixed amount discount cannot exceed the subtotal.');
-                        discountValueInput.value = subtotal;
                     }
 
                     calculateTotal();
                 });
 
+                // Clear discount button
+                document.getElementById('clearDiscountBtn').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    discountTypeSelect.value = 'none';
+                    discountValueInput.value = '0';
+                    // Trigger change events
+                    discountTypeSelect.dispatchEvent(new Event('change'));
+                });
 
-                // Calculate total price with discount
-                function calculateTotal() {
+                // Calculate total price with discount - define as window level function
+                calculateTotal = function() {
                     const currentDiscountType = discountTypeSelect.value;
                     const currentDiscountValue = parseFloat(discountValueInput.value) || 0;
 
                     let subtotal = 0;
                     let giftTotal = 0;
                     let regularTotal = 0;
-                    let specialDiscountTotal = 0;
                     let shippingFees = parseFloat(document.getElementById('shippingFees').value) || 0;
 
                     // Calculate subtotal and handle gift items
@@ -481,18 +855,14 @@
                         const checkbox = item.querySelector('.item-checkbox');
                         const itemId = item.getAttribute('data-item-id');
                         const itemEntry = addedItems.get(itemId);
-                        const specialDiscount = parseFloat(item.querySelector('input[name$="[special_discount]"]').value) || 0;
 
                         if (itemEntry) {
                             const baseItemTotal = itemEntry.price * itemEntry.quantity;
-                            const specialDiscountAmount = baseItemTotal * (specialDiscount / 100);
-                            const itemTotal = baseItemTotal - specialDiscountAmount;
 
                             if (checkbox && !checkbox.checked) {
-                                giftTotal += itemTotal;
+                                giftTotal += baseItemTotal;
                             } else {
-                                regularTotal += itemTotal;
-                                specialDiscountTotal += specialDiscountAmount;
+                                regularTotal += baseItemTotal;
                             }
                         }
                     });
@@ -516,14 +886,26 @@
 
                     // Update display values
                     subtotalAmountDisplay.textContent = `EGP ${subtotal.toFixed(2)}`;
-                    discountAmountDisplay.textContent = `EGP ${totalDiscount.toFixed(2)}`;
+                    discountAmountDisplay.textContent = `- EGP ${totalDiscount.toFixed(2)}`;
+                    shippingAmountDisplay.textContent = `EGP ${shippingFees.toFixed(2)}`;
                     totalAmountDisplay.textContent = `EGP ${finalTotal.toFixed(2)}`;
+
+                    // Show/hide shipping row
+                    const shippingRow = document.querySelector('.shipping-row');
+                    if (shippingFees > 0) {
+                        shippingRow.style.display = 'flex';
+                    } else {
+                        shippingRow.style.display = 'none';
+                    }
 
                     // Update hidden inputs
                     document.getElementById('hiddenSubtotal').value = subtotal.toFixed(2);
                     document.getElementById('hiddenTotal').value = finalTotal.toFixed(2);
                     document.getElementById('hiddenDiscountType').value = currentDiscountType;
                     document.getElementById('hiddenDiscountValue').value = currentDiscountValue;
+
+                    // Update sticky summary
+                    summaryTotal.textContent = `EGP ${finalTotal.toFixed(2)}`;
                 }
 
                 function updateNotesWithGiftItems() {
@@ -531,8 +913,8 @@
                     itemList.querySelectorAll('li').forEach((item) => {
                         const checkbox = item.querySelector('.item-checkbox');
                         if (checkbox && !checkbox.checked) {
-                            const itemName = item.querySelector('.d-flex').textContent.trim().split(' - EGP')[0];
-                            const quantity = item.querySelector('.badge').textContent.match(/\d+/)[0];
+                            const itemName = item.querySelector('.form-check-label').textContent.trim();
+                            const quantity = item.querySelector('.quantity-text').textContent;
                             giftItems.push(`${itemName} (${quantity})`);
                         }
                     });
@@ -544,43 +926,48 @@
                     notesField.value = existingNotes.trim() + (existingNotes.trim() && giftItemsText ? '\n' : '') + giftItemsText;
                 }
 
-                // Add this new function after calculateTotal
-                function updateNotesWithCheckedItems() {
-                    const checkedItems = [];
-                    itemList.querySelectorAll('li').forEach((item) => {
-                        const checkbox = item.querySelector('.item-checkbox');
-                        if (checkbox && !checkbox.checked) {
-                            const itemName = item.querySelector('.d-flex').textContent.trim().split(' (')[0];
-                            checkedItems.push(itemName);
-                        }
-                    });
+                // Add item button event handler
+                addItemButton.addEventListener('click', function () {
+                    const selectedOption = itemSelect.options[itemSelect.selectedIndex];
 
-                    const notesField = document.getElementById('notes');
-                    const existingNotes = notesField.value.split('\n').filter(line => !line.startsWith('Free Items:')).join('\n');
-                    const checkedItemsText = checkedItems.length > 0 ? `Free Items: ${checkedItems.join(' / ')}` : '';
+                    if (selectedOption && selectedOption.value) {
+                        const item = {
+                            id: selectedOption.value,
+                            name: selectedOption.text.split(' (')[0], // Extract name without stock info
+                            price: parseFloat(selectedOption.getAttribute('data-price')),
+                            originalPrice: parseFloat(selectedOption.getAttribute('data-original-price'))
+                        };
+                        const quantity = parseInt(quantityInput.value) || 1;
 
-                    notesField.value = existingNotes.trim() + (existingNotes.trim() && checkedItemsText ? '\n' : '') + checkedItemsText;
-                }
+                        addItemToList(item, quantity);
+                    }
+                });
 
-                // Add shipping fees change handler
-                document.getElementById('shippingFees').addEventListener('input', calculateTotal);
+                // Handle Enter key on quantity input to add item
+                quantityInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && itemSelect.value) {
+                        e.preventDefault();
+                        addItemButton.click();
+                    }
+                });
 
-                function getSaleItemsFromForm() {
-                    // This is a example structure - adapt it to match your form
-                    const saleItems = [];
-                    const itemRows = document.querySelectorAll('.sale-item-row');
+                // Focus on barcode button
+                document.getElementById('focusBarcode').addEventListener('click', function() {
+                    barcodeInput.focus();
+                });
 
-                    itemRows.forEach(row => {
-                        saleItems.push({
-                            item_id: row.querySelector('[name="item_id[]"]').value,
-                            quantity: row.querySelector('[name="quantity[]"]').value,
-                            item: {
-                                name: row.querySelector('[name="item_name[]"]').value
-                            }
-                        });
-                    });
-                    return saleItems;
-                }
+                // Barcode input handler
+                barcodeInput.addEventListener('input', function (e) {
+                    const barcode = e.target.value.trim();
+
+                    // Trigger barcode search immediately after input
+                    if (barcode.length >= 14) {
+                        handleBarcodeScanning(barcode);
+                        setTimeout(() => {
+                            barcodeInput.focus(); // Refocus after scanning
+                        }, 100);
+                    }
+                });
 
                 // Barcode scanning function
                 function handleBarcodeScanning(barcode) {
@@ -597,10 +984,9 @@
                         }
 
                         // Select the item and add to list
-                        itemSelect.value = matchingOption.value;
                         const item = {
                             id: matchingOption.value,
-                            name: matchingOption.text.replace(' Out of stock', ''),
+                            name: matchingOption.text.split(' (')[0], // Clean up name
                             price: parseFloat(matchingOption.getAttribute('data-price')),
                             originalPrice: parseFloat(matchingOption.getAttribute('data-original-price'))
                         };
@@ -614,61 +1000,22 @@
                     }
                 }
 
-                // Prevent form submission on Enter key and refocus barcode input
-                saleForm.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter' && e.target === barcodeInput) {
-                        e.preventDefault(); // Prevent form submission
-                        barcodeInput.value = ''; // Clear the input
-                        barcodeInput.focus(); // Refocus the input
+                // Payment method change
+                paymentMethodSelect.addEventListener('change', function () {
+                    const codDetails = document.getElementById('codDetails');
+
+                    if (paymentMethodSelect.value === 'cod') {
+                        codDetails.style.display = 'block';
+                    } else {
+                        codDetails.style.display = 'none';
+                        document.getElementById('address').value = '';
+                        document.getElementById('shippingFees').value = '0';
+                        calculateTotal(); // Recalculate totals
                     }
                 });
 
-                // Add Item Button Handler
-                addItemButton.addEventListener('click', function () {
-                    const selectedOption = itemSelect.options[itemSelect.selectedIndex];
-
-                    if (selectedOption.value) {
-                        const item = {
-                            id: selectedOption.value,
-                            name: selectedOption.text,
-                            price: parseFloat(selectedOption.getAttribute('data-price')),
-                            originalPrice: parseFloat(selectedOption.getAttribute('data-original-price'))
-                        };
-                        const quantity = quantityInput.value || 1;
-
-                        addItemToList(item, quantity);
-
-                        // Reset inputs
-                        itemSelect.value = '';
-                        quantityInput.value = 1;
-                    }
-
-                });
-
-                // Barcode Input Handler
-                barcodeInput.addEventListener('input', function (e) {
-                    const barcode = e.target.value.trim();
-
-                    // Trigger barcode search immediately after input
-                    if (barcode.length >= 14) {
-                        handleBarcodeScanning(barcode);
-                        setTimeout(() => {
-                            barcodeInput.focus(); // Refocus after scanning
-                        }, 100);
-                    }
-                });
-
-                // Discount and Total Calculation Handlers
-                discountTypeSelect.addEventListener('change', function () {
-                    // Preserve the current discount value when changing type
-                    const currentValue = parseFloat(discountValueInput.value) || 0;
-                    discountValueInput.value = currentValue;
-                    calculateTotal();
-                });
-
-                discountValueInput.addEventListener('input', function () {
-                    calculateTotal();
-                });
+                // Add shipping fees change handler
+                document.getElementById('shippingFees').addEventListener('input', calculateTotal);
 
                 // Print Gift Receipt Handler
                 if (printGiftReceiptBtn) {
@@ -682,19 +1029,21 @@
                     }
 
                     const saleItems = Array.from(itemList.children).map(item => {
-                        const itemId = item.getAttribute('data-item-id'); // Get item ID from the list item
-                        const itemText = item.firstChild.textContent.split(' - ')[0].trim();
-                        const quantityMatch = item.querySelector('.badge').textContent.match(/\d+/);
-                        const quantity = quantityMatch ? parseInt(quantityMatch[0]) : 1;
+                        const itemId = item.getAttribute('data-item-id');
+                        const itemText = item.querySelector('.form-check-label').textContent.trim();
+                        const quantity = item.querySelector('.quantity-text').textContent;
 
                         return {
-                            item_id: itemId, // Include item_id
-                            name: itemText, // Include item name
-                            quantity: quantity
+                            item_id: itemId,
+                            name: itemText,
+                            quantity: parseInt(quantity)
                         };
                     });
 
                     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                    // Show loading overlay
+                    document.getElementById('loadingOverlay').style.display = 'block';
 
                     fetch('{{ route('sales.print-gift-receipt') }}', {
                         method: 'POST',
@@ -704,43 +1053,115 @@
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify({
-                            items: saleItems // Changed saleItems to items
+                            items: saleItems
                         })
                     })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                alert('Gift receipt printed successfully');
-                            } else {
-                                throw new Error(data.message || 'Failed to print gift receipt');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('Error printing gift receipt: ' + error.message);
-                        });
+                    .then(response => response.json())
+                    .then(data => {
+                        // Hide loading overlay
+                        document.getElementById('loadingOverlay').style.display = 'none';
+
+                        if (data.success) {
+                            // Show success toast instead of alert
+                            showToast('Gift receipt printed successfully', 'success');
+                        } else {
+                            throw new Error(data.message || 'Failed to print gift receipt');
+                        }
+                    })
+                    .catch(error => {
+                        // Hide loading overlay
+                        document.getElementById('loadingOverlay').style.display = 'none';
+
+                        console.error('Error:', error);
+                        showToast('Error printing gift receipt: ' + error.message, 'error');
+                    });
                 }
 
-                paymentMethodSelect.addEventListener('change', function () {
-                    if (paymentMethodSelect.value === 'cod') {
-                        shippingFeesContainer.style.display = 'block';
-                        addressContainer.style.display = 'block';
-                    } else {
-                        shippingFeesContainer.style.display = 'none';
-                        addressContainer.style.display = 'none';
+                // Simple toast notification function
+                function showToast(message, type = 'info') {
+                    // Create toast container if it doesn't exist
+                    let toastContainer = document.querySelector('.toast-container');
+                    if (!toastContainer) {
+                        toastContainer = document.createElement('div');
+                        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+                        document.body.appendChild(toastContainer);
                     }
+
+                    // Create toast element
+                    const toastEl = document.createElement('div');
+                    toastEl.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : 'success'} border-0`;
+                    toastEl.setAttribute('role', 'alert');
+                    toastEl.setAttribute('aria-live', 'assertive');
+                    toastEl.setAttribute('aria-atomic', 'true');
+
+                    toastEl.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                ${message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    `;
+
+                    toastContainer.appendChild(toastEl);
+
+                    // Initialize and show the toast
+                    const toast = new bootstrap.Toast(toastEl, {
+                        autohide: true,
+                        delay: 3000
+                    });
+                    toast.show();
+
+                    // Remove the toast after it's hidden
+                    toastEl.addEventListener('hidden.bs.toast', function() {
+                        toastEl.remove();
+                    });
+                }
+
+                // Form validation and submission
+                saleForm.addEventListener('submit', function (event) {
+                    event.preventDefault(); // Prevent default submission
+
+                    // Validate form before submission
+                    if (!validateForm()) {
+                        return;
+                    }
+
+                    // Show loading overlay
+                    document.getElementById('loadingOverlay').style.display = 'block';
+
+                    // Submit the form
+                    this.submit();
                 });
 
-                // Add validation for discount value based on user role
-                saleForm.addEventListener('submit', function (event) {
-                    event.preventDefault(); // Prevent default form submission
+                // Form validation function
+                function validateForm() {
+                    // Check if cart is empty
+                    if (itemList.children.length === 0) {
+                        showToast('Please add at least one item to the cart.', 'error');
+                        return false;
+                    }
 
-                    // Get the clicked button
-                    const submitter = event.submitter;
+                    // If walk-in customer is not checked, validate customer fields
+                    if (!skipCustomerInfoCheckbox.checked) {
+                        if (!customerPhoneInput.value.trim()) {
+                            showToast('Please enter customer phone number.', 'error');
+                            customerPhoneInput.focus();
+                            return false;
+                        }
 
-                    // Only proceed if it's not the print gift receipt button
-                    if (!submitter || submitter.matches('#printGiftReceiptBtn')) {
-                        return; // Exit early if print gift receipt or unknown button
+                        if (!customerNameInput.value.trim()) {
+                            showToast('Please enter customer name.', 'error');
+                            customerNameInput.focus();
+                            return false;
+                        }
+                    }
+
+                    // If COD is selected, validate address
+                    if (paymentMethodSelect.value === 'cod' && !document.getElementById('address').value.trim()) {
+                        showToast('Please enter delivery address for Cash on Delivery orders.', 'error');
+                        document.getElementById('address').focus();
+                        return false;
                     }
 
                     // Validate discount based on user role
@@ -750,27 +1171,23 @@
 
                     if (userRole === 'cashier') {
                         if (discountType === 'percentage' && discountValue > 20) {
-                            alert('As a cashier, percentage discount cannot exceed 20%.');
-                            return;
+                            showToast('As a cashier, percentage discount cannot exceed 20%.', 'error');
+                            discountValueInput.focus();
+                            return false;
                         }
 
                         if (discountType === 'fixed' && discountValue > 100) {
-                            alert('As a cashier, fixed amount discount cannot exceed 100 EGP.');
-                            return;
+                            showToast('As a cashier, fixed amount discount cannot exceed 100 EGP.', 'error');
+                            discountValueInput.focus();
+                            return false;
                         }
                     }
 
-                    // Show loading overlay
-                    document.getElementById('loadingOverlay').style.display = 'block';
-
-                    // Just submit the form if all validations pass
-                    submitter.disabled = true;
-                    this.submit();
-                });
-
+                    return true;
+                }
             });
 
-            // Add this new function to handle special discount updates
+            // Global special discount update function
             function updateSpecialDiscount(input, itemId) {
                 const value = Math.min(100, Math.max(0, parseFloat(input.value) || 0));
                 input.value = value;

@@ -32,3 +32,4 @@ preload.cjs
 /capstone_pos-darwin-arm64
 /storage/logs/*.log
 /storage/framework/*.php
+storage/logs/laravel.log

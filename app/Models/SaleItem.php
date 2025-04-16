@@ -14,7 +14,9 @@ class SaleItem extends Model
         'code',
         'refunded_quantity',
         'as_gift',
-        'special_discount'  // Add this line
+        'special_discount',
+        'subtotal',
+        'is_exchanged'  // Added the is_exchanged field
     ];
 
     public function item()
@@ -32,12 +34,16 @@ class SaleItem extends Model
         // Update inventory for the old item
         $this->item->increment('quantity', $this->quantity);
 
+        // Calculate subtotal
+        $subtotal = $newPrice * $newQuantity;
+
         // Update the sale item with new details
         $this->update([
             'item_id' => $newItemId,
             'quantity' => $newQuantity,
             'price' => $newPrice,
-            'special_discount' => 0  // Reset special discount on exchange
+            'special_discount' => 0,  // Reset special discount on exchange
+            'subtotal' => $subtotal   // Set the subtotal
         ]);
 
         // Update inventory for the new item

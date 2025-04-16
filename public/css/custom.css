@@ -602,3 +602,546 @@
         transition: transform 0.3s ease;
     }
 }
+
+/* Sales create page styles */
+.sale-header {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1.5rem;
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    font-size: 1.0rem;
+    font-weight: 500;
+    color: #34495e;
+}
+
+.form-control,
+.form-select {
+    font-size: 1.0rem;
+    padding: 0.75rem;
+}
+
+.btn-lg {
+    font-size: 1.0rem;
+    padding: 0.75rem 1.5rem;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background-color: #1a237e;
+    padding: 1rem 1.5rem;
+}
+
+.card-header h5 {
+    font-size: 1.3rem;
+    font-weight: 500;
+}
+
+.price-display {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1.5rem;
+}
+
+.total-amount {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.discount-amount {
+    color: #e74c3c;
+}
+
+.list-group-item {
+    padding: 1rem;
+    font-size: 1.1rem;
+}
+
+.badge {
+    font-size: 1rem;
+    padding: 0.5rem 0.75rem;
+}
+
+#itemList {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.select2-container .select2-selection--single {
+    height: 45px;
+    font-size: 1.1rem;
+}
+
+/* Sticky total summary styles - redesigned as a compact floating box */
+.sticky-summary {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #fff;
+    color: #343a40;
+    padding: 15px;
+    z-index: 1000;
+    transition: all 0.3s ease-in-out;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    max-width: 280px;
+}
+
+.sticky-summary.hidden {
+    transform: translateY(150%);
+    opacity: 0;
+}
+
+.sticky-summary p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.sticky-summary h4 {
+    margin: 0 0 5px 0;
+    font-weight: 600;
+    color: #212529;
+    font-size: 1.1rem;
+}
+
+.sticky-summary .create-sale-btn {
+    background-color: #4e73df;
+    border-color: #4e73df;
+    color: white;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.sticky-summary .create-sale-btn:hover {
+    background-color: #375ad3;
+}
+
+.sticky-summary .amount-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    align-items: center;
+}
+
+.sticky-summary .total-row {
+    border-top: 1px solid #e9ecef;
+    padding-top: 8px;
+    margin-top: 5px;
+    font-size: 1.1em;
+}
+
+.page-content-wrapper {
+    padding-bottom: 70px; /* Add space for the fixed summary bar */
+}
+
+@media (max-width: 768px) {
+    .sticky-summary .d-flex {
+        flex-direction: column;
+        align-items: start !important;
+        gap: 10px;
+    }
+
+    .sticky-summary .create-sale-btn {
+        width: 100%;
+    }
+}
+
+/* Quantity adjustment buttons */
+.quantity-control {
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+}
+
+.quantity-control .btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.quantity-text {
+    margin: 0 5px;
+    font-weight: bold;
+    min-width: 30px;
+    text-align: center;
+}
+
+/* Modern, minimalist, Gen Z-compatible, plain color scheme */
+:root {
+  --primary: #222;
+  --secondary: #444;
+  --accent: #1976d2; /* Blue accent similar to the screenshot */
+  --bg: #f8f9fa;
+  --card-bg: #fff;
+  --border: #e5e7eb;
+  --text: #18181b;
+  --muted: #6b7280;
+  --danger: #ef4444;
+}
+
+/* Sales create page redesigned styles */
+.sale-header {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #333;
+  letter-spacing: -0.5px;
+  margin: 1.5rem 0;
+}
+
+.card {
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.card-header {
+  background-color: #1976d2 !important; /* Blue header from the screenshot */
+  color: white !important;
+  font-weight: 500;
+  padding: 1rem 1.25rem;
+  border-bottom: 0;
+}
+
+.form-label, label {
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+input, select, textarea, .form-control, .form-select {
+  border-radius: 0.375rem !important;
+  border: 1px solid #ddd !important;
+  padding: 0.625rem 0.75rem;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #1976d2 !important;
+  box-shadow: 0 0 0 0.25rem rgba(25, 118, 210, 0.15) !important;
+}
+
+.btn {
+  border-radius: 0.375rem;
+  font-weight: 500;
+  padding: 0.625rem 1rem;
+  transition: all 0.2s;
+}
+
+.btn-success {
+  background-color: #219a53 !important;
+  border-color: #219a53 !important;
+}
+
+.btn-primary {
+  background-color: #1976d2 !important;
+  border-color: #1976d2 !important;
+}
+
+.btn-secondary {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+}
+
+.btn-danger {
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+}
+
+/* List item styling */
+.list-group-item {
+  padding: 0.75rem 1rem;
+  border: 1px solid #eee;
+  margin-bottom: 0.5rem;
+  border-radius: 0.375rem !important;
+  background-color: #fff !important;
+}
+
+/* Sticky summary redesign */
+.sticky-summary {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 1rem;
+  width: 280px;
+  z-index: 1000;
+}
+
+.sticky-summary .amount-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.sticky-summary p {
+  margin: 0;
+  color: #666;
+}
+
+.sticky-summary h4 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.sticky-summary .total-row {
+  border-top: 1px solid #eee;
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.sticky-summary .create-sale-btn {
+  width: 100%;
+  margin-top: 0.75rem;
+  background-color: #1976d2;
+  color: white;
+  border: 0;
+  border-radius: 0.375rem;
+  padding: 0.625rem;
+  font-weight: 500;
+}
+
+/* Enhanced Sales Create Page Styles */
+.cart-container {
+  max-height: 55vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+#emptyCart {
+  padding: 3rem 1rem;
+  color: #9ca3af;
+}
+
+/* Quick add items styling */
+.recent-items-container {
+  margin-bottom: 1.5rem;
+}
+
+.quick-add-item {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-item-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  min-width: 120px;
+  height: 75px;
+  justify-content: center;
+  text-align: center;
+}
+
+.quick-item-card:hover {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.quick-item-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 110px;
+}
+
+.quick-item-card small {
+  font-size: 0.7rem;
+  color: #6b7280;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 110px;
+}
+
+/* Customer info section */
+.customer-info-section {
+  transition: opacity 0.3s, background-color 0.3s;
+}
+
+/* Form switch styling */
+.form-check-input:checked {
+  background-color: #1976d2;
+  border-color: #1976d2;
+}
+
+.form-switch .form-check-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(25, 118, 210, 0.25);
+}
+
+/* Special discount styling */
+.special-discount-group {
+  max-width: 150px;
+}
+
+/* Keyboard shortcuts button */
+kbd {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  background-color: #1f2937;
+  border-radius: 0.25rem;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 992px) {
+  .cart-container {
+    max-height: 40vh;
+  }
+
+  .quick-item-card {
+    min-width: 110px;
+    padding: 0.5rem;
+  }
+}
+
+/* Clean and Modern Sales Create Page Styles */
+.create-sale-heading {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+/* Sale cards */
+.sale-card {
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  border: 1px solid #e9ecef;
+  margin-bottom: 1rem;
+}
+
+/**
+ * Select2 Dropdown Styling Overrides
+ * Ensures dropdowns are fully visible and properly styled
+ */
+.select2-container {
+  width: 100% !important;
+  z-index: 1050;
+}
+
+.select2-container--open {
+  z-index: 99999 !important; /* Extremely high z-index to ensure visibility */
+}
+
+.select2-container .select2-selection--single {
+  height: 38px;
+  padding: 6px 10px;
+  font-size: 1rem;
+  line-height: 1.5;
+  border: 1px solid #ced4da;
+  border-radius: 0.375rem;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 36px;
+  right: 5px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  line-height: 24px;
+  color: #495057;
+  padding-left: 0;
+}
+
+.select2-dropdown {
+  border-color: #ced4da;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  z-index: 99999 !important; /* Extremely high z-index to ensure visibility */
+}
+
+.select2-container--open .select2-dropdown {
+  margin-top: 3px;
+}
+
+.select2-search--dropdown .select2-search__field {
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+  background-color: #1976d2;
+}
+
+.select2-results__option {
+  padding: 8px 12px;
+}
+
+.select2-results {
+  max-height: 400px;
+}
+
+/* Fix for walk-in customer toggle */
+.form-check-input {
+  cursor: pointer;
+}
+
+.form-switch .form-check-input {
+  width: 2.5em !important;
+  height: 1.25em !important;
+  margin-top: 0.2em !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%280, 0, 0, 0.25%29'/%3e%3c/svg%3e");
+  background-position: left center;
+  border-radius: 2em;
+  transition: background-position .15s ease-in-out;
+}
+
+.form-switch .form-check-input:checked {
+  background-position: right center;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+}
+
+.form-check-label {
+  user-select: none;
+  cursor: pointer;
+  padding-left: 0.5rem;
+}
+
+/* Clean and Modern Sales Create Page Styles */
+.create-sale-heading {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
+}

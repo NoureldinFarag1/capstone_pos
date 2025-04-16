@@ -5,6 +5,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RefundController extends Controller
 {
@@ -63,8 +64,16 @@ class RefundController extends Controller
                 $item = $saleItem->item;
 
                 // Calculate refund amount
-                $refundAmount = $item->priceAfterSale() * $quantityToRefund;
+                $unitPrice = $item->priceAfterSale();
+                $refundAmount = $unitPrice * $quantityToRefund;
                 $totalRefundAmount += $refundAmount;
+
+                Log::info('Processing refund', [
+                    'item' => $item->name,
+                    'quantity_to_refund' => $quantityToRefund,
+                    'unit_price' => $unitPrice,
+                    'refund_amount' => $refundAmount
+                ]);
 
                 // Update item stock
                 $item->increment('quantity', $quantityToRefund);
@@ -85,10 +94,18 @@ class RefundController extends Controller
                     // If all items are refunded, delete the sale item
                     $saleItem->delete();
                 } else {
-                    // Update the remaining quantity
+                    // Update the remaining quantity and subtotal
+                    $remainingSubtotal = $remainingQuantity * $saleItem->price;
                     $saleItem->update([
                         'quantity' => $remainingQuantity,
-                        'total_amount' => $remainingQuantity * $item->priceAfterSale()
+                        'subtotal' => $remainingSubtotal
+                    ]);
+
+                    Log::info('Updated sale item', [
+                        'item_id' => $saleItem->id,
+                        'remaining_quantity' => $remainingQuantity,
+                        'price' => $saleItem->price,
+                        'new_subtotal' => $remainingSubtotal
                     ]);
                 }
             }
@@ -103,7 +120,18 @@ class RefundController extends Controller
                 $sale->refund_status = 'partial_refund';
             }
 
+            // Recalculate the sale's subtotal from the remaining sale items
+            $sale->subtotal = $sale->saleItems()->sum('subtotal');
+
             $sale->save();
+
+            Log::info('Refund processed', [
+                'sale_id' => $sale->id,
+                'total_refund_amount' => $totalRefundAmount,
+                'new_sale_total' => $sale->total_amount,
+                'new_sale_subtotal' => $sale->subtotal,
+                'refund_status' => $sale->refund_status
+            ]);
 
             return redirect()->route('sales.show', $sale->id)
                 ->with('success', 'Refund processed successfully.');

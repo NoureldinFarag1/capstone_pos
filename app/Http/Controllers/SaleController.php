@@ -886,28 +886,56 @@ class SaleController extends Controller
             $saleItem = SaleItem::findOrFail($exchangeItem['sale_item_id']);
             $newItem = Item::findOrFail($exchangeItem['new_item_id']);
 
+            // Check if the sale item has a quantity greater than 0
+            if ($saleItem->quantity <= 0) {
+                return redirect()->back()->with('error', "Cannot exchange '{$saleItem->item->name}' because it has zero quantity.")->withInput();
+            }
+
+            // Check if the new item has enough stock
+            if ($newItem->quantity <= 0) {
+                return redirect()->back()->with('error', "Cannot exchange with '{$newItem->name}' because it is out of stock.")->withInput();
+            }
+
+            if ($newItem->quantity < $saleItem->quantity) {
+                return redirect()->back()->with('error', "Insufficient stock for '{$newItem->name}'. Available: {$newItem->quantity}, Required: {$saleItem->quantity}")->withInput();
+            }
+
             // Update inventory for the old item
             $saleItem->item->increment('quantity', $saleItem->quantity);
 
             // Get the selling price of the new item
             $newItemPrice = $newItem->priceAfterSale();
 
-            // Update the sale item with new details
+            // Calculate subtotal
+            $newSubtotal = $newItemPrice * $saleItem->quantity;
+
+            // Update the sale item with new details and mark as exchanged
             $saleItem->update([
                 'item_id' => $newItem->id,
-                'price' => $newItemPrice, // Update with the new item's price
-                'subtotal' => $newItemPrice * $saleItem->quantity, // Update subtotal
+                'price' => $newItemPrice,
+                'subtotal' => $newSubtotal,
+                'is_exchanged' => true // Mark the item as exchanged
             ]);
 
             // Update inventory for the new item
             $newItem->decrement('quantity', $saleItem->quantity);
 
-            Log::info('Item exchanged successfully', ['sale_item_id' => $saleItem->id]);
+            Log::info('Item exchanged successfully', [
+                'sale_item_id' => $saleItem->id,
+                'item_quantity' => $saleItem->quantity,
+                'new_item_id' => $newItem->id,
+                'new_price' => $newItemPrice,
+                'new_subtotal' => $newSubtotal,
+                'is_exchanged' => true
+            ]);
         }
 
         // Recalculate the total amount for the sale
         $sale = Sale::with('saleItems')->find($sale->id);
+
+        // Calculate new subtotal by summing all item subtotals
         $newSubtotalAmount = $sale->saleItems->sum('subtotal');
+        Log::info('Recalculated sale subtotal', ['subtotal' => $newSubtotalAmount]);
 
         // Apply discount
         $discountAmount = 0;
@@ -917,10 +945,23 @@ class SaleController extends Controller
             $discountAmount = min($sale->discount_value, $newSubtotalAmount);
         }
 
+        Log::info('Applied discount', ['type' => $sale->discount_type, 'value' => $sale->discount_value, 'amount' => $discountAmount]);
+
         // Calculate the final total including shipping fees and discounts
         $newTotalAmount = $newSubtotalAmount - $discountAmount + $sale->shipping_fees;
 
-        $sale->update(['total_amount' => $newTotalAmount, 'subtotal' => $newSubtotalAmount]);
+        Log::info('New total amount calculated', [
+            'subtotal' => $newSubtotalAmount,
+            'discount' => $discountAmount,
+            'shipping' => $sale->shipping_fees,
+            'total' => $newTotalAmount
+        ]);
+
+        $sale->update([
+            'total_amount' => $newTotalAmount,
+            'subtotal' => $newSubtotalAmount,
+            'discount' => $discountAmount
+        ]);
 
         return redirect()->route('sales.show', $sale->id)->with('success', 'Items exchanged successfully.');
     }
