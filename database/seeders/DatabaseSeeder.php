@@ -13,11 +13,20 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // First run roles and permissions seeder
+        $this->call(RolesAndPermissionsSeeder::class);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Create users including admin, manager, and cashiers
+        $this->call(UserSeeder::class);
+
+        // Add product structure - categories and brands
+        $this->call(CategorySeeder::class);
+        $this->call(BrandSeeder::class);
+
+        // Add inventory items
+        $this->call(ItemSeeder::class);
+
+        // Finally, add sales data
+        $this->call(SaleSeeder::class);
     }
 }

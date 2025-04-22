@@ -21,13 +21,5 @@ A full-featured Point of Sale system built with Laravel, tailored for retail sho
 
 ---
 
-## 🧪 Demo Credentials
+## 📷 Screenshots
 
-| Role      | Email               | Password   |
-|-----------|---------------------|------------|
-| Admin     | admin@example.com   | password   |
-| Cashier   | cashier@example.com | password   |
-
-> You can adjust these in the `UserSeeder.php` file.
-
----

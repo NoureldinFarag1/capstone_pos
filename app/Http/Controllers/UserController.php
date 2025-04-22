@@ -38,7 +38,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:admin,moderator,cashier',
+            'role' => 'required|in:admin,manager,cashier',
         ]);
         $username = strtolower(str_replace(' ', '_', $request->name));
 

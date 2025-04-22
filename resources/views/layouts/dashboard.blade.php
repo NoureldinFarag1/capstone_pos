@@ -1,6 +1,10 @@
 @php
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Config;
 $user = auth()->user();
+$navbarLogoPath = Config::get('navbar.logo_path');
+$navbarTextLogoPath = Config::get('navbar.text_logo_path');
+$siteTitle = Config::get('navbar.site_title');
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -10,7 +14,7 @@ $user = auth()->user();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>local HUB</title>
+    <title>{{ $siteTitle }}</title>
     @vite('resources/js/app.js')
     @vite('resources/css/app.css')
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
@@ -32,8 +36,8 @@ $user = auth()->user();
                 <!-- Logo Section -->
                 <div class="flex items-center">
                     <a href="#" class="flex items-center no-underline">
-                        <img src="{{ asset('images/logo.png') }}" alt="LocalHUB Logo" class="h-12 w-auto ml-1">
-                        <img src="{{ asset('images/logo-text.png') }}" alt="LocalHUB" class="h-8 w-auto mr-1">
+                        <img src="{{ asset(str_replace(public_path(), '', $navbarLogoPath)) }}" alt="LocalHUB Logo" class="h-12 w-auto ml-1">
+                        <img src="{{ asset(str_replace(public_path(), '', $navbarTextLogoPath)) }}" alt="LocalHUB" class="h-8 w-auto mr-1">
                     </a>
                 </div>
                 <!-- Main Navigation -->
