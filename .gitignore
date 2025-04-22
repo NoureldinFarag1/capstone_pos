@@ -33,3 +33,4 @@ preload.cjs
 /storage/logs/*.log
 /storage/framework/*.php
 storage/logs/laravel.log
+storage/framework/sessions/*
