@@ -119,6 +119,7 @@ class SaleController extends Controller
             'notes' => $request->notes,
             'display_id' => $displayId,
             'sale_date' => $today,
+            'is_arrived' => ($request->payment_method === 'cod') ? 'pending' : null,
         ]);
 
         // Track the computed subtotal from sale items
@@ -361,8 +362,14 @@ class SaleController extends Controller
             $connector = $this->getPrinterConnector();
             $printer = new Printer($connector);
 
-            // Initialize printer
+            // Initialize printer with Arabic language support
             $printer->initialize();
+
+            // Set character code page to CP864 (Arabic) or CP1256 (Arabic Windows)
+            // This enables Arabic character support
+            $printer->getPrintConnector()->write("\x1B\x74\x0B"); // CP864 (Arabic)
+            // If above doesn't work properly, try CP1256 (Arabic Windows) instead:
+            // $printer->getPrintConnector()->write("\x1B\x74\x16");
 
             // Print store name (larger and centered)
             $printer->setJustification(Printer::JUSTIFY_CENTER);
@@ -520,7 +527,12 @@ class SaleController extends Controller
             if ($sale->shipping_fees > 0) {
                 $data['customer_name'] = $sale->customer_name ?? 'N/A';
                 $data['customer_phone'] = $sale->customer_phone ?? 'N/A';
+
+                // Ensure address is properly encoded for Arabic characters
+                // No additional processing needed since our printer is now configured
+                // to handle Arabic text through the CP864 code page
                 $data['customer_address'] = $sale->address ?? 'N/A';
+
                 // Remove the conditional sections markers
                 $template = str_replace(['%if_shipping_start%', '%if_shipping_end%'], '', $template);
             } else {
@@ -717,7 +729,7 @@ class SaleController extends Controller
             'customer_name',
             'customer_phone',
             DB::raw('COUNT(*) as visit_count'),
-            DB::raw('SUM(total_amount) as total_spent'),
+            DB::raw('SUM(total_spent) as total_spent'),
             DB::raw('MAX(created_at) as last_visit')
         )
             ->whereNotNull('customer_phone')
@@ -970,5 +982,53 @@ class SaleController extends Controller
     {
         $items = Item::where('is_parent', false)->get();
         return view('sales.exchange', compact('sale', 'items'));
+    }
+
+    public function codSales(Request $request)
+    {
+        $query = Sale::where('payment_method', 'cod');
+
+        // Handle search if provided
+        if ($request->has('search')) {
+            $search = $request->query('search');
+            $query->where(function($q) use ($search) {
+                $q->where('customer_name', 'like', "%{$search}%")
+                  ->orWhere('customer_phone', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by status if provided in the request
+        if ($request->has('status')) {
+            $query->where('is_arrived', $request->query('status'));
+        }
+
+        // Get stats for the summary cards
+        $pendingCount = Sale::where('payment_method', 'cod')
+                           ->where('is_arrived', 'pending')
+                           ->count();
+
+        $deliveredCount = Sale::where('payment_method', 'cod')
+                             ->where('is_arrived', 'arrived')
+                             ->count();
+
+        $totalValue = Sale::where('payment_method', 'cod')->sum('total_amount');
+
+        $sales = $query->orderBy('created_at', 'desc')
+                      ->paginate(15);
+
+        return view('sales.cod', compact('sales', 'pendingCount', 'deliveredCount', 'totalValue'));
+    }
+
+    public function updateCodStatus(Sale $sale, Request $request)
+    {
+        $validated = $request->validate([
+            'is_arrived' => 'required|in:pending,arrived'
+        ]);
+
+        $sale->update([
+            'is_arrived' => $validated['is_arrived']
+        ]);
+
+        return redirect()->back()->with('success', 'COD status updated successfully.');
     }
 }

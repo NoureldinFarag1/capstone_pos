@@ -10,7 +10,8 @@ class AddShippingFeesAndAddressToSalesTable extends Migration
     {
         Schema::table('sales', function (Blueprint $table) {
             $table->decimal('shipping_fees', 8, 2)->nullable()->after('discount_value');
-            $table->string('address')->nullable()->after('shipping_fees');
+            // Explicitly set UTF8mb4 charset and collation for proper Arabic language support
+            $table->string('address', 255)->charset('utf8mb4')->collation('utf8mb4_unicode_ci')->nullable()->after('shipping_fees');
         });
     }
 

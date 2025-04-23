@@ -36,8 +36,8 @@ $siteTitle = Config::get('navbar.site_title');
                 <!-- Logo Section -->
                 <div class="flex items-center">
                     <a href="#" class="flex items-center no-underline">
-                        <img src="{{ asset(str_replace(public_path(), '', $navbarLogoPath)) }}" alt="LocalHUB Logo" class="h-12 w-auto ml-1">
-                        <img src="{{ asset(str_replace(public_path(), '', $navbarTextLogoPath)) }}" alt="LocalHUB" class="h-8 w-auto mr-1">
+                        <img src="{{ asset($navbarLogoPath) }}" alt="LocalHUB Logo" class="h-12 w-auto ml-1">
+                        <img src="{{ asset($navbarTextLogoPath) }}" alt="LocalHUB" class="h-8 w-auto mr-1">
                     </a>
                 </div>
                 <!-- Main Navigation -->
@@ -97,6 +97,14 @@ $siteTitle = Config::get('navbar.site_title');
                             class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors">
                             <i class="fas fa-chart-line mr-2"></i>
                             <span>Sales</span>
+                            @if(isset($pendingCodCount) && $pendingCodCount > 0)
+                            <span class="absolute -top-1 -right-1 flex h-4 w-4">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                <span class="relative flex rounded-full h-4 w-4 bg-amber-500 text-white text-xs justify-center items-center">
+                                    {{ $pendingCodCount }}
+                                </span>
+                            </span>
+                            @endif
                             <svg class="ml-2 h-4 w-4 transform transition-transform duration-200"
                                 :class="{ 'rotate-180': isOpen }" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd"
@@ -115,6 +123,10 @@ $siteTitle = Config::get('navbar.site_title');
                                 <a href="{{ route('sales.create') }}"
                                     class="{{ request()->routeIs('sales.create') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
                                     <i class="fas fa-plus-circle mr-2"></i>Create Sale
+                                </a>
+                                <a href="{{ route('sales.cod') }}"
+                                    class="{{ request()->routeIs('sales.cod') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
+                                    <i class="fas fa-truck mr-2"></i>COD Tracking
                                 </a>
                             </div>
                         </div>
@@ -216,7 +228,7 @@ $siteTitle = Config::get('navbar.site_title');
                                 <h4 class="text-lg font-semibold mb-2 text-gray-700">Sales</h4>
                             </div>
                             <a href="{{ route('sales.create') }}"
-                                class="group flex items-center justify-center p-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                class="group flex items-center justify-center p-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                 <i class="fas fa-plus-circle text-xl mr-2"></i>
                                 <span class="font-medium">New Sale</span>
                             </a>
@@ -225,13 +237,18 @@ $siteTitle = Config::get('navbar.site_title');
                                 <i class="fas fa-search-location text-xl mr-2"></i>
                                 <span class="font-medium">Trace Item</span>
                             </a>
+                            <a href="{{ route('sales.cod') }}"
+                                class="group flex items-center justify-center p-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                <i class="fas fa-truck text-xl mr-2"></i>
+                                <span class="font-medium">COD Tracking</span>
+                            </a>
                             <a href="{{ route('expenses.index') }}"
-                                class="group flex items-center justify-center p-4 bg-indigo-400 hover:bg-indigo-500 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                class="group flex items-center justify-center p-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                 <i class="fas fa-receipt text-xl mr-2"></i>
                                 <span class="font-medium">Expenses</span>
                             </a>
                             <a href="/sales"
-                                class="group flex items-center justify-center p-4 bg-indigo-300 hover:bg-indigo-400 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                class="group flex items-center justify-center p-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                 <i class="fas fa-chart-line text-xl mr-2"></i>
                                 <span class="font-medium">Sales Overview</span>
                             </a>
@@ -240,7 +257,7 @@ $siteTitle = Config::get('navbar.site_title');
                                 <h4 class="text-lg font-semibold mb-2 text-gray-700">Inventory</h4>
                             </div>
                             <a href="/items/create"
-                                class="group flex items-center justify-center p-4 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                class="group flex items-center justify-center p-4 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                 <i class="fas fa-box-open text-xl mr-2"></i>
                                 <span class="font-medium">Add Item</span>
                             </a>
@@ -250,12 +267,12 @@ $siteTitle = Config::get('navbar.site_title');
                                 <span class="font-medium">View Inventory</span>
                             </a>
                             <a href="{{ route('items.exportCSV') }}"
-                                class="group flex items-center justify-center p-4 bg-green-400 hover:bg-green-500 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                class="group flex items-center justify-center p-4 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                 <i class="fas fa-file-download text-xl mr-2"></i>
                                 <span class="font-medium">Export Inventory</span>
                             </a>
                             <a href="{{ route('brands.trace') }}"
-                                class="group flex items-center justify-center p-4 bg-green-400 hover:bg-green-500 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                class="group flex items-center justify-center p-4 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                 <i class="fas fa-chart-line text-xl mr-2"></i>
                                 <span class="font-medium">Trace Brand Selling</span>
                             </a>

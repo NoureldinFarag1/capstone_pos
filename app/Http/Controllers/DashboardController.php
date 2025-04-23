@@ -21,6 +21,11 @@ class DashboardController extends Controller
         $selectedMonth = $request->input('month', Carbon::now()->month);
         $selectedYear = $request->input('year', Carbon::now()->year);
 
+        // Count pending COD orders for notification badge
+        $pendingCodCount = Sale::where('payment_method', 'cod')
+                              ->where('is_arrived', 'pending')
+                              ->count();
+
         // Get brands with sales
         $topSellingBrands = SaleItem::select('items.brand_id', DB::raw('SUM(sale_items.quantity) as total_sales'))
             ->join('items', 'sale_items.item_id', '=', 'items.id')
@@ -209,6 +214,7 @@ class DashboardController extends Controller
             'refundMetrics' => $refundMetrics,
             'selectedMonth' => $selectedMonth,
             'selectedYear' => $selectedYear,
+            'pendingCodCount' => $pendingCodCount,
         ]);
     }
 

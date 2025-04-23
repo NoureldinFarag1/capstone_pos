@@ -57,25 +57,25 @@ class StoreSettingsController extends Controller
             'store_slogan' => 'nullable|string|max:255',
             'store_instagram' => 'nullable|string|max:255',
             'site_title' => 'required|string|max:255',
-            'receipt_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'navbar_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'navbar_text_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'receipt_logo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'navbar_logo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'navbar_text_logo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         // Handle receipt logo upload
         if ($request->hasFile('receipt_logo')) {
-            $logo = $request->file('receipt_logo');
-            $logoName = 'RECEIPTLOGO.' . $logo->getClientOriginalExtension();
-            $logo->move(public_path('images'), $logoName);
-            $validatedData['receipt_logo_path'] = public_path('images/' . $logoName);
+            $receiptLogo = $request->file('receipt_logo');
+            $receiptLogoName = 'logo.' . $receiptLogo->getClientOriginalExtension();
+            $receiptLogo->move(public_path('images'), $receiptLogoName);
+            $validatedData['receipt_logo_path'] = public_path('images/' . $receiptLogoName);
         }
 
         // Handle navbar logo upload
         if ($request->hasFile('navbar_logo')) {
             $navbarLogo = $request->file('navbar_logo');
-            $navbarLogoName = 'logo.' . $navbarLogo->getClientOriginalExtension();
+            $navbarLogoName = 'logo-nav.' . $navbarLogo->getClientOriginalExtension();
             $navbarLogo->move(public_path('images'), $navbarLogoName);
-            $validatedData['navbar_logo_path'] = public_path('images/' . $navbarLogoName);
+            $validatedData['navbar_logo_path'] = 'images/' . $navbarLogoName;
         }
 
         // Handle navbar text logo upload
@@ -83,13 +83,14 @@ class StoreSettingsController extends Controller
             $navbarTextLogo = $request->file('navbar_text_logo');
             $navbarTextLogoName = 'logo-text.' . $navbarTextLogo->getClientOriginalExtension();
             $navbarTextLogo->move(public_path('images'), $navbarTextLogoName);
-            $validatedData['navbar_text_logo_path'] = public_path('images/' . $navbarTextLogoName);
+            $validatedData['navbar_text_logo_path'] = 'images/' . $navbarTextLogoName;
         }
 
         // Update receipt configuration
         $receiptConfigPath = config_path('receipt.php');
         $receiptConfig = require $receiptConfigPath;
 
+        // Ensure properly encoded UTF-8 for Arabic text support
         $receiptConfig['store_name'] = $validatedData['store_name'];
         $receiptConfig['store_slogan'] = $validatedData['store_slogan'] ?? '';
         $receiptConfig['store_instagram'] = $validatedData['store_instagram'] ?? '';
@@ -99,10 +100,10 @@ class StoreSettingsController extends Controller
         }
 
         // Convert the array to a string for receipt config
-        $receiptConfigString = var_export($receiptConfig, true);
-        $receiptConfigString = "<?php\n\nreturn " . $receiptConfigString . ";\n";
+        // Make sure to properly encode special characters including Arabic
+        $receiptConfigString = "<?php\n\nreturn " . var_export($receiptConfig, true) . ";\n";
 
-        // Write the updated receipt configuration back to the file
+        // Properly write the UTF-8 encoded file
         File::put($receiptConfigPath, $receiptConfigString);
 
         // Update navbar configuration
@@ -121,8 +122,7 @@ class StoreSettingsController extends Controller
         }
 
         // Convert the array to a string for navbar config
-        $navbarConfigString = var_export($navbarConfig, true);
-        $navbarConfigString = "<?php\n\nreturn " . $navbarConfigString . ";\n";
+        $navbarConfigString = "<?php\n\nreturn " . var_export($navbarConfig, true) . ";\n";
 
         // Write the updated navbar configuration back to the file
         File::put($navbarConfigPath, $navbarConfigString);

@@ -54,8 +54,8 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Receipt Logo</h5>
-                        @if(isset($receiptLogoPath) && file_exists($receiptLogoPath))
-                            <img src="{{ asset(str_replace(public_path(), '', $receiptLogoPath)) }}" alt="Receipt Logo" style="max-width: 100px;">
+                        @if(isset($receiptLogoPath))
+                            <img src="{{ asset($receiptLogoPath) }}" alt="Receipt Logo" style="max-width: 100px;">
                         @else
                             <p class="card-text text-muted">No logo uploaded</p>
                         @endif
@@ -70,8 +70,8 @@
                 <div class="card mb-3">
                     <div class="card-body">
                         <h5 class="card-title">Navbar Logo (Graphic)</h5>
-                        @if(isset($navbarLogoPath) && file_exists($navbarLogoPath))
-                            <img src="{{ asset(str_replace(public_path(), '', $navbarLogoPath)) }}" alt="Navbar Logo" style="max-width: 100px;">
+                        @if(isset($navbarLogoPath))
+                            <img src="{{ asset($navbarLogoPath) }}" alt="Navbar Logo" style="max-width: 100px;">
                         @else
                             <p class="card-text text-muted">No logo uploaded</p>
                         @endif
@@ -83,8 +83,8 @@
                 <div class="card mb-3">
                     <div class="card-body">
                         <h5 class="card-title">Navbar Text Logo</h5>
-                        @if(isset($navbarTextLogoPath) && file_exists($navbarTextLogoPath))
-                            <img src="{{ asset(str_replace(public_path(), '', $navbarTextLogoPath)) }}" alt="Navbar Text Logo" style="max-width: 100px;">
+                        @if(isset($navbarTextLogoPath))
+                            <img src="{{ asset($navbarTextLogoPath) }}" alt="Navbar Text Logo" style="max-width: 100px;">
                         @else
                             <p class="card-text text-muted">No logo uploaded</p>
                         @endif

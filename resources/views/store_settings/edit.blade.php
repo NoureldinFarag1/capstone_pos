@@ -85,10 +85,10 @@
                             <div class="form-group mb-3">
                                 <label for="receipt_logo">Receipt Logo</label>
                                 <input type="file" name="receipt_logo" id="receipt_logo" class="form-control">
-                                @if(isset($receiptLogoPath) && file_exists($receiptLogoPath))
+                                @if(isset($receiptLogoPath))
                                     <div class="mt-2">
                                         <strong>Current Receipt Logo:</strong>
-                                        <img src="{{ asset(str_replace(public_path(), '', $receiptLogoPath)) }}" alt="Current Receipt Logo" style="max-width: 100px; margin-top: 5px;">
+                                        <img src="{{ asset($receiptLogoPath) }}" alt="Current Receipt Logo" style="max-width: 100px; margin-top: 5px;">
                                     </div>
                                 @endif
                                 <small class="form-text text-muted">This logo appears on printed receipts.</small>
@@ -108,10 +108,10 @@
                             <div class="form-group mb-3">
                                 <label for="navbar_logo">Navbar Logo (Graphic)</label>
                                 <input type="file" name="navbar_logo" id="navbar_logo" class="form-control">
-                                @if(isset($navbarLogoPath) && file_exists($navbarLogoPath))
+                                @if(isset($navbarLogoPath))
                                     <div class="mt-2">
                                         <strong>Current Navbar Logo:</strong>
-                                        <img src="{{ asset(str_replace(public_path(), '', $navbarLogoPath)) }}" alt="Current Navbar Logo" style="max-width: 100px; margin-top: 5px;">
+                                        <img src="{{ asset($navbarLogoPath) }}" alt="Current Navbar Logo" style="max-width: 100px; margin-top: 5px;">
                                     </div>
                                 @endif
                                 <small class="form-text text-muted">This is the graphic logo that appears in the navbar (left side).</small>
@@ -121,10 +121,10 @@
                             <div class="form-group mb-3">
                                 <label for="navbar_text_logo">Navbar Text Logo</label>
                                 <input type="file" name="navbar_text_logo" id="navbar_text_logo" class="form-control">
-                                @if(isset($navbarTextLogoPath) && file_exists($navbarTextLogoPath))
+                                @if(isset($navbarTextLogoPath))
                                     <div class="mt-2">
                                         <strong>Current Navbar Text Logo:</strong>
-                                        <img src="{{ asset(str_replace(public_path(), '', $navbarTextLogoPath)) }}" alt="Current Navbar Text Logo" style="max-width: 100px; margin-top: 5px;">
+                                        <img src="{{ asset($navbarTextLogoPath) }}" alt="Current Navbar Text Logo" style="max-width: 100px; margin-top: 5px;">
                                     </div>
                                 @endif
                                 <small class="form-text text-muted">This is the text logo that appears in the navbar (next to the graphic logo).</small>

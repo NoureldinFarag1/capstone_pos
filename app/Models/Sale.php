@@ -27,7 +27,8 @@ class Sale extends Model
         'address',
         'display_id',
         'sale_date',
-        'notes'
+        'notes',
+        'is_arrived'
     ];
     public $timestamps = true;
 
