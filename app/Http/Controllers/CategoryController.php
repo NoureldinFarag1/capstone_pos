@@ -41,7 +41,8 @@ class CategoryController extends Controller
 
     public function index()
     {
-        $categories = Category::with('items')->get();
+        // OPTIMIZED: Eager load both items and brands to avoid N+1 queries
+        $categories = Category::with(['items', 'brands'])->get();
         return view('categories.index', compact('categories'));
     }
 

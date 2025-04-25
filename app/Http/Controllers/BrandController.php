@@ -13,7 +13,10 @@ class BrandController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $brands = Brand::query()
+
+        // OPTIMIZED: Eager load categories and items count to avoid N+1 queries in the view
+        $brands = Brand::with('categories')
+            ->withCount('items')
             ->when($search, function ($query, $search) {
                 return $query->where('name', 'like', "%{$search}%");
             })

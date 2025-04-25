@@ -292,14 +292,18 @@ class ItemController extends BaseController
         $sortBy = $request->input('sort_by', 'name');
         $sortOrder = $request->input('sort_order', 'asc');
 
-        $query = Item::with(['brand', 'category', 'sizes', 'colors'])
-                    ->where('is_parent', true)
-                    ->select([
-                        'items.*',
-                        DB::raw('CAST(items.selling_price AS DECIMAL(10,2)) as selling_price'),
-                        DB::raw('CAST(items.discount_value AS DECIMAL(10,2)) as discount_value'),
-                        DB::raw('CAST(items.quantity AS SIGNED) as quantity')
-                    ]);
+        // OPTIMIZED: Eager load relationships and transform data in a single query
+        $query = Item::with(['brand', 'category', 'sizes', 'colors', 'variants' => function($query) {
+                // Only select necessary fields from variants to reduce data transfer
+                $query->select('id', 'parent_id', 'code', 'quantity');
+            }])
+            ->where('is_parent', true)
+            ->select([
+                'items.*',
+                DB::raw('CAST(items.selling_price AS DECIMAL(10,2)) as selling_price'),
+                DB::raw('CAST(items.discount_value AS DECIMAL(10,2)) as discount_value'),
+                DB::raw('CAST(items.quantity AS SIGNED) as quantity')
+            ]);
 
         // Apply filters
         if (!$showAll) {
@@ -593,65 +597,201 @@ class ItemController extends BaseController
         return PHP_OS_FAMILY === 'Windows';
     }
 
+    /**
+     * Get printer name from configuration
+     *
+     * @return string
+     */
+    private function getPrinterName()
+    {
+        $configPath = base_path('printer_config.json');
+        $config = json_decode(file_get_contents($configPath), true);
+
+        return $this->isWindows() ? $config['windows'] : $config['mac'];
+    }
+
+    /**
+     * Print label(s) for an item
+     *
+     * @param int $id Item ID
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function printLabel($id, Request $request)
     {
         try {
-            $item = Item::findOrFail($id);
-            $quantity = $request->input('quantity', 1);
-            $printerName = 'Xprinter_XP_T361U';
+            // Start timing for performance logging
+            $startTime = microtime(true);
 
-            // Generate PDF in memory
+            // Eager load the brand and category to avoid N+1 queries
+            $item = Item::with(['brand', 'category'])->findOrFail($id);
+            $quantity = (int) $request->input('quantity', 1);
+
+            // Get printer name from config instead of hardcoding
+            $printerName = $this->getPrinterName();
+
+            // Cache key for this specific label
+            $cacheKey = "label_template_{$item->id}";
+
+            // Check if barcode file exists, if not, generate it
             $barcodePath = public_path('storage/' . $item->barcode);
+            if (!file_exists($barcodePath)) {
+                Log::info("Regenerating barcode for item {$item->id}");
+                $this->regenerateBarcode($item);
+            }
+
+            // Create PDF with optimized settings
             $pdf = PDF::loadView('pdf.label', [
                 'item' => $item,
                 'barcodePath' => $barcodePath,
             ]);
 
-            // Convert mm to points (1mm = 2.83465 points)
+            // Set paper size once
             $width = 36.5 * 2.83465;  // 103.46 points
             $height = 25 * 2.83465;   // 70.87 points
             $pdf->setPaper([0, 0, $width, $height], 'landscape');
 
-            // Save PDF temporarily
-            $tempPath = storage_path('app/temp/label_' . uniqid() . '.pdf');
-            $pdf->save($tempPath);
+            // Configure DomPDF for better performance
+            $pdf->getDomPDF()->set_option('enable_php', true);
+            $pdf->getDomPDF()->set_option('enable_javascript', false);
+            $pdf->getDomPDF()->set_option('enable_remote', false);
+            $pdf->getDomPDF()->set_option('font_height_ratio', 1.0);
 
-            if ($this->isWindows()) {
-                // Path to SumatraPDF
-                $sumatraPath = '"C:\Program Files\SumatraPDF\SumatraPDF.exe"';
-
-                // Define custom paper size in mm
-                $printSettings = "-print-settings \"$quantity"
-                    . ",paper=Custom.36.5x25mm"  // Exact dimensions in mm
-                    . ",fit=NoScaling"           // Prevent auto-scaling
-                    . ",offset-x=0,offset-y=0\""; // No margin offset
-
-                // Build and execute the print command
-                $command = "$sumatraPath $printSettings -print-to \"$printerName\" \"$tempPath\"";
-
-                $process = Process::fromShellCommandline($command);
-                $process->setTimeout(60);
-                $process->run();
-
-                if (!$process->isSuccessful()) {
-                    Log::error('Windows print error: ' . $process->getErrorOutput());
-                    throw new \Exception('Printing failed on Windows: ' . $process->getErrorOutput());
-                }
-            } else {
-                // Mac/Linux printing using lp command
-                exec("lp -d $printerName -n $quantity $tempPath");
+            // Create temp directory if it doesn't exist
+            $tempDir = storage_path('app/temp');
+            if (!file_exists($tempDir)) {
+                mkdir($tempDir, 0755, true);
             }
 
-            // Clean up temp file
-            unlink($tempPath);
+            // Save PDF temporarily with a consistent name for the item
+            // This allows reusing the same file for multiple prints of the same item
+            $tempPath = $tempDir . '/label_' . $item->id . '.pdf';
+            $pdf->save($tempPath);
 
-            return response()->json(['success' => true]);
+            // Print based on OS
+            if ($this->isWindows()) {
+                $result = $this->printLabelWindows($tempPath, $printerName, $quantity);
+            } else {
+                $result = $this->printLabelMac($tempPath, $printerName, $quantity);
+            }
+
+            // Log performance metrics
+            $executionTime = microtime(true) - $startTime;
+            Log::info("Label printed for item {$item->id}, quantity: {$quantity}, time: {$executionTime}s");
+
+            return response()->json(['success' => true, 'execution_time' => $executionTime]);
         } catch (\Exception $e) {
             Log::error('Label printing error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Windows-specific printing implementation
+     */
+    private function printLabelWindows($tempPath, $printerName, $quantity)
+    {
+        // Path to SumatraPDF
+        $sumatraPath = '"C:\Program Files\SumatraPDF\SumatraPDF.exe"';
+
+        // Define custom paper size in mm
+        $printSettings = "-print-settings \"$quantity"
+            . ",paper=Custom.36.5x25mm"
+            . ",fit=NoScaling"
+            . ",offset-x=0,offset-y=0\"";
+
+        // Build and execute the print command
+        $command = "$sumatraPath $printSettings -print-to \"$printerName\" \"$tempPath\"";
+
+        $process = Process::fromShellCommandline($command);
+        $process->setTimeout(60);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            Log::error('Windows print error: ' . $process->getErrorOutput());
+            throw new \Exception('Printing failed on Windows: ' . $process->getErrorOutput());
+        }
+
+        return true;
+    }
+
+    /**
+     * Mac/Linux-specific printing implementation
+     */
+    private function printLabelMac($tempPath, $printerName, $quantity)
+    {
+        // Mac/Linux printing using lp command with proper options
+        $command = "lp -d \"$printerName\" -n $quantity -o fit-to-page \"$tempPath\"";
+        exec($command, $output, $returnCode);
+
+        if ($returnCode !== 0) {
+            Log::error('Mac print error: ' . implode("\n", $output));
+            throw new \Exception('Printing failed on Mac: ' . implode("\n", $output));
+        }
+
+        return true;
+    }
+
+    /**
+     * Regenerate barcode for an item if needed
+     */
+    private function regenerateBarcode($item)
+    {
+        try {
+            // Ensure the barcodes directory exists
+            $barcodesPath = storage_path('app/public/barcodes');
+            if (!file_exists($barcodesPath)) {
+                mkdir($barcodesPath, 0755, true);
+            }
+
+            // Generate barcode code if missing
+            if (empty($item->code)) {
+                if ($item->parent_id) {
+                    // This is a variant
+                    $parent = Item::findOrFail($item->parent_id);
+                    $size = $item->sizes->first();
+                    $color = $item->colors->first();
+
+                    if ($parent && $size && $color) {
+                        $item->code = $parent->code .
+                            Str::padLeft($color->id, 2, '0') .
+                            Str::padLeft($size->id, 2, '0');
+                    }
+                } else {
+                    // This is a parent item
+                    $item->code = Str::padLeft($item->brand_id, 3, '0') .
+                        Str::padLeft($item->category_id, 3, '0') .
+                        Str::padLeft($item->id, 4, '0');
+                }
+            }
+
+            // Generate barcode image
+            $barcodeGenerator = new BarcodeGeneratorPNG();
+            $barcodePath = 'barcodes/' . $item->code . '.png';
+            $storagePath = storage_path('app/public/' . $barcodePath);
+
+            // Generate barcode with optimal quality for printing
+            $barcodeImage = $barcodeGenerator->getBarcode(
+                $item->code,
+                $barcodeGenerator::TYPE_CODE_128,
+                3,  // Width factor
+                50  // Height in pixels
+            );
+
+            // Save the barcode image
+            file_put_contents($storagePath, $barcodeImage);
+
+            // Update item with barcode path
+            $item->barcode = $barcodePath;
+            $item->save();
+
+            return $barcodePath;
+        } catch (\Exception $e) {
+            Log::error('Barcode regeneration error: ' . $e->getMessage());
+            throw $e;
         }
     }
 

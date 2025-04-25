@@ -21,31 +21,36 @@ class DashboardController extends Controller
         $selectedMonth = $request->input('month', Carbon::now()->month);
         $selectedYear = $request->input('year', Carbon::now()->year);
 
-        // Count pending COD orders for notification badge
+        // Count pending COD orders for notification badge - make it null-safe
         $pendingCodCount = Sale::where('payment_method', 'cod')
-                              ->where('is_arrived', 'pending')
+                              ->where(function($query) {
+                                  $query->where('is_arrived', 'pending')
+                                        ->orWhereNull('is_arrived');
+                              })
                               ->count();
 
-        // Get brands with sales
-        $topSellingBrands = SaleItem::select('items.brand_id', DB::raw('SUM(sale_items.quantity) as total_sales'))
-            ->join('items', 'sale_items.item_id', '=', 'items.id')
-            ->groupBy('items.brand_id')
-            ->having('total_sales', '>', 0)
-            ->orderByDesc('total_sales')
-            ->get();
+        // Get brands with sales - OPTIMIZED to avoid N+1 query by including brands table directly
+        $topSellingBrands = SaleItem::select(
+            'items.brand_id',
+            'brands.name',
+            'brands.picture',
+            DB::raw('SUM(sale_items.quantity) as total_sales')
+        )
+        ->join('items', 'sale_items.item_id', '=', 'items.id')
+        ->join('brands', 'items.brand_id', '=', 'brands.id')
+        ->groupBy('items.brand_id', 'brands.name', 'brands.picture')
+        ->having('total_sales', '>', 0)
+        ->orderByDesc('total_sales')
+        ->get();
 
-        // Now, fetch the brand details for each of the brands with sales
-        $topSellingBrandDetails = [];
-        foreach ($topSellingBrands as $brand) {
-            $brandDetails = Brand::find($brand->brand_id);
-            if ($brandDetails) {
-                $topSellingBrandDetails[] = [
-                    'name' => $brandDetails->name,
-                    'image' => $brandDetails->picture,
-                    'total_sales' => $brand->total_sales
-                ];
-            }
-        }
+        // Convert result to needed format without additional queries
+        $topSellingBrandDetails = $topSellingBrands->map(function($brand) {
+            return [
+                'name' => $brand->name,
+                'image' => $brand->picture,
+                'total_sales' => $brand->total_sales
+            ];
+        })->toArray();
 
         // Low Stock Items
         $lowStockItems = Item::where('quantity', '<=', 2)
@@ -57,24 +62,18 @@ class DashboardController extends Controller
         // Sales Metrics
         $monthlySales = $this->getMonthlySalesData($selectedMonth, $selectedYear);
 
-        $cashPaymentsMonthly = Sale::whereMonth('created_at', now()->month)
-                            ->whereYear('created_at', now()->year)
-                            ->where('payment_method', 'cash')
-                            ->sum('total_amount');
-        $creditPaymentsMonthly = Sale::whereMonth('created_at', now()->month)
-                                      ->whereYear('created_at', now()->year)
-                                      ->where('payment_method', 'credit_card')
-                                      ->sum('total_amount');
+        // OPTIMIZED: Get monthly payment methods statistics in a single query
+        $monthlyPaymentStats = Sale::whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->select('payment_method', DB::raw('SUM(total_amount) as total'))
+            ->groupBy('payment_method')
+            ->pluck('total', 'payment_method')
+            ->toArray();
 
-        $mobilePaymentsMonthly = Sale::whereMonth('created_at', now()->month)
-                                  ->whereYear('created_at', now()->year)
-                                  ->where('payment_method', 'mobile_pay')
-                                  ->sum('total_amount');
-
-        $codPaymentsMonthly = Sale::whereMonth('created_at', now()->month)
-                          ->whereYear('created_at', now()->year)
-                          ->where('payment_method', 'cod')
-                          ->sum('total_amount');
+        $cashPaymentsMonthly = $monthlyPaymentStats['cash'] ?? 0;
+        $creditPaymentsMonthly = $monthlyPaymentStats['credit_card'] ?? 0;
+        $mobilePaymentsMonthly = $monthlyPaymentStats['mobile_pay'] ?? 0;
+        $codPaymentsMonthly = $monthlyPaymentStats['cod'] ?? 0;
 
         // Inventory Metrics
         $totalItems = Item::where('is_parent', false)->count();
@@ -103,34 +102,45 @@ class DashboardController extends Controller
                     DB::raw('SUM(total_amount) as total_sales')
                 )
                 ->get();
-        $cashPayments = Sale::whereDate('created_at', Carbon::today())->where('payment_method', 'cash')->sum('total_amount');
-        $creditPayments = Sale::whereDate('created_at', Carbon::today())->where('payment_method', 'credit_card')->sum('total_amount');
-        $mobilePayments = Sale::whereDate('created_at', Carbon::today())->where('payment_method', 'mobile_pay')->sum('total_amount');
-        $codPayments = Sale::whereDate('created_at', Carbon::today())->where('payment_method', 'cod')->sum('total_amount');
 
-        // Stock Level Summary
+        // OPTIMIZED: Get today's payment methods statistics in a single query
+        $todayPaymentStats = Sale::whereDate('created_at', Carbon::today())
+            ->select('payment_method', DB::raw('SUM(total_amount) as total'))
+            ->groupBy('payment_method')
+            ->pluck('total', 'payment_method')
+            ->toArray();
+
+        $cashPayments = $todayPaymentStats['cash'] ?? 0;
+        $creditPayments = $todayPaymentStats['credit_card'] ?? 0;
+        $mobilePayments = $todayPaymentStats['mobile_pay'] ?? 0;
+        $codPayments = $todayPaymentStats['cod'] ?? 0;
+
+        // OPTIMIZED: Get stock levels in a single query with CASE expressions
+        $stockLevelStats = Item::where('is_parent', false)
+            ->select([
+                DB::raw('COUNT(CASE WHEN quantity <= 2 THEN 1 END) as critical'),
+                DB::raw('COUNT(CASE WHEN quantity > 2 AND quantity <= 5 THEN 1 END) as low'),
+                DB::raw('COUNT(CASE WHEN quantity > 5 THEN 1 END) as healthy')
+            ])
+            ->first();
+
         $stockLevels = [
-                'critical' => Item::where('quantity', '<=', 2)
-                     ->where('is_parent', false)
-                     ->count(),
+            'critical' => $stockLevelStats->critical,
+            'low' => $stockLevelStats->low,
+            'healthy' => $stockLevelStats->healthy
+        ];
 
-    'low' => Item::where('quantity', '>', 2)
-                 ->where('quantity', '<=', 5)
-                 ->where('is_parent', false)
-                 ->count(),
+        // OPTIMIZED: Get payment method statistics in a single query
+        $paymentMethodStats = Sale::select('payment_method', DB::raw('COUNT(*) as count'))
+            ->groupBy('payment_method')
+            ->orderByDesc('count')
+            ->get();
 
-    'healthy' => Item::where('quantity', '>', 5)
-                     ->where('is_parent', false)
-                     ->count()
-            ];
-
-        $topPaymentMethod = Sale::select('payment_method', DB::raw('count(*) as count'))
-                            ->groupBy('payment_method')
-                            ->orderByDesc('count')
-                            ->first()->payment_method;
-        $topPaymentMethodPercentage = (Sale::where('payment_method', $topPaymentMethod)->count() / Sale::count()) * 100;
-        $topPaymentMethodCount = (Sale::where('payment_method', $topPaymentMethod)->count());
-        $AllSalesCount = Sale::count();
+        $allSalesCount = $paymentMethodStats->sum('count');
+        $topPaymentMethodStat = $paymentMethodStats->first();
+        $topPaymentMethod = $topPaymentMethodStat ? $topPaymentMethodStat->payment_method : null;
+        $topPaymentMethodCount = $topPaymentMethodStat ? $topPaymentMethodStat->count : 0;
+        $topPaymentMethodPercentage = $allSalesCount > 0 ? ($topPaymentMethodCount / $allSalesCount * 100) : 0;
 
         $recentItems = Item::where('is_parent', false)->latest()->take(5)->get();
 
@@ -191,7 +201,7 @@ class DashboardController extends Controller
             'topPaymentMethod' =>$topPaymentMethod,
             'topPaymentMethodPercentage' =>$topPaymentMethodPercentage,
             'topPaymentMethodCount' =>$topPaymentMethodCount,
-            'AllSalesCount' => $AllSalesCount,
+            'AllSalesCount' => $allSalesCount,
             'recentItems' => $recentItems,
             'todayRevenue' => Sale::whereDate('created_at', today())->sum('total_amount'),
             'todayOrders' => Sale::whereDate('created_at', today())->count(),
@@ -334,45 +344,33 @@ class DashboardController extends Controller
 
     private function getMonthlySalesData($month, $year)
     {
-        $monthlySales = Sale::whereMonth('created_at', $month)
+        // OPTIMIZED: Get monthly sales data in fewer queries
+        $currentMonthSales = Sale::whereMonth('created_at', $month)
             ->whereYear('created_at', $year)
-            ->sum('total_amount');
+            ->select(
+                DB::raw('SUM(total_amount) as total_sales'),
+                DB::raw('SUM(CASE WHEN payment_method = "cash" THEN total_amount ELSE 0 END) as cash_payments'),
+                DB::raw('SUM(CASE WHEN payment_method = "credit_card" THEN total_amount ELSE 0 END) as credit_payments'),
+                DB::raw('SUM(CASE WHEN payment_method = "mobile_pay" THEN total_amount ELSE 0 END) as mobile_payments'),
+                DB::raw('SUM(CASE WHEN payment_method = "cod" THEN total_amount ELSE 0 END) as cod_payments')
+            )
+            ->first();
 
         $previousMonthSales = Sale::whereMonth('created_at', Carbon::create($year, $month)->subMonth()->month)
-            ->whereYear('created_at', $year)
+            ->whereYear('created_at', Carbon::create($year, $month)->subMonth()->year)
             ->sum('total_amount');
 
         $salesGrowthPercentage = $previousMonthSales > 0
-            ? (($monthlySales - $previousMonthSales) / $previousMonthSales) * 100
+            ? (($currentMonthSales->total_sales - $previousMonthSales) / $previousMonthSales) * 100
             : 0;
 
-        $cashPaymentsMonthly = Sale::whereMonth('created_at', $month)
-            ->whereYear('created_at', $year)
-            ->where('payment_method', 'cash')
-            ->sum('total_amount');
-
-        $creditPaymentsMonthly = Sale::whereMonth('created_at', $month)
-            ->whereYear('created_at', $year)
-            ->where('payment_method', 'credit_card')
-            ->sum('total_amount');
-
-        $mobilePaymentsMonthly = Sale::whereMonth('created_at', $month)
-            ->whereYear('created_at', $year)
-            ->where('payment_method', 'mobile_pay')
-            ->sum('total_amount');
-
-        $codPaymentsMonthly = Sale::whereMonth('created_at', $month)
-            ->whereYear('created_at', $year)
-            ->where('payment_method', 'cod')
-            ->sum('total_amount');
-
         return [
-            'total_sales' => $monthlySales,
+            'total_sales' => $currentMonthSales->total_sales ?? 0,
             'salesGrowthPercentage' => $salesGrowthPercentage,
-            'cashPaymentsMonthly' => $cashPaymentsMonthly,
-            'creditPaymentsMonthly' => $creditPaymentsMonthly,
-            'mobilePaymentsMonthly' => $mobilePaymentsMonthly,
-            'codPaymentsMonthly' => $codPaymentsMonthly,
+            'cashPaymentsMonthly' => $currentMonthSales->cash_payments ?? 0,
+            'creditPaymentsMonthly' => $currentMonthSales->credit_payments ?? 0,
+            'mobilePaymentsMonthly' => $currentMonthSales->mobile_payments ?? 0,
+            'codPaymentsMonthly' => $currentMonthSales->cod_payments ?? 0,
         ];
     }
 }

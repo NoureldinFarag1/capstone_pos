@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -14,10 +15,21 @@ class UserController extends Controller
     // List all users
     public function index()
     {
-        $users = User::with('roles')->get(); // Get all users with their roles
-        $adminCount = User::role('Admin')->count();
-        $moderatorCount = User::role('Moderator')->count();
-        $cashierCount = User::role('Cashier')->count();
+        // OPTIMIZED: Get users with roles using eager loading (already good)
+        $users = User::with('roles')->get();
+
+        // OPTIMIZED: Replace multiple role count queries with a single query
+        $roleCounts = User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+            ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+            ->where('model_has_roles.model_type', User::class)
+            ->select('roles.name', DB::raw('COUNT(*) as count'))
+            ->groupBy('roles.name')
+            ->pluck('count', 'name')
+            ->toArray();
+
+        $adminCount = $roleCounts['Admin'] ?? 0;
+        $moderatorCount = $roleCounts['Moderator'] ?? 0;
+        $cashierCount = $roleCounts['Cashier'] ?? 0;
 
         return view('users.index', compact('users', 'adminCount', 'moderatorCount', 'cashierCount'));
     }

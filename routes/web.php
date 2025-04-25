@@ -139,6 +139,19 @@ Route::post('/refund', [RefundController::class, 'store'])->name('refund.store')
 Route::resource('colors', ColorController::class);
 Route::post('/sales/print-gift-receipt', [SaleController::class, 'printGiftReceipt'])->name('sales.print-gift-receipt');
 Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
+Route::post('/customers/create', [CustomerController::class, 'store'])->name('customers.store');
+Route::get('/customers/create', [CustomerController::class, 'create'])->name('customers.create');
+Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
+Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
+Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
+
+// Loyalty program routes
+Route::get('/loyalty', [LoyaltyController::class, 'index'])->name('loyalty.index');
+Route::get('/loyalty/{customer}', [LoyaltyController::class, 'show'])->name('loyalty.show');
+Route::get('/loyalty/{customer}/adjust', [LoyaltyController::class, 'showAdjustForm'])->name('loyalty.adjust');
+Route::post('/loyalty/{customer}/adjust', [LoyaltyController::class, 'adjustPoints'])->name('loyalty.adjust.post');
+Route::get('/loyalty/{customer}/card', [LoyaltyController::class, 'showLoyaltyCard'])->name('loyalty.card');
+Route::get('/loyalty-rules', [LoyaltyController::class, 'showRules'])->name('loyalty.rules');
 
 // Add this route
 Route::post('/items/update-variants-quantity', [ItemController::class, 'updateVariantsQuantity'])

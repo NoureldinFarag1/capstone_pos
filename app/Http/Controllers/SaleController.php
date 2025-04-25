@@ -6,6 +6,7 @@ use App\Exports\BestSellingReportExport;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Item;
+use App\Models\Brand;
 use Illuminate\Http\Request;
 use App\Exports\SalesPerBrandExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -340,7 +341,12 @@ class SaleController extends Controller
         try {
             Log::info('Starting thermal receipt print for sale #' . $id);
 
-            $sale = Sale::with('saleItems.item')->findOrFail($id);
+            // OPTIMIZED: Eager load all needed relationships to avoid N+1 queries
+            $sale = Sale::with([
+                'saleItems.item.brand',
+                'saleItems.item.category',
+                'user'
+            ])->findOrFail($id);
 
             // Load thermal receipt template from config
             $templatePath = Config::get('receipt.thermal_receipt_template');
@@ -367,9 +373,9 @@ class SaleController extends Controller
 
             // Set character code page to CP864 (Arabic) or CP1256 (Arabic Windows)
             // This enables Arabic character support
-            $printer->getPrintConnector()->write("\x1B\x74\x0B"); // CP864 (Arabic)
+            // $printer->getPrintConnector()->write("\x1B\x74\x0B"); // CP864 (Arabic)
             // If above doesn't work properly, try CP1256 (Arabic Windows) instead:
-            // $printer->getPrintConnector()->write("\x1B\x74\x16");
+             $printer->getPrintConnector()->write("\x1B\x74\x16");
 
             // Print store name (larger and centered)
             $printer->setJustification(Printer::JUSTIFY_CENTER);
@@ -620,27 +626,32 @@ class SaleController extends Controller
         $sort = $request->get('sort', 'desc');
         $search = $request->query('search');
 
-        $sales = Sale::when($search, function ($query, $search) {
-            if (is_numeric($search)) {
-                $query->where('id', $search)
-                    ->orWhere('display_id', $search);
-            } else {
-                if (preg_match('/(\d{2})\/(\d{2})\s*-\s*#(\d+)/', $search, $matches)) {
-                    $day = $matches[1];
-                    $month = $matches[2];
-                    $displayId = ltrim($matches[3], '0');
+        // Get all brands for the dropdown filter
+        $brands = Brand::orderBy('name')->get();
 
-                    $query->whereDay('sale_date', $day)
-                        ->whereMonth('sale_date', $month)
-                        ->where('display_id', $displayId);
+        // OPTIMIZED: Eager load necessary relationships to avoid N+1 queries when displaying sales
+        $sales = Sale::with(['user', 'saleItems.item'])
+            ->when($search, function ($query, $search) {
+                if (is_numeric($search)) {
+                    $query->where('id', $search)
+                        ->orWhere('display_id', $search);
+                } else {
+                    if (preg_match('/(\d{2})\/(\d{2})\s*-\s*#(\d+)/', $search, $matches)) {
+                        $day = $matches[1];
+                        $month = $matches[2];
+                        $displayId = ltrim($matches[3], '0');
+
+                        $query->whereDay('sale_date', $day)
+                            ->whereMonth('sale_date', $month)
+                            ->where('display_id', $displayId);
+                    }
                 }
-            }
-        })
+            })
             ->orderBy('sale_date', 'desc')
             ->orderBy('display_id', 'desc')
             ->paginate(15);
 
-        return view('sales.index', compact('sales', 'sort', 'search'));
+        return view('sales.index', compact('sales', 'sort', 'search', 'brands'));
     }
 
     public function deleteAllSales()
@@ -651,8 +662,14 @@ class SaleController extends Controller
 
     public function show($id)
     {
-        $sale = Sale::with('saleItems.item')->findOrFail($id); // Load the sale and its items
-        return view('sales.show', compact('sale')); // Pass the sale to the view
+        // OPTIMIZED: Eager load all needed relationships in a single query
+        $sale = Sale::with([
+            'saleItems.item.brand',
+            'saleItems.item.category',
+            'user'
+        ])->findOrFail($id);
+
+        return view('sales.show', compact('sale'));
     }
 
     public function destroy($id)
@@ -665,7 +682,12 @@ class SaleController extends Controller
 
     public function showInvoice($id)
     {
-        $sale = Sale::with('saleItems.item')->findOrFail($id);
+        // OPTIMIZED: Eager load all relationships needed for invoice generation
+        $sale = Sale::with([
+            'saleItems.item.brand',
+            'saleItems.item.category',
+            'user'
+        ])->findOrFail($id);
 
         // Define shop information
         $shopName = 'Local HUB';
@@ -729,7 +751,7 @@ class SaleController extends Controller
             'customer_name',
             'customer_phone',
             DB::raw('COUNT(*) as visit_count'),
-            DB::raw('SUM(total_spent) as total_spent'),
+            DB::raw('SUM(total_amount) as total_spent'),
             DB::raw('MAX(created_at) as last_visit')
         )
             ->whereNotNull('customer_phone')
@@ -986,7 +1008,22 @@ class SaleController extends Controller
 
     public function codSales(Request $request)
     {
-        $query = Sale::where('payment_method', 'cod');
+        // OPTIMIZED: Use a single query to get counts and total value by using query scopes
+        $codSalesStats = Sale::where('payment_method', 'cod')
+            ->select([
+                DB::raw('SUM(total_amount) as total_value'),
+                DB::raw('SUM(CASE WHEN is_arrived = "pending" THEN 1 ELSE 0 END) as pending_count'),
+                DB::raw('SUM(CASE WHEN is_arrived = "arrived" THEN 1 ELSE 0 END) as delivered_count'),
+            ])
+            ->first();
+
+        $pendingCount = $codSalesStats->pending_count ?? 0;
+        $deliveredCount = $codSalesStats->delivered_count ?? 0;
+        $totalValue = $codSalesStats->total_value ?? 0;
+
+        // Build query for sales listing
+        $query = Sale::with('saleItems.item') // Eager load relationships
+                     ->where('payment_method', 'cod');
 
         // Handle search if provided
         if ($request->has('search')) {
@@ -1001,17 +1038,6 @@ class SaleController extends Controller
         if ($request->has('status')) {
             $query->where('is_arrived', $request->query('status'));
         }
-
-        // Get stats for the summary cards
-        $pendingCount = Sale::where('payment_method', 'cod')
-                           ->where('is_arrived', 'pending')
-                           ->count();
-
-        $deliveredCount = Sale::where('payment_method', 'cod')
-                             ->where('is_arrived', 'arrived')
-                             ->count();
-
-        $totalValue = Sale::where('payment_method', 'cod')->sum('total_amount');
 
         $sales = $query->orderBy('created_at', 'desc')
                       ->paginate(15);
