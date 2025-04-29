@@ -1,9 +1,8 @@
 # LocalHub POS - Point of Sale System
 
-<p align="center">
-  <img src="public/images/logo.png" alt="LocalHub POS Logo" width="200">
-  <img src="public/images/logo-text.png" alt="LocalHub POS Text Logo" width="200">
-</p>
+<div align="center">
+  <img src="public/images/logo.png" alt="LocalHub POS Logo" width="400">
+</div>
 
 <p align="center">
   A comprehensive Point of Sale (POS) system built with Laravel, designed for modern retail businesses.
