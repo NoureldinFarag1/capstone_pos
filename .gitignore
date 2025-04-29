@@ -34,3 +34,4 @@ preload.cjs
 /storage/framework/*.php
 storage/logs/laravel.log
 storage/framework/sessions/*
+.DS_Store
