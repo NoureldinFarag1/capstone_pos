@@ -2,6 +2,8 @@
 
 <div align="center">
   <img src="public/images/logo.png" alt="LocalHub POS Logo" width="400">
+<br>
+  <img src="public/images/logo-text.png" alt="LocalHub POS Icon" width="120" style="margin-top: 20px;">
 </div>
 
 <p align="center">
