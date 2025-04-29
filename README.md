@@ -1,7 +1,7 @@
 # LocalHub POS - Point of Sale System
 
 <div align="center">
-  <img src="public/images/logo.png" alt="LocalHub POS Logo" width="400">
+  <img src="public/images/logo.png" alt="LocalHub POS Logo" width="200">
 <br>
   <img src="public/images/logo-text.png" alt="LocalHub POS Icon" width="120" style="margin-top: 20px;">
 </div>
