@@ -12,7 +12,7 @@
 
 ## 📋 Overview
 
-LocalHub POS is an advanced Point of Sale solution built on Laravel 11 that combines robust inventory management, streamlined sales processing, and detailed reporting features. The system is designed to be used either as a web application or as a standalone desktop application through an Electron wrapper.
+LocalHub POS is an advanced Point of Sale solution built on Laravel that combines robust inventory management, streamlined sales processing, and detailed reporting features. The system is designed to be used either as a web application or as a standalone desktop application through an Electron wrapper.
 
 ## 📸 Screenshots
 
@@ -49,10 +49,12 @@ LocalHub POS is an advanced Point of Sale solution built on Laravel 11 that comb
 
 ### 💼 Sales Management
 - **Multi-payment processing**: Support for Cash, Credit Card, Mobile Pay, and COD
-- **Intuitive Sales UI**: Fast checkout process with product search and scanning
+- **Intuitive Sales UI**: Fast checkout process with product search and barcode scanning
 - **Discount System**: Apply percentage or fixed discounts to entire sales or individual items
 - **Returns & Exchanges**: Process returns and exchanges with full tracking
 - **Gift Items**: Add complementary items to any purchase
+- **Cash Drawer Control**: Automatic cash drawer opening during sales
+- **Thermal Receipt Printing**: Direct integration with thermal receipt printers
 
 ### 📦 Inventory Management
 - **Complete CRUD Operations**: For Products, Categories, and Brands
@@ -64,14 +66,20 @@ LocalHub POS is an advanced Point of Sale solution built on Laravel 11 that comb
 ### 🏷️ Barcode System
 - **Automatic Generation**: Generate barcodes for all inventory items
 - **Custom Label Printing**: Print barcode labels in various formats
-- **Scanning Support**: Scan barcodes using device camera or barcode scanner
-- **Label Customization**: Customize barcode label appearance
+- **Scanning Support**: Scan barcodes for quick item lookup
+- **Code-128 Format**: Industry standard barcode format
 
-### 🧾 Receipts & Invoices
+### 🧾 Receipts & Printing
 - **Thermal Printing**: Direct integration with thermal receipt printers
-- **PDF Generation**: Generate professional PDF invoices
-- **Customizable Templates**: Customize receipt/invoice layout and content
-- **Digital Receipts**: Option to email receipts to customers
+- **Customizable Templates**: Receipt templates with conditional sections
+- **Standard & Gift Receipts**: Different receipt types for different purposes
+- **Multi-language Support**: Support for special characters including Arabic
+
+### 👥 Customer Management
+- **Customer Database**: Store and manage customer information
+- **Purchase History**: Track customer purchases and spending
+- **Quick Lookup**: Find customers by phone number or name
+- **Shipping Information**: Save delivery addresses for future orders
 
 ### 📊 Reporting & Analytics
 - **Sales Reports**: Daily, weekly, monthly, and custom date range reports
@@ -82,32 +90,36 @@ LocalHub POS is an advanced Point of Sale solution built on Laravel 11 that comb
 
 ### 💵 Cash Management
 - **Cash Tracking**: Monitor cash drawer contents
-- **End-of-day Reconciliation**: Verify cash against sales records
-- **Expense Recording**: Log and categorize business expenses
-- **Cash Flow Reports**: Track all cash movements
+- **Cash Drawer Control**: Open cash drawer from the system
+- **Payment Recording**: Track all payment types
 
 ### ⚙️ Store Settings
-- **Customizable Branding**: Configure store name, logo, and contact information
-- **Receipt Customization**: Customize receipt footer messages and policies
+- **Customizable Branding**: Configure store name, logo, and social media details
+- **Receipt Customization**: Customize receipt content and footer messages
 - **User Management**: Create and manage user accounts with different access levels
-- **System Preferences**: Configure system behavior and defaults
+- **Thermal Printer Configuration**: Configure printer settings for different OS platforms
 
 ## 💻 Technical Features
 
-### 🖥️ Desktop Application
-- **Cross-platform Desktop App**: Run as a standalone application on Windows and macOS
-- **Offline Capability**: Core functionality works without internet connection
-- **Native Printer Integration**: Direct integration with receipt printers
+### 🖥️ Cross-Platform Support
+- **Windows & macOS Support**: Compatible with both operating systems
+- **OS Detection**: Automatically adapts to the operating system for printer integration
+- **Configuration Files**: External configuration for easier setup
 
 ### 🔒 Security
 - **Role-based Access Control**: Different permission levels for Admins, Managers, and Cashiers
-- **Audit Trail**: Track all important system actions
-- **Secure Authentication**: Modern authentication flow with Laravel Breeze
+- **Input Validation**: Secure form processing and data validation
+- **CSRF Protection**: Prevention of cross-site request forgery
 
-### 🔧 Integration & Backup
-- **Automated Backups**: Scheduled database backups with Spatie Laravel Backup
-- **Export/Import System**: Export and import system data for migration
-- **API Endpoints**: RESTful API for potential integrations
+### 🖨️ Printing Technology
+- **ESC/POS Commands**: Industry standard for thermal receipt printers
+- **CUPS on macOS**: Common UNIX Printing System integration for macOS
+- **Windows Printing**: Native Windows printer support
+
+### 🔧 Integration & Data Management
+- **Import/Export System**: Export and import system data
+- **Database Transactions**: Ensures data integrity during complex operations
+- **PDF Generation**: For reports and printable documents
 
 ## 🎯 Project Purpose
 
@@ -127,23 +139,23 @@ Whether you run a clothing store with multiple variants, a grocery store with in
 This project leverages a modern tech stack:
 
 ### Backend
-- **Laravel 11.x** - PHP framework providing the core architecture
+- **Laravel** - PHP framework providing the core architecture
 - **MySQL** - Database system for data storage
-- **Spatie Permissions** - Role and permission management
-- **Spatie Backup** - Automated database backups
-- **Laravel Breeze** - Authentication scaffolding
+- **Eloquent ORM** - For database interactions
 
 ### Frontend
-- **TailwindCSS** - Utility-first CSS framework
-- **AlpineJS** - Lightweight JavaScript framework
-- **Filament** - Admin panel and CRUD interface
-- **Blade** - Laravel's templating engine
+- **Blade Templates** - Laravel's templating engine
+- **JavaScript/jQuery** - For interactive UI elements
+- **TailwindCSS** - For responsive design
 
-### Third-party Integrations
-- **Picqer Barcode Generator** - For barcode generation
+### Printing & Barcodes
 - **Mike42/escpos-php** - For thermal receipt printing
+- **Picqer/php-barcode-generator** - For barcode generation
+- **DomPDF** - For PDF generation
+
+### File & Data Processing
 - **Laravel Excel/CSV** - For importing/exporting data
-- **Laravel DomPDF** - For PDF generation
+- **File Storage** - For managing uploaded files and images
 
 ### Desktop Application
 - **Electron.js** - For wrapping the web app as a desktop application
@@ -218,17 +230,17 @@ Future plans for LocalHub POS include:
 ## 📦 Installation
 
 ### Requirements
-- PHP 8.2 or higher
+- PHP 8.0 or higher
 - MySQL 5.7 or higher
 - Composer
-- Node.js and NPM
+- Node.js and NPM for frontend assets
 
-### Web Application Setup
+### Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/localhub-pos.git
-cd localhub-pos
+git clone https://github.com/yourusername/capstone_pos.git
+cd capstone_pos
 
 # Install PHP dependencies
 composer install
@@ -244,7 +256,7 @@ php artisan key:generate
 # DB_CONNECTION=mysql
 # DB_HOST=127.0.0.1
 # DB_PORT=3306
-# DB_DATABASE=localhub_pos
+# DB_DATABASE=YOURDATABASENAME
 # DB_USERNAME=root
 # DB_PASSWORD=
 
@@ -258,36 +270,29 @@ npm run build
 php artisan serve
 ```
 
-### Desktop Application Setup
-
-```bash
-# After setting up the web application
-# Build the desktop application
-npm run electron:build
-
-# The built application will be available in the dist_electron directory
-```
-
 ## 🖨️ Printer Setup
 
 ### Thermal Receipt Printer
-1. Configure your printer name in the `printer_config.json` file
+1. Configure your printer name in the `printer_config.json` file in the root directory
 2. For Windows: Ensure printer drivers are installed
-3. For macOS: CUPS printing system is utilized
-
-### Barcode Label Printer
-1. Ensure the printer is correctly installed on your system
-2. Adjust label size and format in the application settings
+3. For macOS: Install and configure CUPS printing system
 
 ## 👥 User Roles
 
 - **Administrator**: Full access to all system features
 - **Manager**: Access to inventory, sales, and basic reports
-- **Cashier**: Access to sales processing and basic inventory lookup
+- **Cashier**: Access to sales processing and basic inventory lookup with limited discount capabilities
 
-Default admin login:
-- Email: admin@example.com
-- Password: password
+## 🔄 Receipt Templates
+
+Thermal receipt templates are stored in `storage/app/templates/` and can be customized to include:
+- Store information
+- Sale details
+- Item listings
+- Discounts
+- Gift items
+- Customer details for shipping
+- Store policies
 
 ## 🌐 Progressive Web App (PWA)
 
@@ -307,7 +312,7 @@ This project is licensed under the [MIT license](https://opensource.org/licenses
 
 ## 📞 Support
 
-For support and inquiries, please contact noureldinfarag@gmail.com or open an issue on GitHub.
+For support and inquiries, please contact support@localhub.com or open an issue on GitHub.
 
 ---
 
