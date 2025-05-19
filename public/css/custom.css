@@ -1145,3 +1145,39 @@ kbd {
   margin-bottom: 1rem;
   color: #333;
 }
+
+/* Customer search results styling */
+.customer-result-item {
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.customer-result-item:hover {
+    border-left-color: #1976d2;
+    background-color: #f8f9fa;
+    transform: translateX(3px);
+}
+
+#customerSearchResults {
+    max-height: 300px;
+    overflow-y: auto;
+    border-radius: 0.375rem;
+    margin-top: 0.5rem;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+#customerSearchResults .alert {
+    margin-bottom: 0;
+    border-radius: 0;
+}
+
+#customerStatus {
+    margin-top: 0.5rem;
+}
+
+#customerStatus .text-success {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}

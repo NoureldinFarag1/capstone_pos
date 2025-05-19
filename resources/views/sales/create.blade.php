@@ -138,7 +138,13 @@
                     <div class="card-body customer-info-section">
                         <div class="mb-3">
                             <label for="customerPhone" class="form-label">Phone Number</label>
-                            <input type="text" id="customerPhone" name="customer_phone" class="form-control" form="saleForm">
+                            <div class="input-group">
+                                <input type="text" id="customerPhone" name="customer_phone" class="form-control" form="saleForm">
+                                <button class="btn btn-outline-secondary" type="button" id="customerLookupBtn" title="Find customer">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <div id="customerSearchResults" class="mt-1 d-none"></div>
                         </div>
                         <div class="mb-3">
                             <label for="customerName" class="form-label">Customer Name</label>
@@ -353,6 +359,77 @@
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script>
+            // Retry customer search function (used by error retry button)
+            function retryCustomerSearch(phoneNumber) {
+                const customerSearchResults = document.getElementById('customerSearchResults');
+                const customerStatus = document.getElementById('customerStatus');
+
+                if (phoneNumber) {
+                    // Show a loading indicator
+                    customerSearchResults.innerHTML = '<div class="text-center"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Searching again...</div>';
+                    customerSearchResults.classList.remove('d-none');
+
+                    // Fetch customer data with correct parameter
+                    fetch(`/customers/search?query=${phoneNumber}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! Status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success && data.customers && data.customers.length > 0) {
+                                // Create HTML for customer results
+                                let resultsHtml = '<div class="list-group">';
+                                data.customers.forEach(customer => {
+                                    resultsHtml += `
+                                        <a href="#" class="list-group-item list-group-item-action customer-result-item"
+                                           data-customer-id="${customer.id}"
+                                           data-customer-name="${customer.name}"
+                                           data-customer-phone="${customer.phone}">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">${customer.name}</h6>
+                                                <small>${customer.total_visits || 0} visits</small>
+                                            </div>
+                                            <p class="mb-1">${customer.phone}</p>
+                                            <small>Total spent: EGP ${customer.total_spent || 0}</small>
+                                        </a>`;
+                                });
+                                resultsHtml += '</div>';
+                                customerSearchResults.innerHTML = resultsHtml;
+                            } else {
+                                customerSearchResults.innerHTML = `
+                                    <div class="alert alert-info">
+                                        No customers found with this phone number.
+                                        <a href="/customers/create" target="_blank" class="alert-link">Add a new customer</a>
+                                    </div>`;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error searching customers (retry):', error);
+                            let errorMessage = 'An unexpected error occurred while searching for customers.';
+
+                            // Provide more specific error messages based on error type
+                            if (error.message.includes('HTTP error')) {
+                                errorMessage = 'Server communication error. The customer search service may be temporarily unavailable.';
+                            } else if (error.name === 'TypeError') {
+                                errorMessage = 'Network error. Please check your internet connection and try again.';
+                            } else if (error.name === 'SyntaxError') {
+                                errorMessage = 'Invalid data received from server. Please try again or contact support.';
+                            }
+
+                            customerSearchResults.innerHTML = `
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    ${errorMessage}
+                                    <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="retryCustomerSearch('${phoneNumber}')">
+                                        <i class="fas fa-sync-alt me-1"></i> Retry Again
+                                    </button>
+                                </div>`;
+                        });
+                }
+            }
+
             // Declare calculateTotal as a global function so it can be called from outside
             let calculateTotal;
 
@@ -387,6 +464,9 @@
                 const summaryItemCount = document.getElementById('summaryItemCount');
                 const summaryTotal = document.getElementById('summaryTotal');
                 const itemCountDisplay = document.getElementById('itemCount');
+                const customerLookupBtn = document.getElementById('customerLookupBtn');
+                const customerSearchResults = document.getElementById('customerSearchResults');
+                const customerStatus = document.getElementById('customerStatus');
 
                 // Track items in cart
                 const addedItems = new Map();
@@ -563,6 +643,177 @@
                             customerInfoSection.style.pointerEvents = 'auto';
                             customerPhoneInput.setAttribute('required', 'required');
                             customerNameInput.setAttribute('required', 'required');
+                        }
+                    });
+
+                    // Add debounce function to limit search frequency
+                    function debounce(func, wait) {
+                        let timeout;
+                        return function(...args) {
+                            clearTimeout(timeout);
+                            timeout = setTimeout(() => func.apply(this, args), wait);
+                        };
+                    }
+
+                    // Auto search as user types in phone number
+                    customerPhoneInput.addEventListener('input', debounce(function() {
+                        const phoneNumber = customerPhoneInput.value.trim();
+                        if (phoneNumber && phoneNumber.length >= 3) {
+                            // Show a loading indicator
+                            customerSearchResults.innerHTML = '<div class="text-center"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Searching...</div>';
+                            customerSearchResults.classList.remove('d-none');
+
+                            // Get CSRF token from meta tag
+                            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                            // Use the full URL with domain to avoid path issues
+                            const baseUrl = window.location.origin;
+                            const searchUrl = `${baseUrl}/customers/search?query=${encodeURIComponent(phoneNumber)}`;
+
+                            // Fetch customer data with proper headers
+                            fetch(searchUrl, {
+                                method: 'GET',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'X-CSRF-TOKEN': csrfToken
+                                },
+                                credentials: 'same-origin'
+                            })
+                            .then(response => {
+                                if (!response.ok) {
+                                    // Instead of throwing error, just handle it silently
+                                    console.log('Search response status:', response.status);
+                                    customerSearchResults.classList.add('d-none');
+                                    return { success: false };
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                if (data.success && data.customers && data.customers.length > 0) {
+                                    // If there's exactly one match and it's an exact match, auto-select it
+                                    if (data.customers.length === 1 && data.customers[0].phone === phoneNumber) {
+                                        const customer = data.customers[0];
+                                        customerNameInput.value = customer.name;
+                                        customerPhoneInput.value = customer.phone;
+                                        customerStatus.innerHTML = `<span class="text-success"><i class="fas fa-user-check"></i> Selected customer: ${customer.name}</span>`;
+                                        customerSearchResults.classList.add('d-none');
+                                        return;
+                                    }
+
+                                    // Create HTML for customer results
+                                    let resultsHtml = '<div class="list-group">';
+                                    data.customers.forEach(customer => {
+                                        resultsHtml += `
+                                            <a href="#" class="list-group-item list-group-item-action customer-result-item"
+                                               data-customer-id="${customer.id}"
+                                               data-customer-name="${customer.name}"
+                                               data-customer-phone="${customer.phone}">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <h6 class="mb-1">${customer.name}</h6>
+                                                    <small>${customer.total_visits || 0} visits</small>
+                                                </div>
+                                                <p class="mb-1">${customer.phone}</p>
+                                                <small>Total spent: EGP ${customer.total_spent || 0}</small>
+                                            </a>`;
+                                    });
+                                    resultsHtml += '</div>';
+                                    customerSearchResults.innerHTML = resultsHtml;
+                                } else {
+                                    customerSearchResults.innerHTML = `
+                                        <div class="alert alert-info">
+                                            No customers found with this phone number.
+                                            <a href="/customers/create" target="_blank" class="alert-link">Add a new customer</a>
+                                        </div>`;
+                                }
+                            })
+                            .catch(error => {
+                                // Just hide the search results on error - no error messages shown
+                                console.log('Error searching for customer, hiding results');
+                                customerSearchResults.classList.add('d-none');
+                            });
+                        } else if (!phoneNumber) {
+                            customerSearchResults.classList.add('d-none');
+                            customerStatus.innerHTML = '';
+                        }
+                    }, 500)); // 500ms debounce delay
+
+                    // Keep the existing customer lookup button functionality as backup
+                    customerLookupBtn.addEventListener('click', function() {
+                        const phoneNumber = customerPhoneInput.value.trim();
+                        if (phoneNumber) {
+                            // Show a loading indicator
+                            customerSearchResults.innerHTML = '<div class="text-center"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Searching...</div>';
+                            customerSearchResults.classList.remove('d-none');
+
+                            // Fetch customer data with correct parameter
+                            fetch(`/customers/search?query=${phoneNumber}`)
+                                .then(response => {
+                                    if (!response.ok) {
+                                        // Handle silently instead of showing error
+                                        customerSearchResults.classList.add('d-none');
+                                        return { success: false };
+                                    }
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    if (data.success && data.customers && data.customers.length > 0) {
+                                        // Create HTML for customer results
+                                        let resultsHtml = '<div class="list-group">';
+                                        data.customers.forEach(customer => {
+                                            resultsHtml += `
+                                                <a href="#" class="list-group-item list-group-item-action customer-result-item"
+                                                   data-customer-id="${customer.id}"
+                                                   data-customer-name="${customer.name}"
+                                                   data-customer-phone="${customer.phone}">
+                                                    <div class="d-flex w-100 justify-content-between">
+                                                        <h6 class="mb-1">${customer.name}</h6>
+                                                        <small>${customer.total_visits || 0} visits</small>
+                                                    </div>
+                                                    <p class="mb-1">${customer.phone}</p>
+                                                    <small>Total spent: EGP ${customer.total_spent || 0}</small>
+                                                </a>`;
+                                        });
+                                        resultsHtml += '</div>';
+                                        customerSearchResults.innerHTML = resultsHtml;
+                                    } else {
+                                        customerSearchResults.innerHTML = `
+                                            <div class="alert alert-info">
+                                                No customers found with this phone number.
+                                                <a href="/customers/create" target="_blank" class="alert-link">Add a new customer</a>
+                                            </div>`;
+                                    }
+                                })
+                                .catch(error => {
+                                    // Just hide the search results on error - no error messages shown
+                                    console.log('Error searching for customer, hiding results');
+                                    customerSearchResults.classList.add('d-none');
+                                });
+                        } else {
+                            // Alert if no phone number is entered
+                            customerSearchResults.innerHTML = '<div class="alert alert-warning">Please enter a phone number to search</div>';
+                            customerSearchResults.classList.remove('d-none');
+                        }
+                    });
+
+                    // Handle customer search result click
+                    customerSearchResults.addEventListener('click', function(e) {
+                        const target = e.target.closest('.customer-result-item');
+                        if (target) {
+                            e.preventDefault();
+                            const customerId = target.getAttribute('data-customer-id');
+                            const customerName = target.getAttribute('data-customer-name');
+                            const customerPhone = target.getAttribute('data-customer-phone');
+
+                            // Fill in the form fields
+                            customerNameInput.value = customerName;
+                            customerPhoneInput.value = customerPhone;
+
+                            // Update status display
+                            customerStatus.innerHTML = `<span class="text-success"><i class="fas fa-user-check"></i> Selected customer: ${customerName}</span>`;
+
+                            // Hide search results
+                            customerSearchResults.classList.add('d-none');
                         }
                     });
                 }

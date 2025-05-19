@@ -7,6 +7,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Item;
 use App\Models\Brand;
+use App\Models\Customer;
 use Illuminate\Http\Request;
 use App\Exports\SalesPerBrandExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -39,18 +40,17 @@ class SaleController extends Controller
             'items.*.item_id' => 'required|exists:items,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
-            'items.*.special_discount' => 'nullable|numeric|min:0|max:100', // Add this line
-            'items.*.as_gift' => 'required|boolean', // Updated this rule
+            'items.*.special_discount' => 'nullable|numeric|min:0|max:100',
+            'items.*.as_gift' => 'required|boolean',
             'discount_type' => 'nullable|in:none,percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
             'shipping_fees' => 'nullable|numeric|min:0',
             'customer_name' => 'required|string|max:255',
             'customer_phone' => 'required|string|max:255',
             'notes' => 'nullable|string|max:1000',
-            // Remove validation for subtotal and total as we'll calculate these
         ]);
 
-        $userRole = $request->user()->role; // Assuming role is available in the user object
+        $userRole = $request->user()->role;
 
         // Log the user role and discount details for debugging
         Log::info('User Role: ' . $userRole);
@@ -97,6 +97,41 @@ class SaleController extends Controller
             }
         }
 
+        // Find or create customer
+        $customerId = null;
+        if (!empty($request->customer_phone)) {
+            // Try to find an existing customer with the given phone number
+            $customer = Customer::where('phone', $request->customer_phone)->first();
+
+            if (!$customer) {
+                // Create a new customer if not found
+                $customer = Customer::create([
+                    'name' => $request->customer_name,
+                    'phone' => $request->customer_phone,
+                    'address' => $request->address,
+                    'last_visit' => now(),
+                    'total_visits' => 1,
+                    'total_spent' => 0, // We'll update this after calculating the total
+                ]);
+            } else {
+                // Update existing customer info
+                $customer->update([
+                    'name' => $request->customer_name, // Update name in case it changed
+                    'last_visit' => now(),
+                    'total_visits' => $customer->total_visits + 1,
+                    // Total spent will be updated later
+                ]);
+
+                // Update address if provided and customer doesn't have one
+                if ($request->address && empty($customer->address)) {
+                    $customer->address = $request->address;
+                    $customer->save();
+                }
+            }
+
+            $customerId = $customer->id;
+        }
+
         // Get today's date
         $today = now()->toDateString();
 
@@ -107,6 +142,7 @@ class SaleController extends Controller
         // Create sale record
         $sale = Sale::create([
             'user_id' => \Illuminate\Support\Facades\Auth::user()->id,
+            'customer_id' => $customerId, // Link to customer model
             'total_amount' => 0,  // Set initial value
             'subtotal' => 0,      // Set initial value
             'customer_name' => $request->customer_name,
@@ -204,6 +240,11 @@ class SaleController extends Controller
             'total_amount' => $totalAmount,
             'discount' => $discountAmount
         ]);
+
+        // Update customer's total_spent amount if customer exists
+        if ($customerId) {
+            $customer->increment('total_spent', $totalAmount);
+        }
 
         // Log the final sale record for debugging
         Log::info('Final Sale Record: ', $sale->toArray());

@@ -96,11 +96,17 @@ Route::get('/sales/payment-method-report', [SaleController::class, 'generatePaym
 Route::get('/sales/hourly-report', [SaleController::class, 'generateHourlySalesReport'])->name('sales.hourlyReport');
 Route::get('/sales/refunds-report', [SaleController::class, 'generateRefundsReport'])->name('sales.refundsReport');
 
+// IMPORTANT: Customer specific routes must be defined BEFORE the resource route
+// Customer search route for sales form
+Route::get('/customers/search', [CustomerController::class, 'search'])->name('customers.search');
+Route::get('/customers/fetch-name', [CustomerController::class, 'fetchName']);
+
 // Resource routes for brands, categories, items, and sales
 Route::resource('brands', BrandController::class);
 Route::get('/api/brands/count', [BrandController::class, 'brandCount']);
 Route::resource('categories', CategoryController::class);
 Route::resource('items', ItemController::class);
+Route::resource('customers', CustomerController::class); // Add proper resource route for customers
 Route::resource('sales', SaleController::class)->except(['destroy']);
 Route::delete('/sales/{id}', [SaleController::class, 'destroy'])->name('sales.destroy');
 Route::delete('/sales/{sale}/delete-all-items', [SaleController::class, 'deleteAllItems'])->name('sales.deleteAllItems');
@@ -145,15 +151,9 @@ Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('
 Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
 Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
 
-// Loyalty program routes
-Route::get('/loyalty', [LoyaltyController::class, 'index'])->name('loyalty.index');
-Route::get('/loyalty/{customer}', [LoyaltyController::class, 'show'])->name('loyalty.show');
-Route::get('/loyalty/{customer}/adjust', [LoyaltyController::class, 'showAdjustForm'])->name('loyalty.adjust');
-Route::post('/loyalty/{customer}/adjust', [LoyaltyController::class, 'adjustPoints'])->name('loyalty.adjust.post');
-Route::get('/loyalty/{customer}/card', [LoyaltyController::class, 'showLoyaltyCard'])->name('loyalty.card');
-Route::get('/loyalty-rules', [LoyaltyController::class, 'showRules'])->name('loyalty.rules');
+// Customer search route for sales form
+Route::get('/customers/search', [CustomerController::class, 'search'])->name('customers.search');
 
-// Add this route
 Route::post('/items/update-variants-quantity', [ItemController::class, 'updateVariantsQuantity'])
     ->name('items.updateVariantsQuantity')
     ->middleware('auth');

@@ -18,6 +18,7 @@ class Sale extends Model
         'refund_status',
         'customer_name',
         'customer_phone',
+        'customer_id', // Add customer_id to fillable
         'discount_type',
         'discount_value',
         'payment_method',
@@ -77,5 +78,10 @@ class Sale extends Model
         return $this->belongsToMany(Item::class, 'sale_items')
             ->withPivot(['quantity', 'price'])
             ->withTimestamps();
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
     }
 }
