@@ -310,10 +310,6 @@ Automated database backups are configured using Spatie Laravel Backup. By defaul
 
 This project is licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
-## 📞 Support
-
-For support and inquiries, please contact support@localhub.com or open an issue on GitHub.
-
 ---
 
 Built with ❤️ using Laravel and modern web technologies.
