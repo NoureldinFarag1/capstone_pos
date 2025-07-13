@@ -104,15 +104,27 @@ Route::get('/customers/fetch-name', [CustomerController::class, 'fetchName']);
 // Resource routes for brands, categories, items, and sales
 Route::resource('brands', BrandController::class);
 Route::get('/api/brands/count', [BrandController::class, 'brandCount']);
+// Brand print labels route
+Route::get('/brands/{id}/print-labels', [BrandController::class, 'printLabels'])->name('brands.printLabels');
+
 Route::resource('categories', CategoryController::class);
+
+// Custom item routes (must be before resource routes)
+Route::get('/items/bulk-import', [ItemController::class, 'bulkImportPage'])->name('items.bulkImportPage');
+Route::post('/items/bulk-upload', [ItemController::class, 'bulkUpload'])->name('items.bulkUpload');
+Route::get('/items/download-template', [ItemController::class, 'downloadTemplate'])->name('items.downloadTemplate');
+Route::get('/items/download-demo-csv', [ItemController::class, 'downloadDemoCSV'])->name('items.downloadDemoCSV');
+Route::post('/items/add-variant', [ItemController::class, 'addVariant'])->name('items.addVariant');
+// Item print labels routes
+Route::post('/items/print-labels', [ItemController::class, 'printItemLabels'])->name('items.printLabels');
+Route::get('/items/{id}/print-label', [ItemController::class, 'printSingleItemLabel'])->name('items.printSingleLabel');
+
 Route::resource('items', ItemController::class);
 Route::resource('customers', CustomerController::class); // Add proper resource route for customers
 Route::resource('sales', SaleController::class)->except(['destroy']);
 Route::delete('/sales/{id}', [SaleController::class, 'destroy'])->name('sales.destroy');
 Route::delete('/sales/{sale}/delete-all-items', [SaleController::class, 'deleteAllItems'])->name('sales.deleteAllItems');
 Route::put('/items/{id}', [ItemController::class, 'update'])->name('items.update');
-
-Route::post('/items/add-variant', [ItemController::class, 'addVariant'])->name('items.addVariant');
 
 // Additional item-related routes
 Route::get('/categories-by-brand/{brand_id}', [CategoryController::class, 'getCategoriesByBrand'])->name('categories.byBrand');
@@ -135,7 +147,6 @@ Route::post('/items/{id}/print-label', [ItemController::class, 'printLabel'])->n
 Route::get('/refund/create', [RefundController::class, 'create'])->name('refund.create');
 Route::post('/refund', [RefundController::class, 'store'])->name('refund.store');
 Route::get('/refund/create/{sale_id}', [RefundController::class, 'create'])->name('refund.create');
-Route::post('/items/bulk-upload', [ItemController::class, 'bulkUpload'])->name('items.bulkUpload');
 Route::middleware(['auth'])->group(function () {
     Route::get('/cash-drawer', [CashDrawerController::class, 'showForm'])->name('cash-drawer.form');
     Route::post('/cash-drawer', [CashDrawerController::class, 'store'])->name('cash-drawer.store');

@@ -14,9 +14,11 @@
             <div class="card mb-3 shadow-sm">
                 <div class="d-flex justify-content-between p-3 border-bottom">
                     <h5 class="card-header-title mb-0">Item Details</h5>
+                    @role('admin|moderator')
                     <a href="{{ route('items.edit', $item->id) }}" class="btn btn-sm btn-outline-primary">
                         <i class="fas fa-edit"></i> Edit
                     </a>
+                    @endrole
                 </div>
                 <div class="item-image-container">
                     <img src="{{ asset('storage/' . $item->picture) }}" alt="{{ $item->name }}"
@@ -67,9 +69,11 @@
                 <div class="card-header bg-light">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Item Variants</h5>
+                        @role('admin|moderator')
                         <button type="button" class="btn btn-primary btn-sm" id="saveAllQuantities">
                             <i class="fas fa-save"></i> Save Changes
                         </button>
+                        @endrole
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -103,8 +107,13 @@
                                         </td>
                                         <td class="text-center">
                                             <div class="d-flex align-items-center justify-content-center gap-2">
+                                                @role('admin|moderator')
                                                 <input type="number" class="form-control form-control-sm quantity-input"
                                                     value="{{ $variant->quantity }}" min="0" style="width: 80px;">
+                                                @else
+                                                <input type="number" class="form-control form-control-sm quantity-input"
+                                                    value="{{ $variant->quantity }}" min="0" style="width: 80px;" disabled>
+                                                @endrole
                                                 <span class="stock-status">
                                                     @if($variant->quantity == 0)
                                                         <span class="badge bg-danger">Out of Stock</span>

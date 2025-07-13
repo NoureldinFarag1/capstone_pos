@@ -24,6 +24,8 @@ class Item extends Model
         'discount_value',
         'parent_id',
         'is_parent',
+        'code',
+        'barcode',
     ];
 
     public function category()

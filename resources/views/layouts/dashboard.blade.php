@@ -987,6 +987,27 @@ $siteTitle = Config::get('navbar.site_title');
         </script>
         @endif
 
+        @if (session('warning'))
+        <script>
+        let warningHtml = "{{ session('warning') }}";
+        @if (session('errors'))
+            warningHtml += "<br><br><strong>Errors encountered:</strong><ul style='text-align: left; margin: 10px 0;'>";
+            @foreach (session('errors') as $error)
+                warningHtml += "<li>{{ $error }}</li>";
+            @endforeach
+            warningHtml += "</ul>";
+        @endif
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Import Completed with Issues',
+            html: warningHtml,
+            width: 600,
+            showConfirmButton: true
+        });
+        </script>
+        @endif
+
         <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('categoryPerformance', () => ({

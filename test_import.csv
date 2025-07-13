@@ -1,0 +1,4 @@
+item_name,brand,category,size,color,color_code,quantity,buying_price,selling_price,tax,discount_type,discount_value,description
+Test Product,Test Brand,Test Category,Small,Red,#FF0000,10,50,100,10,percentage,5,Test description
+Test Product,Test Brand,Test Category,Medium,Blue,#0000FF,15,50,100,10,percentage,5,Test description
+Another Product,Another Brand,Another Category,Large,Green,#00FF00,20,30,60,5,fixed,2,Another test

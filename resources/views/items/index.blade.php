@@ -89,6 +89,9 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="fw-bold">Items</h1>
                 <div class="d-flex gap-2">
+                    <a href="{{ route('items.bulkImportPage') }}" class="btn btn-success">
+                        <i class="fas fa-upload"></i> Bulk Import
+                    </a>
                     <a href="{{ route('items.create') }}" class="btn btn-primary">
                         <i class="fas fa-plus-circle"></i> Add New Item
                     </a>
@@ -99,16 +102,24 @@
             </div>
 
             <!-- Clear Filters and Show All Items Buttons -->
-            <div class="d-flex justify-content-start gap-2 mb-4">
-                <a href="{{ route('items.index') }}"
-                   class="btn btn-outline-secondary {{ !request()->has('search') && !request()->has('brand_id') && !request()->has('show_all') ? 'disabled' : '' }}">
-                    <i class="fas fa-times me-2"></i>Clear Filters
-                </a>
-                <a href="{{ route('items.index', ['show_all' => 1]) }}"
-                   class="btn btn-outline-primary">
-                    <i class="fas fa-list me-2"></i>Show All Items
-                </a>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex gap-2">
+                    <a href="{{ route('items.index') }}"
+                       class="btn btn-outline-secondary {{ !request()->has('search') && !request()->has('brand_id') && !request()->has('show_all') ? 'disabled' : '' }}">
+                        <i class="fas fa-times me-2"></i>Clear Filters
+                    </a>
+                    <a href="{{ route('items.index', ['show_all' => 1]) }}"
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-list me-2"></i>Show All Items
+                    </a>
+                </div>
             </div>
+
+            <!-- Bulk Selection Form -->
+            <form id="bulkPrintForm" method="POST" action="{{ route('items.printLabels') }}" style="display: none;">
+                @csrf
+                <input type="hidden" name="item_ids" id="selectedItemIds">
+            </form>
 
             <!-- Items Grid -->
             @if($items->isEmpty())
@@ -121,6 +132,19 @@
                         @if($item->is_parent)
                             <div class="col-md-6 col-xl-4">
                                 <div class="card shadow-sm border-0 h-100 hover-shadow transition">
+                                    @if($item->quantity > 0)
+                                        <div class="position-absolute top-0 end-0 p-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input item-checkbox"
+                                                       type="checkbox"
+                                                       value="{{ $item->id }}"
+                                                       id="item_{{ $item->id }}">
+                                                <label class="form-check-label" for="item_{{ $item->id }}">
+                                                    <span class="visually-hidden">Select for printing</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    @endif
                                     @if($item->brand->logo)
                                         <div class="card-header bg-light border-0 py-2">
                                             <img src="{{ asset('storage/' . $item->brand->logo) }}"
@@ -170,11 +194,22 @@
                                             </p>
                                         </div>
 
-                                        <div class="mt-auto pt-3 border-top d-flex justify-content-between">
-                                            <a href="{{ route('items.edit', $item->id) }}" class="btn btn-outline-primary btn-sm">
-                                                <i class="fas fa-edit"></i> Edit
-                                            </a>
-                                            @can('admin')
+                                        <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                                            <div class="d-flex gap-2">
+                                                @role('admin|moderator')
+                                                <a href="{{ route('items.edit', $item->id) }}" class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </a>
+                                                @endrole
+                                                @if($item->quantity > 0)
+                                                    <a href="{{ route('items.printSingleLabel', $item->id) }}"
+                                                       class="btn btn-outline-success btn-sm"
+                                                       title="Print label for this item">
+                                                        <i class="fas fa-print"></i> Print Label
+                                                    </a>
+                                                @endif
+                                            </div>
+                                            @role('admin')
                                                 <form action="{{ route('items.destroy', $item->id) }}" method="POST" class="delete-item-form">
                                                     @csrf
                                                     @method('DELETE')
@@ -182,7 +217,7 @@
                                                         <i class="fas fa-trash-alt"></i> Delete
                                                     </button>
                                                 </form>
-                                            @endcan
+                                            @endrole
                                         </div>
                                     </div>
                                 </div>
@@ -296,6 +331,44 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
+
+    // Bulk print labels functionality
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    const bulkPrintBtn = document.getElementById('bulkPrintBtn');
+    const bulkPrintForm = document.getElementById('bulkPrintForm');
+    const selectedItemIds = document.getElementById('selectedItemIds');
+
+    function updateBulkPrintButton() {
+        const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+        bulkPrintBtn.disabled = checkedBoxes.length === 0;
+
+        if (checkedBoxes.length > 0) {
+            bulkPrintBtn.innerHTML = `<i class="fas fa-print me-2"></i>Print ${checkedBoxes.length} Selected Label${checkedBoxes.length > 1 ? 's' : ''}`;
+        } else {
+            bulkPrintBtn.innerHTML = '<i class="fas fa-print me-2"></i>Print Selected Labels';
+        }
+    }
+
+    // Handle checkbox changes
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkPrintButton);
+    });
+
+    // Handle bulk print button click
+    if (bulkPrintBtn) {
+        bulkPrintBtn.addEventListener('click', function() {
+            const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+            const itemIds = Array.from(checkedBoxes).map(cb => cb.value);
+
+            if (itemIds.length > 0) {
+                selectedItemIds.value = JSON.stringify(itemIds);
+                bulkPrintForm.submit();
+            }
+        });
+    }
+
+    // Initialize bulk print button state
+    updateBulkPrintButton();
 });
 </script>
 @endpush
@@ -354,6 +427,41 @@ document.addEventListener('DOMContentLoaded', function () {
 
         .form-check-input:checked + .form-check-label .brand-logo {
             background-color: #e7f1ff;
+        }
+
+        /* Custom styles for print label functionality */
+        .item-checkbox {
+            transform: scale(1.2);
+        }
+
+        .bulk-actions {
+            min-width: 200px;
+        }
+
+        /* Improve checkbox visibility on cards */
+        .card .form-check {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 4px;
+            padding: 2px;
+        }
+
+        .card:hover .form-check {
+            background: rgba(255, 255, 255, 1);
+        }
+
+        /* Print labels button styling */
+        .print-labels-section {
+            text-align: center;
+        }
+
+        .print-labels-section .btn {
+            margin-bottom: 0.25rem;
+        }
+
+        /* Hover effects for cards with checkboxes */
+        .card.position-relative:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
     </style>
 @endpush

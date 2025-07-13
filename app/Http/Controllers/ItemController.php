@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Exports\ItemsExport;
 use App\Exports\SalesExport;
+use App\Exports\ItemImportTemplateExport;
 use App\Imports\ItemsImport;
+use App\Imports\EnhancedItemsImport;
 use App\Models\Category;
 use App\Models\Brand;
 use App\Models\Color;
@@ -592,7 +594,12 @@ class ItemController extends BaseController
         return Excel::download(new ItemsExport($items), 'items.xlsx');
     }
 
-    private function isWindows()
+    /**
+     * Check if the current system is Windows
+     *
+     * @return bool
+     */
+    private static function isWindows()
     {
         return PHP_OS_FAMILY === 'Windows';
     }
@@ -602,12 +609,12 @@ class ItemController extends BaseController
      *
      * @return string
      */
-    private function getPrinterName()
+    private static function getPrinterName()
     {
         $configPath = base_path('printer_config.json');
         $config = json_decode(file_get_contents($configPath), true);
 
-        return $this->isWindows() ? $config['windows'] : $config['mac'];
+        return self::isWindows() ? $config['windows'] : $config['mac'];
     }
 
     /**
@@ -624,29 +631,38 @@ class ItemController extends BaseController
             $startTime = microtime(true);
 
             // Eager load the brand and category to avoid N+1 queries
-            $item = Item::with(['brand', 'category'])->findOrFail($id);
+            $item = Item::with(['brand', 'category', 'sizes', 'colors'])->findOrFail($id);
             $quantity = (int) $request->input('quantity', 1);
 
             // Get printer name from config instead of hardcoding
             $printerName = $this->getPrinterName();
 
-            // Cache key for this specific label
-            $cacheKey = "label_template_{$item->id}";
-
-            // Check if barcode file exists, if not, generate it
-            $barcodePath = public_path('storage/' . $item->barcode);
-            if (!file_exists($barcodePath)) {
+            // For variants, ensure we have the correct barcode
+            if ($item->parent_id) {
+                // This is a variant, ensure it has a unique barcode
+                if (!$item->barcode || !file_exists(public_path('storage/' . $item->barcode))) {
+                    Log::info("Regenerating barcode for variant item {$item->id}");
+                    $this->regenerateBarcode($item);
+                    $item->refresh();
+                }
+            } else if (!$item->barcode || !file_exists(public_path('storage/' . $item->barcode))) {
+                // Regular item with missing barcode
                 Log::info("Regenerating barcode for item {$item->id}");
                 $this->regenerateBarcode($item);
+                $item->refresh();
             }
+
+            // Use base64 encoded image for PDF generation
+            $barcodePath = public_path('storage/' . $item->barcode);
+            $barcodeData = 'data:image/png;base64,' . base64_encode(file_get_contents($barcodePath));
 
             // Create PDF with optimized settings
             $pdf = PDF::loadView('pdf.label', [
                 'item' => $item,
-                'barcodePath' => $barcodePath,
+                'barcodePath' => $barcodeData,
             ]);
 
-            // Set paper size once
+            // Set paper size once - 36.5mm x 25mm (converted to points)
             $width = 36.5 * 2.83465;  // 103.46 points
             $height = 25 * 2.83465;   // 70.87 points
             $pdf->setPaper([0, 0, $width, $height], 'landscape');
@@ -654,8 +670,9 @@ class ItemController extends BaseController
             // Configure DomPDF for better performance
             $pdf->getDomPDF()->set_option('enable_php', true);
             $pdf->getDomPDF()->set_option('enable_javascript', false);
-            $pdf->getDomPDF()->set_option('enable_remote', false);
+            $pdf->getDomPDF()->set_option('enable_remote', true);
             $pdf->getDomPDF()->set_option('font_height_ratio', 1.0);
+            $pdf->getDomPDF()->set_option('isRemoteEnabled', true);
 
             // Create temp directory if it doesn't exist
             $tempDir = storage_path('app/temp');
@@ -691,13 +708,12 @@ class ItemController extends BaseController
 
     /**
      * Windows-specific printing implementation
-     */
-    private function printLabelWindows($tempPath, $printerName, $quantity)
+     */    private function printLabelWindows($tempPath, $printerName, $quantity)
     {
         // Path to SumatraPDF
         $sumatraPath = '"C:\Program Files\SumatraPDF\SumatraPDF.exe"';
 
-        // Define custom paper size in mm
+        // Always use the custom label size for both single and batch printing
         $printSettings = "-print-settings \"$quantity"
             . ",paper=Custom.36.5x25mm"
             . ",fit=NoScaling"
@@ -720,11 +736,11 @@ class ItemController extends BaseController
 
     /**
      * Mac/Linux-specific printing implementation
-     */
-    private function printLabelMac($tempPath, $printerName, $quantity)
+     */    private function printLabelMac($tempPath, $printerName, $quantity)
     {
-        // Mac/Linux printing using lp command with proper options
-        $command = "lp -d \"$printerName\" -n $quantity -o fit-to-page \"$tempPath\"";
+        // Always use the small label size for both single and batch printing
+        $command = "lp -d \"$printerName\" -n $quantity -o fit-to-page -o media=Custom.36.5x25mm \"$tempPath\"";
+
         exec($command, $output, $returnCode);
 
         if ($returnCode !== 0) {
@@ -890,11 +906,48 @@ class ItemController extends BaseController
         ]);
 
         try {
-            Excel::import(new ItemsImport, $request->file('file'));
-            return redirect()->back()->with('success', 'Items imported successfully!');
+            $import = new \App\Imports\EnhancedItemsImport();
+            Excel::import($import, $request->file('file'));
+
+            $results = $import->getResults();
+
+            $message = "Import completed! ";
+            $message .= "Created: " . count($results['created_items']) . " items, ";
+            $message .= "Updated: " . count($results['updated_items']) . " items, ";
+            $message .= "Successful operations: " . $results['success'];
+
+            if (!empty($results['errors'])) {
+                $errorMessage = "Import completed with errors: " . implode('; ', array_slice($results['errors'], 0, 3));
+                if (count($results['errors']) > 3) {
+                    $errorMessage .= " and " . (count($results['errors']) - 3) . " more errors.";
+                }
+                return redirect()->back()
+                    ->with('warning', $message)
+                    ->with('errors', $results['errors']);
+            }
+
+            return redirect()->back()->with('success', $message);
+
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'There was an error importing the file: ' . $e->getMessage());
+            Log::error('Bulk import failed: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Import failed: ' . $e->getMessage());
         }
+    }
+
+    public function downloadTemplate()
+    {
+        return Excel::download(new \App\Exports\ItemImportTemplateExport(), 'item_import_template.xlsx');
+    }
+
+    public function downloadDemoCSV()
+    {
+        return \App\Exports\DemoItemsCSVExport::downloadCSV();
+    }
+
+    public function bulkImportPage()
+    {
+        $recentImports = collect(); // You can implement import history if needed
+        return view('items.bulk-import', compact('recentImports'));
     }
 
     public function updateVariantsQuantity(Request $request)
@@ -1177,6 +1230,383 @@ class ItemController extends BaseController
                 'success' => false,
                 'error' => 'Failed to update discount: ' . $e->getMessage()
             ], 500);
+        }
+    }    /**
+     * Update both methods in ItemController to use the static batchPrintLabels
+     */
+    public function printItemLabels(Request $request)
+    {
+        try {
+            $itemIds = $request->input('item_ids');
+
+            // Handle JSON string input from bulk selection
+            if (is_string($itemIds)) {
+                $itemIds = json_decode($itemIds, true);
+            }
+
+            if (empty($itemIds) || !is_array($itemIds)) {
+                return redirect()->back()->with('warning', 'Please select items to print labels for.');
+            }
+
+            // Get selected items with quantity > 0
+            $items = Item::whereIn('id', $itemIds)
+                ->where('quantity', '>', 0)
+                ->with(['sizes', 'colors', 'category', 'brand'])
+                ->get();
+
+            if ($items->isEmpty()) {
+                return redirect()->back()->with('warning', 'No items with quantity found for the selected items.');
+            }
+
+            // Initialize item data collection for batch printing
+            $itemsData = [];
+            $successCount = 0;
+            $errorCount = 0;
+
+            foreach ($items as $item) {
+                try {
+                    // For parent items, include all variants
+                    if ($item->is_parent) {
+                        $variants = Item::where('parent_id', $item->id)
+                            ->where('quantity', '>', 0)
+                            ->with(['sizes', 'colors', 'brand'])
+                            ->get();
+
+                        foreach ($variants as $variant) {
+                            // Ensure variant has its own barcode, not parent's
+                            if (!$variant->barcode || $variant->barcode === $item->barcode) {
+                                $this->regenerateBarcode($variant);
+                                $variant->refresh();
+                            }
+
+                            // Add variant to batch print data with its quantity
+                            if ($variant->quantity > 0) {
+                                $itemsData[$variant->id] = $variant->quantity;
+                                $successCount += $variant->quantity;
+                            }
+                        }
+                    } else {
+                        // Add non-parent item to batch print data with its quantity
+                        if ($item->quantity > 0) {
+                            $itemsData[$item->id] = $item->quantity;
+                            $successCount += $item->quantity;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Error processing item {$item->id} for printing: " . $e->getMessage());
+                    $errorCount++;
+                }
+            }
+
+            // Check if we have any items to print
+            if (empty($itemsData)) {
+                return redirect()->back()->with('warning', 'No valid items to print labels for.');
+            }
+
+            // Batch print all labels
+            $result = self::batchPrintLabels($itemsData);
+
+            if ($result['success']) {
+                $message = "{$result['quantity']} labels sent to printer successfully using {$result['method']} printing.";
+                if ($result['method'] === 'individual') {
+                    $message .= " (PDF merging was not available on your system)";
+                }
+
+                if ($errorCount > 0) {
+                    $message .= " $errorCount items could not be processed.";
+                }
+
+                return redirect()->back()->with('success', $message);
+            } else {
+                $errorMsg = isset($result['error']) ? ': ' . $result['error'] : '.';
+                return redirect()->back()->with('error', 'Failed to print labels' . $errorMsg);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Bulk label printing error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to generate labels: ' . $e->getMessage());
+        }
+    }    /**
+     * Generate and print a PDF label for a single item
+     * Uses batch printing for both single items and variants
+     */
+    public function printSingleItemLabel($id)
+    {
+        try {
+            $item = Item::with(['sizes', 'colors', 'category', 'brand'])->findOrFail($id);
+
+            // Initialize data collection for batch printing
+            $itemsData = [];
+
+            // For parent items, get all variants instead
+            if ($item->is_parent) {
+                $variants = Item::where('parent_id', $item->id)
+                    ->where('quantity', '>', 0)
+                    ->with(['sizes', 'colors', 'brand'])
+                    ->get();
+
+                if ($variants->isEmpty()) {
+                    return redirect()->back()->with('warning', 'No variants with quantity found for this parent item.');
+                }
+
+                // Add all variants to the batch print data
+                foreach ($variants as $variant) {
+                    // Ensure variant has its own barcode, not parent's
+                    if (!$variant->barcode || $variant->barcode === $item->barcode) {
+                        $this->regenerateBarcode($variant);
+                        $variant->refresh();
+                    }
+
+                    // Add to batch print with quantity
+                    if ($variant->quantity > 0) {
+                        $itemsData[$variant->id] = $variant->quantity;
+                    }
+                }
+            } else {
+                // Single item or variant
+                if ($item->quantity <= 0) {
+                    return redirect()->back()->with('warning', 'Item has no quantity available for printing.');
+                }
+
+                // Ensure it has a barcode
+                if (!$item->barcode || !file_exists(public_path('storage/' . $item->barcode))) {
+                    $this->regenerateBarcode($item);
+                    $item->refresh();
+                }
+
+                // Add to batch print with quantity
+                $itemsData[$item->id] = $item->quantity;
+            }
+
+            // Check if we have any items to print
+            if (empty($itemsData)) {
+                return redirect()->back()->with('warning', 'No valid items to print labels for.');
+            }
+
+            // Batch print all labels
+            $result = self::batchPrintLabels($itemsData);
+
+            if ($result['success']) {
+                $message = "{$result['quantity']} labels sent to printer successfully using {$result['method']} printing.";
+                if ($result['method'] === 'individual') {
+                    $message .= " (PDF merging was not available on your system)";
+                }
+                return redirect()->back()->with('success', $message);
+            } else {
+                $errorMsg = isset($result['error']) ? ': ' . $result['error'] : '.';
+                return redirect()->back()->with('error', 'Failed to print labels' . $errorMsg);
+            }
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to generate labels: ' . $e->getMessage());
+        }
+    }
+
+    private function generateItemLabelPDF($item)
+    {
+        // First check if the barcode field exists at all
+        if (!$item->barcode) {
+            $this->regenerateBarcode($item);
+            // Refresh the item to get the updated barcode path
+            $item->refresh();
+        }
+
+        // Then check if the file exists on disk
+        $barcodePath = public_path('storage/' . $item->barcode);
+        if (!file_exists($barcodePath)) {
+            $this->regenerateBarcode($item);
+            // Refresh the item to get the updated barcode path
+            $item->refresh();
+        }
+
+        // Use asset URL instead of file path for PDF generation
+        $barcodeUrl = asset('storage/' . $item->barcode);
+
+        return [
+            'item' => $item,
+            'barcodePath' => $barcodeUrl,
+        ];
+    }
+
+    private function generateCombinedLabelsPDF($labelData, $filename)
+    {
+        // Create PDF with labels using the existing template
+        $pdf = PDF::loadView('pdf.labels-sheet', [
+            'labels' => $labelData,
+        ]);
+
+        // Set paper size for labels (A4)
+        $pdf->setPaper('A4', 'portrait');
+
+        // Configure DomPDF
+        $pdf->getDomPDF()->set_option('enable_php', true);
+        $pdf->getDomPDF()->set_option('enable_javascript', false);
+        $pdf->getDomPDF()->set_option('enable_remote', false);
+
+        return $pdf->download($filename . '.pdf');
+    }
+
+    /**
+     * Print labels directly to the printer instead of downloading them
+     */
+    private function printLabelsDirectly($labelData, $filename)
+    {
+        // Create PDF with labels using the existing template
+        $pdf = PDF::loadView('pdf.labels-sheet', [
+            'labels' => $labelData,
+        ]);
+
+        // Set paper size for labels (A4)
+        $pdf->setPaper('A4', 'portrait');
+
+        // Configure DomPDF
+        $pdf->getDomPDF()->set_option('enable_php', true);
+        $pdf->getDomPDF()->set_option('enable_javascript', false);
+        $pdf->getDomPDF()->set_option('enable_remote', false);
+
+        // Create temp directory if it doesn't exist
+        $tempDir = storage_path('app/temp');
+        if (!file_exists($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        // Generate a unique temporary file name
+        $tempPath = $tempDir . '/' . Str::slug($filename) . '_' . time() . '.pdf';
+
+        // Save PDF temporarily
+        $pdf->save($tempPath);
+
+        // Get printer name from config
+        $printerName = $this->getPrinterName();
+
+        // Print based on OS
+        try {
+            if ($this->isWindows()) {
+                $result = $this->printLabelWindows($tempPath, $printerName, 1);
+            } else {
+                $result = $this->printLabelMac($tempPath, $printerName, 1);
+            }
+
+            return redirect()->back()->with('success', 'Labels sent to printer successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to print labels: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Batch print multiple items' labels in a single job
+     *
+     * @param array $itemsData Array of [itemId => quantity] pairs
+     * @return array Result of printing operation
+     */
+    /**
+     * Batch print multiple labels in a single print job
+     * This method can be called from other controllers via static call
+     *
+     * @param array $itemsData Associative array where keys are item IDs and values are quantities
+     * @return array Result with success status, quantity, execution time, and method
+     */
+    public static function batchPrintLabels($itemsData)
+    {
+        try {
+            $startTime = microtime(true);
+
+            // Create temp directory if it doesn't exist
+            $tempDir = storage_path('app/temp');
+            if (!file_exists($tempDir)) {
+                mkdir($tempDir, 0755, true);
+            }
+
+            // Generate a unique batch identifier
+            $batchId = 'batch_' . time() . '_' . Str::random(8);
+            $batchTempPath = $tempDir . '/' . $batchId . '.pdf';
+
+            // Get printer name
+            $printerName = self::getPrinterName();
+
+            // Prepare labels data for the multi-label sheet
+            $labels = [];
+            $totalQuantity = 0;
+
+            foreach ($itemsData as $itemId => $quantity) {
+                if ($quantity <= 0) continue;
+
+                // Load the item with necessary relations
+                $item = Item::with(['brand', 'category', 'sizes', 'colors'])->findOrFail($itemId);
+
+                // Ensure item has a valid barcode
+                if (!$item->barcode || !file_exists(public_path('storage/' . $item->barcode))) {
+                    Log::info("Regenerating barcode for item {$item->id}");
+                    $controller = new ItemController();
+                    $controller->regenerateBarcode($item);
+                    $item->refresh();
+                }
+
+                // Use base64 encoded image for PDF generation
+                $barcodePath = public_path('storage/' . $item->barcode);
+                $barcodeData = 'data:image/png;base64,' . base64_encode(file_get_contents($barcodePath));
+
+                // Add this item to the labels array, repeating by quantity
+                for ($i = 0; $i < $quantity; $i++) {
+                    $labels[] = [
+                        'item' => $item,
+                        'barcodePath' => $barcodeData,
+                    ];
+                }
+
+                $totalQuantity += $quantity;
+            }
+
+            if (empty($labels)) {
+                return ['success' => false, 'message' => 'No valid items to print'];
+            }
+
+            // Generate a single multi-page PDF with all labels using small label size
+            $pdf = PDF::loadView('pdf.labels-batch', [
+                'labels' => $labels,
+            ]);
+
+            // Set paper size - 36.5mm x 25mm (converted to points)
+            $width = 36.5 * 2.83465;  // 103.46 points
+            $height = 25 * 2.83465;   // 70.87 points
+            $pdf->setPaper([0, 0, $width, $height], 'landscape');
+
+            // Configure DomPDF
+            $pdf->getDomPDF()->set_option('enable_php', true);
+            $pdf->getDomPDF()->set_option('enable_javascript', false);
+            $pdf->getDomPDF()->set_option('enable_remote', true);
+            $pdf->getDomPDF()->set_option('font_height_ratio', 1.0);
+            $pdf->getDomPDF()->set_option('isRemoteEnabled', true);
+
+            // Save the multi-page PDF
+            $pdf->save($batchTempPath);
+
+            // Print the single multi-page PDF file
+            $controller = new ItemController();
+            $result = false;
+
+            if (self::isWindows()) {
+                $result = $controller->printLabelWindows($batchTempPath, $printerName, 1);
+            } else {
+                $result = $controller->printLabelMac($batchTempPath, $printerName, 1);
+            }
+
+            // Clean up temp file
+            @unlink($batchTempPath);
+
+            $executionTime = microtime(true) - $startTime;
+            Log::info("Batch printed $totalQuantity labels in {$executionTime}s as a single multi-page document");
+
+            return [
+                'success' => $result,
+                'quantity' => $totalQuantity,
+                'execution_time' => $executionTime,
+                'method' => 'multi-page-batch'
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Batch print error: ' . $e->getMessage());
+            return ['success' => false, 'error' => $e->getMessage()];
         }
     }
 }

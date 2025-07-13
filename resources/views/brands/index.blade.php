@@ -78,6 +78,17 @@
                                     </form>
                                 </div>
                             @endif
+                            <!-- Print Labels Section -->
+                            <div class="print-labels-section">
+                                <a href="{{ route('brands.printLabels', $brand->id) }}"
+                                   class="btn btn-sm btn-outline-success"
+                                   title="Print labels for all items in this brand with quantity > 0">
+                                    <i class="fas fa-print"></i> Print Labels
+                                </a>
+                                <small class="text-muted d-block mt-1">
+                                    {{ $brand->items()->where('quantity', '>', 0)->count() }} items available
+                                </small>
+                            </div>
                         </div>
                     </div>
                 </div>
