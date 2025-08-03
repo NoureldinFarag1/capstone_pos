@@ -246,4 +246,9 @@ Route::get('/expenses/monthly-reasons/{month}', [ExpenseController::class, 'getM
 
 Route::post('/verify-access', [VerificationController::class, 'verify'])->name('verify.access');
 
+// iPad compatibility test route
+Route::get('/ipad-test', function () {
+    return view('ipad-test');
+})->name('ipad.test');
+
 require __DIR__ . '/auth.php';

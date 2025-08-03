@@ -236,17 +236,80 @@
   user-select: none !important;
 }
 
-/* Fix for Safari on iPad keyboard issues */
+/* Safari-specific fixes for iPad */
 @supports (-webkit-touch-callout: none) {
   /* iPad Safari specific fixes */
   input[type="text"]:focus,
   input[type="email"]:focus,
   input[type="password"]:focus,
   input[type="number"]:focus,
-  textarea:focus {
+  textarea:focus,
+  select:focus {
     /* Prevent zoom on focus */
     -webkit-transform: translateZ(0) !important;
     transform: translateZ(0) !important;
+    -webkit-user-select: text !important;
+    user-select: text !important;
+  }
+  
+  /* Fix for Safari input styling */
+  input, textarea, select {
+    -webkit-appearance: none !important;
+    -webkit-border-radius: 0 !important;
+    border-radius: 4px !important;
+  }
+  
+  /* Fix for Safari button styling */
+  button, .btn {
+    -webkit-appearance: none !important;
+    -webkit-border-radius: 0 !important;
+  }
+  
+  /* Fix tap highlight color */
+  * {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  /* Fix for Safari scrolling */
+  .overflow-auto, .overflow-y-auto, .overflow-x-auto {
+    -webkit-overflow-scrolling: touch !important;
+    overflow: auto !important;
+  }
+  
+  /* Fix for position sticky in Safari */
+  .sticky {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+  }
+}
+
+/* WebKit-specific optimizations */
+@media screen and (-webkit-min-device-pixel-ratio: 1) {
+  /* High DPI display optimizations */
+  .btn, button {
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+  }
+  
+  /* Fix for WebKit form validation */
+  input:invalid, textarea:invalid, select:invalid {
+    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+  }
+  
+  /* Fix for WebKit autofill */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    -webkit-text-fill-color: #333 !important;
+    -webkit-box-shadow: 0 0 0px 1000px white inset !important;
+    transition: background-color 5000s ease-in-out 0s !important;
   }
 }
 
