@@ -11,13 +11,17 @@ $siteTitle = Config::get('navbar.site_title');
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-touch-fullscreen" content="yes">
     <title>{{ $siteTitle }}</title>
     @vite('resources/js/app.js')
     @vite('resources/css/app.css')
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/ipad.css') }}">
     <link rel="icon" href="{{ asset('images/favicon.ico') }}" type="image/x-icon">
     <!-- Bootstrap 5.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -32,7 +36,7 @@ $siteTitle = Config::get('navbar.site_title');
 <body class="bg-gray-100">
     <nav class="bg-white shadow-lg sticky">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
+            <div class="flex items-center justify-between">
                 <!-- Logo Section -->
                 <div class="flex items-center">
                     <a href="#" class="flex items-center no-underline">
@@ -40,8 +44,23 @@ $siteTitle = Config::get('navbar.site_title');
                         <img src="{{ asset($navbarTextLogoPath) }}" alt="LocalHUB" class="h-8 w-auto mr-1">
                     </a>
                 </div>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button x-data="{ mobileOpen: false }" @click="mobileOpen = !mobileOpen" type="button" 
+                            class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 min-h-[44px] min-w-[44px]">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" :class="{'hidden': mobileOpen, 'block': !mobileOpen }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <svg class="h-6 w-6" :class="{'block': mobileOpen, 'hidden': !mobileOpen }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
                 <!-- Main Navigation -->
-                <div class="hidden sm:flex sm:items-center sm:space-x-4">
+                <div class="hidden md:flex md:items-center md:space-x-4">
                     <!-- Dashboard -->
                     @role('admin|moderator')
                     <a href="{{ route('dashboard') }}"
@@ -51,9 +70,9 @@ $siteTitle = Config::get('navbar.site_title');
                     @endrole
 
                     <!-- Inventory Dropdown -->
-                    <div x-data="{ isOpen: false }" class="relative no-underline">
+                    <div x-data="{ isOpen: false }" class="relative no-underline" @click.away="isOpen = false">
                         <button @click="isOpen = !isOpen" @keydown.escape.window="isOpen = false"
-                            class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors">
+                            class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors min-h-[44px]">
                             <i class="fas fa-box-open mr-2"></i>
                             <span>Inventory</span>
                             <svg class="ml-2 h-4 w-4 transform transition-transform duration-200"
@@ -64,27 +83,27 @@ $siteTitle = Config::get('navbar.site_title');
                             </svg>
                         </button>
 
-                        <div x-show="isOpen" @click.away="isOpen = false"
-                            class="absolute z-10 mt-2 w-48 rounded-md shadow-lg origin-top-right right-0">
-                            <div class="py-1 bg-white rounded-md shadow-xs">
+                        <div x-show="isOpen" x-transition
+                            class="absolute z-10 mt-2 w-48 rounded-md shadow-lg origin-top-right right-0 bg-white">
+                            <div class="py-1 rounded-md shadow-xs">
                                 <a href="{{ route('brands.index') }}"
-                                    class="{{ request()->routeIs('brands.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
+                                    class="{{ request()->routeIs('brands.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-3 text-sm hover:bg-gray-100 no-underline min-h-[44px] flex items-center">
                                     <i class="fas fa-tags mr-2"></i>Brands
                                 </a>
                                 <a href="{{ route('categories.index') }}"
-                                    class="{{ request()->routeIs('categories.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
+                                    class="{{ request()->routeIs('categories.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-3 text-sm hover:bg-gray-100 no-underline min-h-[44px] flex items-center">
                                     <i class="fas fa-th-list mr-2"></i>Categories
                                 </a>
                                 <a href="{{ route('items.index') }}"
-                                    class="{{ request()->routeIs('items.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
+                                    class="{{ request()->routeIs('items.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-3 text-sm hover:bg-gray-100 no-underline min-h-[44px] flex items-center">
                                     <i class="fas fa-box mr-2"></i>Items
                                 </a>
                                 <a href="{{ route('sizes.index') }}"
-                                    class="{{ request()->routeIs('sizes.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
+                                    class="{{ request()->routeIs('sizes.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-3 text-sm hover:bg-gray-100 no-underline min-h-[44px] flex items-center">
                                     <i class="fas fa-ruler mr-2"></i>Sizes
                                 </a>
                                 <a href="{{ route('colors.index') }}"
-                                    class="{{ request()->routeIs('colors.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
+                                    class="{{ request()->routeIs('colors.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-3 text-sm hover:bg-gray-100 no-underline min-h-[44px] flex items-center">
                                     <i class="fas fa-tint mr-2"></i>Colors
                                 </a>
                             </div>
@@ -92,9 +111,9 @@ $siteTitle = Config::get('navbar.site_title');
                     </div>
 
                     <!-- Sales Dropdown -->
-                    <div x-data="{ isOpen: false }" class="relative">
+                    <div x-data="{ isOpen: false }" class="relative" @click.away="isOpen = false">
                         <button @click="isOpen = !isOpen" @keydown.escape.window="isOpen = false"
-                            class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors">
+                            class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors min-h-[44px] relative">
                             <i class="fas fa-chart-line mr-2"></i>
                             <span>Sales</span>
                             @if(isset($pendingCodCount) && $pendingCodCount > 0)
@@ -113,19 +132,19 @@ $siteTitle = Config::get('navbar.site_title');
                             </svg>
                         </button>
 
-                        <div x-show="isOpen" @click.away="isOpen = false"
-                            class="absolute z-10 mt-2 w-48 rounded-md shadow-lg origin-top-right right-0">
-                            <div class="py-1 bg-white rounded-md shadow-xs">
+                        <div x-show="isOpen" x-transition
+                            class="absolute z-10 mt-2 w-48 rounded-md shadow-lg origin-top-right right-0 bg-white">
+                            <div class="py-1 rounded-md shadow-xs">
                                 <a href="{{ route('sales.index') }}"
-                                    class="{{ request()->routeIs('sales.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
+                                    class="{{ request()->routeIs('sales.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-3 text-sm hover:bg-gray-100 no-underline min-h-[44px] flex items-center">
                                     <i class="fas fa-list mr-2"></i>Sales List
                                 </a>
                                 <a href="{{ route('sales.create') }}"
-                                    class="{{ request()->routeIs('sales.create') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
+                                    class="{{ request()->routeIs('sales.create') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-3 text-sm hover:bg-gray-100 no-underline min-h-[44px] flex items-center">
                                     <i class="fas fa-plus-circle mr-2"></i>Create Sale
                                 </a>
                                 <a href="{{ route('sales.cod') }}"
-                                    class="{{ request()->routeIs('sales.cod') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
+                                    class="{{ request()->routeIs('sales.cod') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-3 text-sm hover:bg-gray-100 no-underline min-h-[44px] flex items-center">
                                     <i class="fas fa-truck mr-2"></i>COD Tracking
                                 </a>
                             </div>
@@ -149,7 +168,7 @@ $siteTitle = Config::get('navbar.site_title');
                     </form>
                 </div>
                 <!-- Notification and Logout aligned to the right -->
-                <div class="hidden sm:flex sm:items-center">
+                <div class="hidden md:flex md:items-center">
                     <!-- Low Stock Notification Dropdown -->
                     @if (isset($lowStockItems) && $lowStockItems->isNotEmpty())
                     <div x-data="{ open: false, dotVisible: true }" class="relative mr-4">
@@ -963,6 +982,8 @@ $siteTitle = Config::get('navbar.site_title');
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
         <!-- Add SweetAlert2 JS -->
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <!-- iPad Optimizations -->
+        <script src="{{ asset('js/ipad-optimizations.js') }}"></script>
 
         <!-- Flash Messages -->
         @if (session('success'))

@@ -8,10 +8,10 @@
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <div class="container-fluid bg-light py-4">
+    <div class="container-fluid bg-light py-4 pos-interface">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="create-sale-heading">Create New Sale</h1>
-            <button type="button" class="btn btn-outline-secondary btn-sm" id="keyboardShortcutsBtn">
+            <button type="button" class="btn btn-outline-secondary" id="keyboardShortcutsBtn">
                 <i class="fas fa-keyboard me-2"></i>Shortcuts
             </button>
         </div>
@@ -35,7 +35,7 @@
                     <div class="card sale-card mb-4">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">Add Items</h5>
-                            <div class="d-flex gap-2">
+                            <div class="d-flex gap-2 flex-wrap">
                                 <button type="button" class="btn btn-danger" id="clearCartBtn" title="Clear cart">
                                     <i class="fas fa-trash-alt me-1"></i> Clear Cart
                                 </button>
@@ -52,7 +52,7 @@
                                         <i class="fas fa-barcode text-muted"></i>
                                     </span>
                                     <input type="text" id="barcode" class="form-control form-control-lg border-start-0"
-                                        placeholder="Scan barcode or press / to search" autofocus>
+                                        placeholder="Scan barcode or tap to search" autofocus>
                                     <button class="btn btn-outline-secondary" type="button" id="focusBarcode" title="Focus barcode (/)">
                                         <i class="fas fa-qrcode"></i>
                                     </button>
@@ -88,20 +88,20 @@
                                         </select>
                                     </div>
                                     <div class="col-auto">
-                                        <div class="input-group">
-                                            <input type="number" id="quantity" class="form-control" min="1" value="1" style="width: 70px;">
+                                        <div class="input-group quantity-controls">
+                                            <input type="number" id="quantity" class="form-control quantity-control" min="1" value="1" style="width: 80px;">
                                             <button type="button" id="addItemButton" class="btn btn-success">
                                                 <i class="fas fa-plus me-1"></i> Add
                                             </button>
                                         </div>
                                     </div>
                                 </div>
-                                <small class="text-muted">Press Tab to navigate, Enter to add</small>
+                                <small class="text-muted">Tap Add to include item or use Enter key</small>
                             </div>
 
                             <!-- Quick Actions -->
                             <div class="mb-3 d-flex flex-wrap gap-2">
-                                <button type="button" class="btn btn-sm btn-outline-primary quick-action-btn" data-action="add-frequently-sold">
+                                <button type="button" class="btn btn-outline-primary product-btn" data-action="add-frequently-sold">
                                     <i class="fas fa-star me-1"></i> Popular Items
                                 </button>
                             </div>
@@ -232,8 +232,8 @@
                         </div>
 
                         <div class="d-grid">
-                            <button type="submit" form="saleForm" class="btn btn-primary btn-lg">
-                                <i class="fas fa-check-circle me-2"></i>Complete Sale (F8)
+                            <button type="submit" form="saleForm" class="btn btn-primary btn-lg payment-method-btn">
+                                <i class="fas fa-check-circle me-2"></i>Complete Sale
                             </button>
                         </div>
                     </div>
