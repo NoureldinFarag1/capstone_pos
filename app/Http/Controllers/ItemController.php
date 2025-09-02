@@ -300,6 +300,7 @@ class ItemController extends BaseController
                 $query->select('id', 'parent_id', 'code', 'quantity');
             }])
             ->where('is_parent', true)
+            ->whereHas('brand') // exclude orphan items with missing brand
             ->select([
                 'items.*',
                 DB::raw('CAST(items.selling_price AS DECIMAL(10,2)) as selling_price'),
@@ -475,7 +476,14 @@ class ItemController extends BaseController
 
     public function show($id)
     {
-        $item = Item::with(['category', 'brand'])->findOrFail($id);
+        $item = Item::with(['category', 'brand', 'variants'])->findOrFail($id);
+        // If the brand no longer exists, remove this orphan item (and its variants) and redirect
+        if (!$item->brand) {
+            // delete variants first
+            Item::where('parent_id', $item->id)->delete();
+            $item->delete();
+            return redirect()->route('items.index')->with('success', 'Item removed because its brand was deleted.');
+        }
         return view('items.show', compact('item'));
     }
 

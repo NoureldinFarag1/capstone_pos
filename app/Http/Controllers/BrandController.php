@@ -78,10 +78,29 @@ class BrandController extends Controller
 
     public function destroy($id)
     {
-        $brand = Brand::findOrFail($id);
-        $brand->delete();
+        DB::beginTransaction();
+        try {
+            $brand = Brand::findOrFail($id);
 
-        return redirect()->route('brands.index')->with('success', 'Brand deleted successfully.');
+            // Delete all items for this brand (delete variants first for parents)
+            $items = Item::where('brand_id', $brand->id)->get();
+            foreach ($items as $item) {
+                if ($item->is_parent) {
+                    Item::where('parent_id', $item->id)->delete();
+                }
+                $item->delete();
+            }
+
+            // Finally delete the brand
+            $brand->delete();
+
+            DB::commit();
+            return redirect()->route('brands.index')->with('success', 'Brand and its items deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to delete brand and items: ' . $e->getMessage());
+            return redirect()->route('brands.index')->with('error', 'Failed to delete brand: ' . $e->getMessage());
+        }
     }
     public function brandCount()
     {

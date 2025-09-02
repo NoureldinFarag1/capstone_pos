@@ -237,6 +237,12 @@ $siteTitle = Config::get('navbar.site_title');
                                 <i class="fas fa-search-location text-xl mr-2"></i>
                                 <span class="font-medium">Trace Item</span>
                             </a>
+                            <a href="{{ route('sales.overview') }}"
+                                class="group flex items-center justify-center p-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                <i class="fas fa-chart-line text-xl mr-2"></i>
+                                <span class="font-medium">Sales Overview</span>
+                            </a>
+
                             <a href="{{ route('sales.cod') }}"
                                 class="group flex items-center justify-center p-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                 <i class="fas fa-truck text-xl mr-2"></i>
@@ -247,11 +253,12 @@ $siteTitle = Config::get('navbar.site_title');
                                 <i class="fas fa-receipt text-xl mr-2"></i>
                                 <span class="font-medium">Expenses</span>
                             </a>
-                            <a href="/sales"
-                                class="group flex items-center justify-center p-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
-                                <i class="fas fa-chart-line text-xl mr-2"></i>
-                                <span class="font-medium">Sales Overview</span>
+                            <a href="{{ route('refunds.index') }}"
+                                class="group flex items-center justify-center p-4 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                <i class="fas fa-undo text-xl mr-2"></i>
+                                <span class="font-medium">Refund Analytics</span>
                             </a>
+
 
                             <div class="col-span-full sm:col-span-2 lg:col-span-4">
                                 <h4 class="text-lg font-semibold mb-2 text-gray-700">Inventory</h4>
@@ -282,7 +289,7 @@ $siteTitle = Config::get('navbar.site_title');
                                 <h4 class="text-lg font-semibold mb-2 text-gray-700">Administration</h4>
                             </div>
                             <a href="{{ route('store-settings.index') }}"
-                                class="group flex items-center justify-center p-4 bg-orange-600 hover:bg-orange-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                class="group flex items-center justify-center p-4 bg-orange-500 hover:bg-orange-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                 <i class="fas fa-store text-xl mr-2"></i>
                                 <span class="font-medium">Store Settings</span>
                             </a>
@@ -297,7 +304,7 @@ $siteTitle = Config::get('navbar.site_title');
                                 <h4 class="text-lg font-semibold mb-2 text-gray-700">Other</h4>
                             </div>
                             <a href="/brands/create"
-                                class="group flex items-center justify-center p-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
+                                class="group flex items-center justify-center p-4 bg-gray-500 hover:bg-gray-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
                                 <i class="fas fa-tag text-xl mr-2"></i>
                                 <span class="font-medium">Add Brand</span>
                             </a>
@@ -749,18 +756,33 @@ $siteTitle = Config::get('navbar.site_title');
             <!-- Details Row -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 <!-- Top Selling Brands Widget -->
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden" x-data="{ viewMode: 'alltime' }">
                     <div class="border-b border-gray-100 p-6">
                         <div class="flex items-center justify-between">
                             <h3 class="text-2xl font-bold text-gray-900">GOATS</h3>
-                            <span class="px-3 py-1 text-sm font-medium text-purple-700 bg-purple-50 rounded-full">
-                                Top Performers
-                            </span>
+                            <div class="flex items-center space-x-2">
+                                <span class="px-3 py-1 text-sm font-medium text-purple-700 bg-purple-50 rounded-full">
+                                    <span x-text="viewMode === 'alltime' ? 'All Time' : 'Monthly'"></span> Top Performers
+                                </span>
+                                <div class="flex space-x-1">
+                                    <button @click="viewMode = 'alltime'"
+                                        :class="viewMode === 'alltime' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                                        class="px-3 py-1 text-xs font-medium rounded-md transition-colors">
+                                        All Time
+                                    </button>
+                                    <button @click="viewMode = 'monthly'"
+                                        :class="viewMode === 'monthly' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                                        class="px-3 py-1 text-xs font-medium rounded-md transition-colors">
+                                        Monthly
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="p-6">
-                        <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                            @foreach ($topSellingBrandDetails as $index => $brand)
+                        <!-- All Time Top Selling Brands -->
+                        <div x-show="viewMode === 'alltime'" class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                            @foreach ($topSellingBrands as $index => $brand)
                             <div
                                 class="group flex items-center justify-between p-4 rounded-lg transition-all duration-300 hover:bg-gray-50/80 hover:shadow-sm">
                                 <div class="flex items-center space-x-4">
@@ -768,9 +790,9 @@ $siteTitle = Config::get('navbar.site_title');
                                     <img src="{{ asset('storage/' . $brand['image']) }}" alt="{{ $brand['name'] }}"
                                         class="w-12 h-12 rounded-lg object-cover border-2
                                                  @if ($index == 0) border-yellow-400
-                                                 @elseif($index == 1) border-gray-400
-                                                 @elseif($index == 2) border-orange-600
-                                                 @else border-gray-100 @endif">
+                                                 @elseif($index == 1) border-blue-400
+                                                 @elseif($index == 2) border-red-600
+                                                 @else border-green-100 @endif">
                                     @else
                                     <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center border-2
                                                  @if ($index == 0) border-yellow-400
@@ -791,10 +813,57 @@ $siteTitle = Config::get('navbar.site_title');
                                 <div class="flex flex-col items-end">
                                     <span
                                         class="text-xl font-bold text-gray-900">{{ number_format($brand['total_sales'], 0) }}</span>
-                                    <span class="text-sm text-gray-500 font-medium">Sales</span>
+                                    <span class="text-sm text-gray-500 font-medium">Total Sales</span>
                                 </div>
                             </div>
                             @endforeach
+                        </div>
+
+                        <!-- Monthly Top Selling Brands -->
+                        <div x-show="viewMode === 'monthly'" class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                            @foreach ($topSellingBrandsMonthly as $index => $brand)
+                            <div
+                                class="group flex items-center justify-between p-4 rounded-lg transition-all duration-300 hover:bg-gray-50/80 hover:shadow-sm">
+                                <div class="flex items-center space-x-4">
+                                    @if ($brand->picture)
+                                    <img src="{{ asset('storage/' . $brand->picture) }}" alt="{{ $brand->name }}"
+                                        class="w-12 h-12 rounded-lg object-cover border-2
+                                                 @if ($index == 0) border-yellow-400
+                                                 @elseif($index == 1) border-blue-400
+                                                 @elseif($index == 2) border-red-600
+                                                 @else border-green-100 @endif">
+                                    @else
+                                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border-2
+                                                 @if ($index == 0) border-yellow-400
+                                                 @elseif($index == 1) border-gray-400
+                                                 @elseif($index == 2) border-orange-600
+                                                 @else border-gray-100 @endif">
+                                        <span class="text-xl font-bold text-white">
+                                            {{ substr($brand->name, 0, 1) }}
+                                        </span>
+                                    </div>
+                                    @endif
+                                    <div class="flex flex-col">
+                                        <span class="text-lg font-semibold text-gray-900">{{ $brand->name }}</span>
+                                        <span class="text-sm text-gray-500 font-medium">Rank
+                                            #{{ $index + 1 }}</span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col items-end">
+                                    <span
+                                        class="text-xl font-bold text-gray-900">{{ number_format($brand->total_sales, 0) }}</span>
+                                    <span class="text-sm text-gray-500 font-medium">Monthly Sales</span>
+                                </div>
+                            </div>
+                            @endforeach
+                            @if($topSellingBrandsMonthly->isEmpty())
+                            <div class="flex flex-col items-center justify-center py-8 px-4">
+                                <div class="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                                    <i class="fas fa-chart-bar text-gray-400 text-xl"></i>
+                                </div>
+                                <p class="text-gray-500 font-medium">No sales data for this month</p>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>

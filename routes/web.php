@@ -95,6 +95,7 @@ Route::get('/items/sample-file', function () {
 Route::get('/sales/payment-method-report', [SaleController::class, 'generatePaymentMethodReport'])->name('sales.paymentMethodReport');
 Route::get('/sales/hourly-report', [SaleController::class, 'generateHourlySalesReport'])->name('sales.hourlyReport');
 Route::get('/sales/refunds-report', [SaleController::class, 'generateRefundsReport'])->name('sales.refundsReport');
+Route::get('/sales/overview', [SaleController::class, 'overview'])->name('sales.overview');
 
 // IMPORTANT: Customer specific routes must be defined BEFORE the resource route
 // Customer search route for sales form
@@ -144,6 +145,7 @@ Route::get('/items/findByBarcode/{barcode}', function ($barcode) {
     return response()->json(['item' => null]);
 });
 Route::post('/items/{id}/print-label', [ItemController::class, 'printLabel'])->name('items.print-label');
+Route::get('/refund', [RefundController::class, 'index'])->name('refunds.index');
 Route::get('/refund/create', [RefundController::class, 'create'])->name('refund.create');
 Route::post('/refund', [RefundController::class, 'store'])->name('refund.store');
 Route::get('/refund/create/{sale_id}', [RefundController::class, 'create'])->name('refund.create');

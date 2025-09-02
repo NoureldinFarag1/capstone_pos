@@ -145,9 +145,10 @@
                                             </div>
                                         </div>
                                     @endif
-                                    @if($item->brand->logo)
+                                    {{-- Show brand logo only if brand exists and has picture --}}
+                                    @if(optional($item->brand)->picture)
                                         <div class="card-header bg-light border-0 py-2">
-                                            <img src="{{ asset('storage/' . $item->brand->logo) }}"
+                                            <img src="{{ asset('storage/' . $item->brand->picture) }}"
                                                  alt="{{ $item->brand->name }}"
                                                  class="brand-logo-sm"
                                                  style="height: 30px; object-fit: contain;">
@@ -156,7 +157,9 @@
                                     <div class="card-body d-flex flex-column">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
                                             <a href="{{ route('items.show', $item->id) }}" class="text-decoration-none text-reset">
-                                                <h5 class="card-title fw-bold m-0">{{ $item->name }} - {{ $item->brand->name }}</h5>
+                                                <h5 class="card-title fw-bold m-0">
+                                                    {{ $item->name }}@if(optional($item->brand)->name) - {{ $item->brand->name }}@endif
+                                                </h5>
                                             </a>
                                             @if($item->quantity <= 0)
                                                 <div class="stock-badge">
@@ -304,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 return response.json();
             })
-            .then(data => {
+            .then data => {
                 if (data.success) {
                     Swal.fire({
                         title: 'Success!',

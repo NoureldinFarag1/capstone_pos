@@ -52,6 +52,22 @@ class DashboardController extends Controller
             ];
         })->toArray();
 
+        // Top Selling Brands Monthly
+        $topSellingBrandsMonthly = SaleItem::select(
+            'items.brand_id',
+            'brands.name',
+            'brands.picture',
+            DB::raw('SUM(sale_items.quantity) as total_sales')
+        )
+        ->join('items', 'sale_items.item_id', '=', 'items.id')
+        ->join('brands', 'items.brand_id', '=', 'brands.id')
+        ->whereMonth('sale_items.created_at', $selectedMonth)
+        ->whereYear('sale_items.created_at', $selectedYear)
+        ->groupBy('items.brand_id', 'brands.name', 'brands.picture')
+        ->having('total_sales', '>', 0)
+        ->orderByDesc('total_sales')
+        ->get();
+
         // Low Stock Items
         $lowStockItems = Item::where('quantity', '<=', 2)
             ->where('is_parent', false)
@@ -63,8 +79,8 @@ class DashboardController extends Controller
         $monthlySales = $this->getMonthlySalesData($selectedMonth, $selectedYear);
 
         // OPTIMIZED: Get monthly payment methods statistics in a single query
-        $monthlyPaymentStats = Sale::whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
+        $monthlyPaymentStats = Sale::whereMonth('created_at', $selectedMonth)
+            ->whereYear('created_at', $selectedYear)
             ->select('payment_method', DB::raw('SUM(total_amount) as total'))
             ->groupBy('payment_method')
             ->pluck('total', 'payment_method')
@@ -182,10 +198,26 @@ class DashboardController extends Controller
                 ->whereYear('created_at', Carbon::now()->year)
                 ->sum('refund_amount'),
             'refund_rate' => $this->calculateRefundRate(),
+            'average_refund_amount' => Refund::avg('refund_amount') ?? 0,
+            'total_refunds_count' => Refund::count(),
+            'refunds_by_reason' => Refund::select('reason', DB::raw('COUNT(*) as count'), DB::raw('SUM(refund_amount) as total_amount'))
+                ->whereNotNull('reason')
+                ->groupBy('reason')
+                ->orderBy('count', 'desc')
+                ->limit(5)
+                ->get(),
+            'top_refunded_items' => Refund::with('item')
+                ->select('item_id', DB::raw('SUM(quantity_refunded) as total_quantity'), DB::raw('SUM(refund_amount) as total_amount'))
+                ->groupBy('item_id')
+                ->orderBy('total_amount', 'desc')
+                ->limit(5)
+                ->get(),
             'recent_refunds' => Refund::with(['sale', 'item'])
                 ->latest()
                 ->take(5)
-                ->get()
+                ->get(),
+            'weekly_refund_trend' => $this->getWeeklyRefundTrend(),
+            'monthly_refund_comparison' => $this->getMonthlyRefundComparison()
         ];
 
         return view('layouts.dashboard', [
@@ -208,12 +240,16 @@ class DashboardController extends Controller
             'cashPayments'=>$cashPayments,
             'creditPayments' =>$creditPayments,
             'mobilePayments' => $mobilePayments,
-            'cashPaymentsMonthly' => $monthlySales['cashPaymentsMonthly'],
-            'creditPaymentsMonthly' => $monthlySales['creditPaymentsMonthly'],
-            'mobilePaymentsMonthly' => $monthlySales['mobilePaymentsMonthly'],
+            'cashPaymentsMonthly' => $cashPaymentsMonthly,
+            'creditPaymentsMonthly' => $creditPaymentsMonthly,
+            'mobilePaymentsMonthly' => $mobilePaymentsMonthly,
             'codPayments' => $codPayments,
-            'codPaymentsMonthly' => $monthlySales['codPaymentsMonthly'],
-            'topSellingBrandDetails' => $topSellingBrandDetails,
+            'codPaymentsMonthly' => $codPaymentsMonthly,
+            'topSellingBrands' => $topSellingBrandDetails,
+            'topSellingBrandsMonthly' => $topSellingBrandsMonthly,
+            'recentRefunds' => $refundMetrics['recent_refunds'],
+            'todayRefunds' => $refundMetrics['today_refunds'],
+            'monthRefunds' => $refundMetrics['month_refunds'],
             'salesAnalytics' => $salesAnalytics,
             'inventoryMetrics' => $inventoryMetrics,
             'categoryPerformance' => $categoryPerformance,
@@ -371,6 +407,40 @@ class DashboardController extends Controller
             'creditPaymentsMonthly' => $currentMonthSales->credit_payments ?? 0,
             'mobilePaymentsMonthly' => $currentMonthSales->mobile_payments ?? 0,
             'codPaymentsMonthly' => $currentMonthSales->cod_payments ?? 0,
+        ];
+    }
+
+    private function getWeeklyRefundTrend()
+    {
+        return Refund::select(
+            DB::raw('WEEK(created_at) as week'),
+            DB::raw('COUNT(*) as count'),
+            DB::raw('SUM(refund_amount) as total_amount')
+        )
+        ->where('created_at', '>=', Carbon::now()->subWeeks(4))
+        ->groupBy('week')
+        ->orderBy('week')
+        ->get();
+    }
+
+    private function getMonthlyRefundComparison()
+    {
+        $currentMonth = Refund::whereMonth('created_at', Carbon::now()->month)
+            ->whereYear('created_at', Carbon::now()->year)
+            ->sum('refund_amount');
+
+        $previousMonth = Refund::whereMonth('created_at', Carbon::now()->subMonth()->month)
+            ->whereYear('created_at', Carbon::now()->subMonth()->year)
+            ->sum('refund_amount');
+
+        $growthPercentage = $previousMonth > 0
+            ? (($currentMonth - $previousMonth) / $previousMonth) * 100
+            : 0;
+
+        return [
+            'current_month' => $currentMonth,
+            'previous_month' => $previousMonth,
+            'growth_percentage' => $growthPercentage
         ];
     }
 }

@@ -37,8 +37,8 @@
                             @endif
                         </div>
                         <div class="col-6">
-                            <p class="card-text"><strong>Brand:</strong> {{ $item->brand->name }}</p>
-                            <p class="card-text"><strong>Category:</strong> {{ $item->category->name }}</p>
+                            <p class="card-text"><strong>Brand:</strong> {{ optional($item->brand)->name ?? '-' }}</p>
+                            <p class="card-text"><strong>Category:</strong> {{ optional($item->category)->name ?? '-' }}</p>
                             <p class="card-text"><strong>Base Price:</strong> EGP{{ $item->selling_price }}</p>
                             @if($item->discount_type === 'percentage')
                                 <p class="mb-1 text-muted">Sale: <span class="fw-bold">{{ $item->discount_value }}%</span>

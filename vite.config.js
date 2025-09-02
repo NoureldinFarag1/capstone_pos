@@ -7,10 +7,11 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
+                'resources/css/brands.css',
                 'resources/js/app.js',
             ],
             refresh: true,
         }),
-        vue(), 
+        vue(),
     ],
 });

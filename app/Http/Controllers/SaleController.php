@@ -1098,4 +1098,122 @@ class SaleController extends Controller
 
         return redirect()->back()->with('success', 'COD status updated successfully.');
     }
+
+    public function overview()
+    {
+        // Cache key for overview data
+        $cacheKey = 'sales_overview_' . Carbon::now()->format('Y-m-d_H');
+
+        // Get cached data or compute it
+        $data = cache()->remember($cacheKey, 3600, function () { // Cache for 1 hour
+            // Get current date parameters
+            $today = Carbon::today();
+            $startOfWeek = Carbon::now()->startOfWeek();
+            $startOfMonth = Carbon::now()->startOfMonth();
+
+            // Use a single query to get most sales metrics
+            $salesMetrics = Sale::selectRaw('
+                SUM(CASE WHEN DATE(created_at) = ? THEN total_amount ELSE 0 END) as today_sales,
+                SUM(CASE WHEN DATE(created_at) = ? THEN total_amount ELSE 0 END) as yesterday_sales,
+                SUM(CASE WHEN created_at >= ? THEN total_amount ELSE 0 END) as weekly_sales,
+                SUM(CASE WHEN created_at >= ? THEN total_amount ELSE 0 END) as monthly_sales,
+                COUNT(CASE WHEN DATE(created_at) = ? THEN 1 END) as today_transactions,
+                COUNT(CASE WHEN created_at >= ? THEN 1 END) as weekly_transactions,
+                COUNT(CASE WHEN created_at >= ? THEN 1 END) as monthly_transactions,
+                AVG(CASE WHEN created_at >= ? THEN total_amount END) as avg_order_value
+            ', [
+                $today->toDateString(),
+                $today->copy()->subDay()->toDateString(),
+                $startOfWeek,
+                $startOfMonth,
+                $today->toDateString(),
+                $startOfWeek,
+                $startOfMonth,
+                $startOfMonth
+            ])->first();
+
+            // Get last week sales for growth calculation
+            $lastWeekSales = Sale::whereBetween('created_at', [
+                $startOfWeek->copy()->subWeek(),
+                $startOfWeek->copy()->subWeek()->addWeek()
+            ])->sum('total_amount');
+
+            // Calculate growth percentages
+            $dailyGrowth = $salesMetrics->yesterday_sales > 0 ?
+                (($salesMetrics->today_sales - $salesMetrics->yesterday_sales) / $salesMetrics->yesterday_sales) * 100 : 0;
+            $weeklyGrowth = $lastWeekSales > 0 ?
+                (($salesMetrics->weekly_sales - $lastWeekSales) / $lastWeekSales) * 100 : 0;
+
+            return [
+                'todaySales' => $salesMetrics->today_sales ?? 0,
+                'weeklySales' => $salesMetrics->weekly_sales ?? 0,
+                'monthlySales' => $salesMetrics->monthly_sales ?? 0,
+                'todayTransactions' => $salesMetrics->today_transactions ?? 0,
+                'weeklyTransactions' => $salesMetrics->weekly_transactions ?? 0,
+                'monthlyTransactions' => $salesMetrics->monthly_transactions ?? 0,
+                'avgOrderValue' => $salesMetrics->avg_order_value ?? 0,
+                'dailyGrowth' => $dailyGrowth,
+                'weeklyGrowth' => $weeklyGrowth,
+            ];
+        });
+
+        // Get lightweight data that changes frequently (not cached)
+
+        // Payment method breakdown (limited to current month)
+        $paymentMethods = Sale::select('payment_method', DB::raw('COUNT(*) as count'), DB::raw('SUM(total_amount) as total'))
+            ->where('created_at', '>=', Carbon::now()->startOfMonth())
+            ->groupBy('payment_method')
+            ->orderByDesc('total')
+            ->limit(4) // Limit to top 4 payment methods
+            ->get();
+
+        // Top selling items (limited and optimized)
+        $topItems = SaleItem::join('items', 'sale_items.item_id', '=', 'items.id')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->select('items.name', DB::raw('SUM(sale_items.quantity) as total_sold'), DB::raw('SUM(sale_items.quantity * sale_items.price) as total_revenue'))
+            ->where('sales.created_at', '>=', Carbon::now()->startOfMonth())
+            ->groupBy('items.id', 'items.name')
+            ->orderByDesc('total_sold')
+            ->limit(5) // Reduced from 10 to 5
+            ->get();
+
+        // Top brands (limited and optimized)
+        $brandSales = SaleItem::join('items', 'sale_items.item_id', '=', 'items.id')
+            ->join('brands', 'items.brand_id', '=', 'brands.id')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->select('brands.name', 'brands.picture', DB::raw('SUM(sale_items.quantity) as total_sold'), DB::raw('SUM(sale_items.quantity * sale_items.price) as total_revenue'))
+            ->where('sales.created_at', '>=', Carbon::now()->startOfMonth())
+            ->groupBy('brands.id', 'brands.name', 'brands.picture')
+            ->orderByDesc('total_revenue')
+            ->limit(5) // Reduced from 8 to 5
+            ->get();
+
+        // Simplified daily trend (last 7 days instead of 30)
+        $dailySalesTrend = Sale::select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total_amount) as total_amount'))
+            ->where('created_at', '>=', Carbon::now()->subDays(7))
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->orderBy('date')
+            ->get();
+
+        // Top customers (reduced to 5)
+        $topCustomers = Sale::select('customer_name', 'customer_phone', DB::raw('COUNT(*) as order_count'), DB::raw('SUM(total_amount) as total_spent'))
+            ->where('created_at', '>=', Carbon::now()->startOfMonth())
+            ->whereNotNull('customer_name')
+            ->groupBy('customer_name', 'customer_phone')
+            ->orderByDesc('total_spent')
+            ->limit(5) // Reduced from 10 to 5
+            ->get();
+
+        // Recent large transactions (reduced to 3)
+        $largeTransactions = Sale::select('id', 'display_id', 'customer_name', 'total_amount', 'created_at')
+            ->where('total_amount', '>', 1000)
+            ->orderByDesc('created_at')
+            ->limit(3)
+            ->get();
+
+        return view('sales.overview_optimized', array_merge($data, compact(
+            'paymentMethods', 'topItems', 'brandSales', 'dailySalesTrend',
+            'topCustomers', 'largeTransactions'
+        )));
+    }
 }

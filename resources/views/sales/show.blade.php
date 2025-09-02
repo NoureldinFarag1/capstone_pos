@@ -85,6 +85,7 @@
                                             <th class="text-end">Refund Amount</th>
                                             <th class="px-4">Reason</th>
                                             <th class="text-end px-4">Refund Date</th>
+                                            <th class="text-end">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -98,7 +99,15 @@
                                                 <td class="text-end">EGP {{ number_format($refund->refund_amount, 2) }}</td>
                                                 <td class="px-4">{{ $refund->reason ?? 'No reason provided' }}</td>
                                                 <td class="text-end px-4">{{ $refund->created_at->format('Y-m-d H:i') }}</td>
+                                                <td class="text-end">
+                                                    @if($refund->is_exchanged)
+                                                        <span class="badge bg-info text-white">Exchanged</span>
+                                                    @else
+                                                        <span class="badge bg-success text-white">Original</span>
+                                                    @endif
+                                                </td>
                                             </tr>
+                                            <tr>
                                         @endforeach
                                     </tbody>
                                     <tfoot>
@@ -106,6 +115,13 @@
                                             <td colspan="2" class="text-end">Total Refunded:</td>
                                             <td class="text-end">EGP {{ number_format($sale->refunds->sum('refund_amount'), 2) }}</td>
                                             <td colspan="2"></td>
+                                            <td class="text-end">
+                                                @if($sale->refunds->count() > 0)
+                                                    <span class="badge bg-danger text-white">Refunded</span>
+                                                @else
+                                                    <span class="badge bg-secondary text-white">No Refunds</span>
+                                                @endif
+                                            </td>
                                         </tr>
                                     </tfoot>
                                 </table>
