@@ -25,6 +25,7 @@ use App\Exports\DailySalesExport;
 use App\Exports\HourlySalesReportExport;
 use App\Exports\PaymentMethodReportExport;
 use App\Exports\RefundsReportExport;
+use App\Exports\DailyTotalsReportExport;
 
 class SaleController extends Controller
 {
@@ -548,12 +549,16 @@ class SaleController extends Controller
             ]);
 
             // Prepare base data array
+            $saleDateFormatted = ($sale->sale_date instanceof \DateTimeInterface)
+                ? $sale->sale_date->format('d/m')
+                : \Carbon\Carbon::parse((string) $sale->sale_date)->format('d/m');
+
             $data = [
                 'store_name' => $storeName,
                 'store_slogan' => $storeSlogan,
                 'store_instagram' => $storeInstagram,
                 'sale_id' => $sale->id,
-                'sale_date' => $sale->sale_date->format('d/m'),
+                'sale_date' => $saleDateFormatted,
                 'display_id' => str_pad($sale->display_id, 4, '0', STR_PAD_LEFT),
                 'created_at' => $sale->created_at->format('d M Y'),
                 'created_at_time' => $sale->created_at->format('H:i:s'),
@@ -929,6 +934,28 @@ class SaleController extends Controller
 
         $fileName = 'refunds_report_' . $date;
         return $this->downloadReport($reportData, $fileName, $format, RefundsReportExport::class);
+    }
+
+    public function generateDailyTotalsReport(Request $request)
+    {
+        $startDate = $request->query('start_date', now()->toDateString());
+        $endDate = $request->query('end_date', now()->toDateString());
+        $format = $request->query('format', 'excel');
+
+        // Basic validation
+        if ($endDate < $startDate) {
+            return response('End date must be on or after start date.', 422);
+        }
+
+        $fileName = "daily_totals_{$startDate}_to_{$endDate}";
+
+        if ($format === 'excel') {
+            return Excel::download(new DailyTotalsReportExport($startDate, $endDate), $fileName . '.xlsx');
+        } elseif ($format === 'csv') {
+            return Excel::download(new DailyTotalsReportExport($startDate, $endDate), $fileName . '.csv');
+        }
+
+        return response('Invalid format specified.', 400);
     }
 
     private function downloadReport($data, $fileName, $format, $exportClass)

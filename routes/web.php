@@ -65,6 +65,8 @@ Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logou
 // Update the daily report route to use query parameters
 Route::get('/sales/daily-report', [SaleController::class, 'generateDailyReport'])->name('sales.dailyReport');
 Route::get('/sales/export', [SaleController::class, 'exportSalesPerBrand'])->name('sales.export');
+Route::get('/sales/daily-totals-report', [SaleController::class, 'generateDailyTotalsReport'])->name('sales.dailyTotalsReport');
+
 
 // COD tracking routes - moved higher up to avoid conflicts
 Route::get('/sales/cod', [SaleController::class, 'codSales'])->name('sales.cod')->middleware('auth');

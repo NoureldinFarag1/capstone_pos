@@ -24,60 +24,90 @@
                 Trace Item Selling
             </a>
             <!-- Daily Sales Report Dropdown -->
-            <div class="relative" x-data="{ open: false, selectedDate: '{{ now()->format('Y-m-d') }}' }">
+            <div class="relative" x-data="{ open: false, selectedDate: '{{ now()->format('Y-m-d') }}', startDate: '{{ now()->subDays(30)->format('Y-m-d') }}', endDate: '{{ now()->format('Y-m-d') }}' }">
                 <button @click="open = !open" type="button"
                     class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 no-underline">
+                    <i class="fas fa-chart-line -ml-1 mr-2 text-sm"></i>
                     Generate Reports
-                    <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                        fill="currentColor">
-                        <path fill-rule="evenodd"
-                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                            clip-rule="evenodd" />
+                    <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                     </svg>
                 </button>
                 <div x-show="open" @click.away="open = false"
-                    class="origin-top-right absolute right-0 mt-2 w-72 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100">
+                    class="origin-top-right absolute right-0 mt-2 w-96 rounded-lg shadow-xl bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-200 z-50">
                     <div class="p-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Date</label>
-                        <input type="date" x-model="selectedDate"
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mb-3">
-                        <div class="flex flex-col gap-2">
-                            <!-- Daily Sales -->
-                            <div class="text-sm font-medium text-gray-900 mb-2">Daily Sales</div>
-                            <a href="#"
-                                @click.prevent="window.location.href='{{ route('sales.dailyReport') }}?format=excel&date=' + selectedDate"
-                                class="text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md no-underline">Daily
-                                Sales
-                                (Excel)</a>
-                            <a href="#"
-                                @click.prevent="window.location.href='{{ route('sales.dailyReport') }}?format=csv&date=' + selectedDate"
-                                class="text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md no-underline">Daily
-                                Sales
-                                (CSV)</a>
-
-                            <!-- Payment Methods -->
-                            <div class="text-sm font-medium text-gray-900 mb-2 mt-3">Payment Methods</div>
-                            <a href="#"
-                                @click.prevent="window.location.href='{{ route('sales.paymentMethodReport') }}?format=excel&date=' + selectedDate"
-                                class="text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md no-underline">Payment
-                                Methods
-                                Report</a>
-
-                            <!-- Hourly Sales -->
-                            <div class="text-sm font-medium text-gray-900 mb-2 mt-3">Hourly Analysis</div>
-                            <a href="#"
-                                @click.prevent="window.location.href='{{ route('sales.hourlyReport') }}?format=excel&date=' + selectedDate"
-                                class="text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md no-underline">Hourly
-                                Sales
-                                Report</a>
-
-                            <!-- Refunds -->
-                            <div class="text-sm font-medium text-gray-900 mb-2 mt-3">Refunds</div>
-                            <a href="#"
-                                @click.prevent="window.location.href='{{ route('sales.refundsReport') }}?format=excel&date=' + selectedDate"
-                                class="text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md no-underline">Refunds
-                                Report</a>
+                        <div class="font-semibold text-lg text-gray-900 mb-2 flex items-center gap-2">
+                            <!-- Calendar icon for Daily Sales -->
+                            <i class="fas fa-calendar-alt text-gray-500"></i>
+                            Daily Sales
                         </div>
+                        <div class="flex gap-2 mb-3">
+                            <input type="date" x-model="selectedDate" class="w-1/2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                        </div>
+                        <div class="flex flex-col gap-1 mb-2">
+                            <a href="#" @click.prevent="window.location.href='{{ route('sales.dailyReport') }}?format=excel&date=' + selectedDate" class="flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md no-underline">
+                                <i class="fas fa-file-excel text-green-600 text-xs"></i>
+                                Daily Sales (Excel)
+                            </a>
+                            <a href="#" @click.prevent="window.location.href='{{ route('sales.dailyReport') }}?format=csv&date=' + selectedDate" class="flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md no-underline">
+                                <i class="fas fa-file-alt text-blue-600 text-xs"></i>
+                                Daily Sales (CSV)
+                            </a>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div class="font-semibold text-lg text-gray-900 mb-2 flex items-center gap-2">
+                            <!-- Chart-bar icon for Daily Totals -->
+                            <i class="fas fa-chart-bar text-gray-500"></i>
+                            Daily Totals (Range)
+                        </div>
+                        <div class="flex gap-2 mb-3">
+                            <input type="date" x-model="startDate" class="w-1/2 rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500" />
+                            <input type="date" x-model="endDate" class="w-1/2 rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500" />
+                        </div>
+                        <div class="flex flex-col gap-1 mb-2">
+                            <a href="#" @click.prevent="window.location.href='{{ route('sales.dailyTotalsReport') }}?format=excel&start_date=' + startDate + '&end_date=' + endDate" class="flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md no-underline">
+                                <i class="fas fa-file-excel text-green-600 text-xs"></i>
+                                Daily Totals (Excel)
+                            </a>
+                            <a href="#" @click.prevent="window.location.href='{{ route('sales.dailyTotalsReport') }}?format=csv&start_date=' + startDate + '&end_date=' + endDate" class="flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md no-underline">
+                                <i class="fas fa-file-alt text-blue-600 text-xs"></i>
+                                Daily Totals (CSV)
+                            </a>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div class="font-semibold text-lg text-gray-900 mb-2 flex items-center gap-2">
+                            <!-- Credit-card icon for Payment Methods -->
+                            <i class="fas fa-credit-card text-gray-500"></i>
+                            Payment Methods
+                        </div>
+                        <a href="#" @click.prevent="window.location.href='{{ route('sales.paymentMethodReport') }}?format=excel&date=' + selectedDate" class="flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md no-underline">
+                            <i class="fas fa-file-excel text-green-600 text-xs"></i>
+                            Payment Methods Report
+                        </a>
+                    </div>
+                    <div class="p-4">
+                        <div class="font-semibold text-lg text-gray-900 mb-2 flex items-center gap-2">
+                            <!-- Clock icon for Hourly Analysis -->
+                            <i class="fas fa-clock text-gray-500"></i>
+                            Hourly Analysis
+                        </div>
+                        <a href="#" @click.prevent="window.location.href='{{ route('sales.hourlyReport') }}?format=excel&date=' + selectedDate" class="flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md no-underline">
+                            <i class="fas fa-file-excel text-green-600 text-xs"></i>
+                            Hourly Sales Report
+                        </a>
+                    </div>
+                    <div class="p-4">
+                        <div class="font-semibold text-lg text-gray-900 mb-2 flex items-center gap-2">
+                            <!-- Refresh icon for Refunds -->
+                            <i class="fas fa-undo-alt text-gray-500"></i>
+                            Refunds
+                        </div>
+                        <a href="#" @click.prevent="window.location.href='{{ route('sales.refundsReport') }}?format=excel&date=' + selectedDate" class="flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md no-underline">
+                            <i class="fas fa-file-excel text-green-600 text-xs"></i>
+                            Refunds Report
+                        </a>
                     </div>
                 </div>
             </div>
@@ -95,7 +125,6 @@
                     <path fill-rule="evenodd"
                         d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                         clip-rule="evenodd" />
-                </svg>
             </div>
             <div class="ml-3">
                 <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
@@ -109,7 +138,6 @@
                             <path fill-rule="evenodd"
                                 d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
                                 clip-rule="evenodd" />
-                        </svg>
                     </button>
                 </div>
             </div>
@@ -308,6 +336,7 @@
 </div>
 
 @push('styles')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-dymI2nY4rS4o0v9WgP5TgQp8m1x1m8xTzFQwzNn0uX8L1f4wA0MZqkJqg3dT5s4d4i1z2v9a4m6q5c8b7y9w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <style>
 .fade-out {
     animation: fadeOut 0.3s ease-in-out forwards;
