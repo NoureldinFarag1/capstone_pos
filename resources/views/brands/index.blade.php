@@ -11,9 +11,14 @@
         <h1 class="fw-bold text-dark mb-1">Brand Management</h1>
         <p class="text-muted">Manage your product brands and discount settings</p>
     </div>
-    <a href="{{ route('brands.create') }}" class="btn btn-primary px-4 py-2 rounded-3 shadow-sm">
-        <i class="fas fa-plus me-2"></i>Add New Brand
-    </a>
+    <div class="d-flex gap-2">
+        <a href="{{ route('brands.trash') }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 shadow-sm">
+            <i class="fas fa-trash-alt me-2"></i>Trash
+        </a>
+        <a href="{{ route('brands.create') }}" class="btn btn-primary px-4 py-2 rounded-3 shadow-sm">
+            <i class="fas fa-plus me-2"></i>Add New Brand
+        </a>
+    </div>
 </div>
 
 <!-- Stats Cards -->

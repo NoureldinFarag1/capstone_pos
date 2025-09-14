@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Refund extends Model
 {
-    protected $fillable = ['sale_id', 'item_id', 'quantity_refunded', 'refund_amount', 'reason'];
+    protected $fillable = ['sale_id', 'sale_item_id', 'item_id', 'quantity_refunded', 'refund_amount', 'reason'];
 
     public function sale()
     {

@@ -8,7 +8,6 @@ $siteTitle = Config::get('navbar.site_title');
 @endphp
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,37 +22,55 @@ $siteTitle = Config::get('navbar.site_title');
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- Add SweetAlert2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     @stack('styles')
 </head>
 
 <body class="bg-gray-100">
-    <nav class="bg-white shadow-lg sticky">
+    <nav x-data="{ mobileOpen: false }" class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
-                <!-- Logo Section -->
-                <div class="flex items-center">
+                <!-- Left Section: Session Timer then Logo (timer at far-left) -->
+                <div class="flex items-center gap-3">
+                    <!-- Session duration (since login) - moved to far-left -->
+                    <div id="sessionTimer" class="relative" aria-label="Active session duration"
+                         @if($user && $user->last_login) data-login-at="{{ $user->last_login->toIso8601String() }}" @endif>
+                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-sm text-indigo-700">
+                            <i class="fas fa-hourglass-half"></i>
+                            <span id="sessionDuration">--:--:--</span>
+                        </span>
+                    </div>
+
                     <a href="#" class="flex items-center no-underline">
                         <img src="{{ asset($navbarLogoPath) }}" alt="LocalHUB Logo" class="h-12 w-auto ml-1">
                         <img src="{{ asset($navbarTextLogoPath) }}" alt="LocalHUB" class="h-8 w-auto mr-1">
                     </a>
+                </div>
+                <!-- Mobile toggle -->
+                <div class="flex items-center sm:hidden">
+                    <button @click="mobileOpen = !mobileOpen" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        aria-controls="mobile-menu" :aria-expanded="mobileOpen">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
                 </div>
                 <!-- Main Navigation -->
                 <div class="hidden sm:flex sm:items-center sm:space-x-4">
                     <!-- Dashboard -->
                     @role('admin|moderator')
                     <a href="{{ route('dashboard') }}"
-                        class="{{ request()->is('dashboard*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium no-underline">
+                        class="{{ request()->is('dashboard*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-lg text-sm font-medium no-underline">
                         <i class="fas fa-home mr-2"></i>Dashboard
                     </a>
                     @endrole
 
                     <!-- Inventory Dropdown -->
-                    <div x-data="{ isOpen: false }" class="relative no-underline">
+            <div x-data="{ isOpen: false }" class="relative no-underline">
                         <button @click="isOpen = !isOpen" @keydown.escape.window="isOpen = false"
-                            class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors">
+                class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-lg text-sm font-medium flex items-center transition-colors">
                             <i class="fas fa-box-open mr-2"></i>
                             <span>Inventory</span>
                             <svg class="ml-2 h-4 w-4 transform transition-transform duration-200"
@@ -65,8 +82,8 @@ $siteTitle = Config::get('navbar.site_title');
                         </button>
 
                         <div x-show="isOpen" @click.away="isOpen = false"
-                            class="absolute z-10 mt-2 w-48 rounded-md shadow-lg origin-top-right right-0">
-                            <div class="py-1 bg-white rounded-md shadow-xs">
+                class="absolute z-10 mt-2 w-56 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 origin-top-right right-0">
+                <div class="py-1 bg-white rounded-lg">
                                 <a href="{{ route('brands.index') }}"
                                     class="{{ request()->routeIs('brands.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
                                     <i class="fas fa-tags mr-2"></i>Brands
@@ -92,9 +109,9 @@ $siteTitle = Config::get('navbar.site_title');
                     </div>
 
                     <!-- Sales Dropdown -->
-                    <div x-data="{ isOpen: false }" class="relative">
+            <div x-data="{ isOpen: false }" class="relative">
                         <button @click="isOpen = !isOpen" @keydown.escape.window="isOpen = false"
-                            class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors">
+                class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-lg text-sm font-medium flex items-center transition-colors">
                             <i class="fas fa-chart-line mr-2"></i>
                             <span>Sales</span>
                             @if(isset($pendingCodCount) && $pendingCodCount > 0)
@@ -114,8 +131,8 @@ $siteTitle = Config::get('navbar.site_title');
                         </button>
 
                         <div x-show="isOpen" @click.away="isOpen = false"
-                            class="absolute z-10 mt-2 w-48 rounded-md shadow-lg origin-top-right right-0">
-                            <div class="py-1 bg-white rounded-md shadow-xs">
+                class="absolute z-10 mt-2 w-56 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 origin-top-right right-0">
+                <div class="py-1 bg-white rounded-lg">
                                 <a href="{{ route('sales.index') }}"
                                     class="{{ request()->routeIs('sales.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
                                     <i class="fas fa-list mr-2"></i>Sales List
@@ -135,7 +152,7 @@ $siteTitle = Config::get('navbar.site_title');
                     <!-- Admin Section -->
                     @can('admin')
                     <a href="{{ route('users.index') }}"
-                        class="{{ request()->is('users*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                        class="{{ request()->is('users*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-lg text-sm font-medium">
                         <i class="fas fa-users-cog mr-2"></i>Manage Users
                     </a>
                     @endcan
@@ -143,7 +160,7 @@ $siteTitle = Config::get('navbar.site_title');
                     <form action="{{ route('backup.download') }}" method="POST" class="inline">
                         @csrf
                         <button type="submit"
-                            class="{{ request()->is('backup*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors">
+                            class="{{ request()->is('backup*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-lg text-sm font-medium flex items-center transition-colors">
                             <i class="fas fa-download mr-2"></i>Backup
                         </button>
                     </form>
@@ -153,8 +170,8 @@ $siteTitle = Config::get('navbar.site_title');
                     <!-- Low Stock Notification Dropdown -->
                     @if (isset($lowStockItems) && $lowStockItems->isNotEmpty())
                     <div x-data="{ open: false, dotVisible: true }" class="relative mr-4">
-                        <button @click="open = !open; dotVisible = false" class="notification-btn">
-                            <i :class="open ? 'far fa-bell' : 'fas fa-bell'"></i>
+                        <button @click="open = !open; dotVisible = false" class="relative inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors">
+                            <i :class="open ? 'far fa-bell' : 'fas fa-bell'" class="text-lg"></i>
                             <div x-show="dotVisible" class="notification-dot"></div>
                         </button>
                         <div x-show="open" @click.away="open = false" class="notification-dropdown">
@@ -192,6 +209,33 @@ $siteTitle = Config::get('navbar.site_title');
             </div>
         </div>
     </nav>
+    <!-- Mobile menu -->
+    <div x-show="mobileOpen" x-transition id="mobile-menu" class="sm:hidden border-b border-gray-100 bg-white">
+        <div class="px-4 pt-2 pb-3 space-y-1">
+            @role('admin|moderator')
+            <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('dashboard*') ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
+                <i class="fas fa-home mr-2"></i>Dashboard
+            </a>
+            @endrole
+            <a href="{{ route('items.index') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                <i class="fas fa-box mr-2"></i>Items
+            </a>
+            <a href="{{ route('sales.index') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                <i class="fas fa-list mr-2"></i>Sales
+            </a>
+            @can('admin')
+            <a href="{{ route('users.index') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                <i class="fas fa-users-cog mr-2"></i>Users
+            </a>
+            @endcan
+            <form action="{{ route('backup.download') }}" method="POST" class="px-3 py-2">
+                @csrf
+                <button type="submit" class="w-full inline-flex items-center justify-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                    <i class="fas fa-download mr-2"></i>Backup
+                </button>
+            </form>
+        </div>
+    </div>
     <!-- Content Area -->
     <div class="container mx-auto p-6">
         <div class="mb-4 flex justify-end">
@@ -1023,8 +1067,7 @@ $siteTitle = Config::get('navbar.site_title');
             </div>
             @endif
         </div>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
@@ -1044,6 +1087,8 @@ $siteTitle = Config::get('navbar.site_title');
             timerProgressBar: true
         });
         </script>
+
+
         @endif
 
         @if (session('error'))
@@ -1083,6 +1128,56 @@ $siteTitle = Config::get('navbar.site_title');
                 showAllCategories: false
             }))
         })
+        </script>
+        <script>
+        // Session duration timer driven by server-side last_login; runs until logout
+        (function () {
+            const timer = document.getElementById('sessionTimer');
+            if (!timer) return;
+            const loginAtIso = timer.getAttribute('data-login-at');
+            const out = document.getElementById('sessionDuration');
+            if (!loginAtIso || !out) return;
+
+            const loginAtMs = new Date(loginAtIso).getTime();
+            function fmt(ms) {
+                if (ms < 0) ms = 0;
+                const t = Math.floor(ms / 1000);
+                const h = String(Math.floor(t / 3600)).padStart(2, '0');
+                const m = String(Math.floor((t % 3600) / 60)).padStart(2, '0');
+                const s = String(t % 60).padStart(2, '0');
+                return `${h}:${m}:${s}`;
+            }
+            function tick() {
+                out.textContent = fmt(Date.now() - loginAtMs);
+            }
+            tick();
+            const id = setInterval(tick, 1000);
+
+            // Stop updating on logout form submission
+            document.addEventListener('submit', (e) => {
+                const form = e.target;
+                if (!form || !(form instanceof HTMLFormElement)) return;
+                const action = form.getAttribute('action') || '';
+                if (action.includes('/logout')) clearInterval(id);
+            }, true);
+        })();
+        </script>
+        <script>
+        // Lightweight heartbeat to keep the session active while the user is logged in
+        (function () {
+            const HEARTBEAT_MS = 60 * 1000; // every 60s
+            function ping() {
+                fetch('{{ route('session.keepalive') }}', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                }).catch(() => { /* ignore network errors */ });
+            }
+            // Start soon after load, then repeat
+            setTimeout(ping, 5000);
+            setInterval(ping, HEARTBEAT_MS);
+        })();
         </script>
 </body>
 <footer class="bg-gray-100 border-t border-gray-200 py-8">

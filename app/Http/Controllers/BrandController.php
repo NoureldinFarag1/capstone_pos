@@ -79,33 +79,67 @@ class BrandController extends Controller
 
         return redirect()->route('brands.index')->with('success', 'Brand updated successfully.');
     }
-
     public function destroy($id)
-    {
-        DB::beginTransaction();
-        try {
-            $brand = Brand::findOrFail($id);
+        {
+            DB::beginTransaction();
+            try {
+                $brand = Brand::findOrFail($id);
 
-            // Delete all items for this brand (delete variants first for parents)
-            $items = Item::where('brand_id', $brand->id)->get();
-            foreach ($items as $item) {
-                if ($item->is_parent) {
-                    Item::where('parent_id', $item->id)->delete();
-                }
-                $item->delete();
+                // Soft-delete the brand; keep items intact so they can be recovered with the brand
+                $brand->delete();
+
+                DB::commit();
+                return redirect()->route('brands.index')->with('success', 'Brand moved to trash. You can restore it within 30 days.');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Failed to soft delete brand: ' . $e->getMessage());
+                return redirect()->route('brands.index')->with('error', 'Failed to delete brand: ' . $e->getMessage());
+            }
+        }
+
+        public function trash(Request $request)
+        {
+            // List trashed brands within the last 30 days
+            $trashed = Brand::onlyTrashed()
+                ->where('deleted_at', '>=', now()->subDays(30))
+                ->orderByDesc('deleted_at')
+                ->get();
+
+            return view('brands.trash', compact('trashed'));
+        }
+
+        public function restore($id)
+        {
+            $brand = Brand::onlyTrashed()->findOrFail($id);
+
+            // Only allow restore within 30 days
+            if ($brand->deleted_at < now()->subDays(30)) {
+                return redirect()->route('brands.index')->with('error', 'Restore window expired (30 days).');
             }
 
-            // Finally delete the brand
-            $brand->delete();
-
-            DB::commit();
-            return redirect()->route('brands.index')->with('success', 'Brand and its items deleted successfully.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Failed to delete brand and items: ' . $e->getMessage());
-            return redirect()->route('brands.index')->with('error', 'Failed to delete brand: ' . $e->getMessage());
+            $brand->restore();
+            return redirect()->route('brands.index')->with('success', 'Brand restored successfully.');
         }
-    }
+
+        public function forceDelete($id)
+        {
+            $brand = Brand::onlyTrashed()->findOrFail($id);
+
+            // If outside 30 days, allow permanent delete; also allow manual permanent delete
+            try {
+                DB::beginTransaction();
+
+                // Optionally delete items here if business rule requires cleanup on permanent delete
+                // Item::where('brand_id', $brand->id)->delete();
+
+                $brand->forceDelete();
+                DB::commit();
+                return redirect()->route('brands.index')->with('success', 'Brand permanently deleted.');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return redirect()->route('brands.index')->with('error', 'Failed to permanently delete brand: ' . $e->getMessage());
+            }
+        }
     public function brandCount()
     {
         $count = Brand::count();

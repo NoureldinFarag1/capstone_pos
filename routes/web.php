@@ -1,6 +1,9 @@
 <?php
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ItemController;
@@ -59,8 +62,20 @@ Route::get('/test-write', function () {
     }
 });
 
-// Logout route
-Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
+// Logout route (controller not available, use closure)
+Route::post('/logout', function (Request $request) {
+    Auth::guard('web')->logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+    return redirect('/');
+})->name('logout');
+
+// Keepalive endpoint to refresh session activity
+Route::get('/keepalive', function () {
+    // Touch the session to keep it alive
+    Session::put('last_keepalive', now());
+    return response()->noContent();
+})->middleware(['web','auth'])->name('session.keepalive');
 
 // Update the daily report route to use query parameters
 Route::get('/sales/daily-report', [SaleController::class, 'generateDailyReport'])->name('sales.dailyReport');
@@ -105,6 +120,10 @@ Route::get('/customers/search', [CustomerController::class, 'search'])->name('cu
 Route::get('/customers/fetch-name', [CustomerController::class, 'fetchName']);
 
 // Resource routes for brands, categories, items, and sales
+// Brand trash management routes (must be before resource to avoid /brands/trash being treated as {brand})
+Route::get('/brands/trash', [BrandController::class, 'trash'])->name('brands.trash');
+Route::post('/brands/{id}/restore', [BrandController::class, 'restore'])->name('brands.restore');
+Route::delete('/brands/{id}/force-delete', [BrandController::class, 'forceDelete'])->name('brands.forceDelete');
 Route::resource('brands', BrandController::class);
 Route::get('/api/brands/count', [BrandController::class, 'brandCount']);
 // Brand print labels route

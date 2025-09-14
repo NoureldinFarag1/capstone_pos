@@ -17,6 +17,7 @@ use Mike42\Escpos\PrintConnectors\CupsPrintConnector;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB as FacadesDB;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Mike42\Escpos\EscposImage;
 use Illuminate\Support\Facades\Config;

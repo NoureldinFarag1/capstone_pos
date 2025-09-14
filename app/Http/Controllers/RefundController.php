@@ -201,9 +201,17 @@ class RefundController extends Controller
                 'refund.*.reason' => 'nullable|string|max:255',
             ]);
 
-            $sale = Sale::findOrFail($validated['sale_id']);
+            $sale = Sale::with('saleItems')->findOrFail($validated['sale_id']);
             $refunds = $validated['refund'] ?? [];
-            $totalRefundAmount = 0;
+
+            // Capture original values for accurate discount apportioning
+            $originalSubtotal = $sale->saleItems->sum('subtotal');
+            $discountType = $sale->discount_type ?? null; // 'percentage' or 'fixed' or null
+            $discountValue = (float) ($sale->discount_value ?? 0);
+            $discountRate = $discountType === 'percentage' ? ($discountValue / 100.0) : 0.0;
+            $shippingFees = (float) ($sale->shipping_fees ?? 0);
+
+            $totalRefundAmount = 0; // informational/logging
 
             foreach ($refunds as $saleItemId => $refundData) {
                 $quantityToRefund = $refundData['quantity'] ?? 0;
@@ -225,9 +233,29 @@ class RefundController extends Controller
 
                 $item = $saleItem->item;
 
-                // Calculate refund amount
-                $unitPrice = $saleItem->price;
-                $refundAmount = $unitPrice * $quantityToRefund;
+                // Calculate discount-aware refund amount
+                $unitPrice = (float) $saleItem->price;
+                $refundAmount = 0.0;
+
+                if ($discountType === 'percentage') {
+                    // Percentage discount applies uniformly across all items
+                    $netUnitPrice = max(0, $unitPrice * (1 - $discountRate));
+                    $refundAmount = $netUnitPrice * $quantityToRefund;
+                } elseif ($discountType === 'fixed' && $originalSubtotal > 0) {
+                    // Apportion fixed discount across line items by their share of original subtotal
+                    $lineSubtotal = (float) ($saleItem->subtotal ?? ($saleItem->quantity * $unitPrice));
+                    $lineShare = $lineSubtotal / $originalSubtotal; // 0..1
+                    $lineDiscountTotal = $lineShare * $discountValue; // total discount applied on this line
+                    $perUnitDiscount = $saleItem->quantity > 0 ? ($lineDiscountTotal / $saleItem->quantity) : 0.0;
+                    $netUnitPrice = max(0, $unitPrice - $perUnitDiscount);
+                    $refundAmount = $netUnitPrice * $quantityToRefund;
+                } else {
+                    // No discount
+                    $refundAmount = $unitPrice * $quantityToRefund;
+                }
+
+                // Round to 2 decimals for currency
+                $refundAmount = round($refundAmount, 2);
                 $totalRefundAmount += $refundAmount;
 
                 Log::info('Processing refund', [
@@ -279,8 +307,27 @@ class RefundController extends Controller
                 }
             }
 
-            // Update sale total amount
-            $sale->total_amount = max(0, $sale->total_amount - $totalRefundAmount);
+            // Recalculate sale amounts from remaining items
+            $remainingSubtotal = $sale->saleItems()->sum('subtotal');
+            $sale->subtotal = $remainingSubtotal;
+
+            // Recalculate discount amount from new subtotal
+            $newDiscountAmount = 0.0;
+            if ($discountType === 'percentage') {
+                $newDiscountAmount = $remainingSubtotal * $discountRate;
+            } elseif ($discountType === 'fixed') {
+                // Keep fixed value but cap at current subtotal
+                $newDiscountAmount = min($discountValue, $remainingSubtotal);
+            }
+            $newDiscountAmount = round($newDiscountAmount, 2);
+
+            // Persist absolute discount if the Sale model uses it
+            if (property_exists($sale, 'discount') || $sale->getAttributes() && array_key_exists('discount', $sale->getAttributes())) {
+                $sale->discount = $newDiscountAmount;
+            }
+
+            // Final total = subtotal - discount + shipping
+            $sale->total_amount = max(0, round($remainingSubtotal - $newDiscountAmount + $shippingFees, 2));
 
             // Update sale refund status
             if ($sale->saleItems()->count() === 0) {
@@ -288,10 +335,6 @@ class RefundController extends Controller
             } elseif ($totalRefundAmount > 0) {
                 $sale->refund_status = 'partial_refund';
             }
-
-            // Recalculate the sale's subtotal from the remaining sale items using cached saleItems
-            $remainingSubtotal = $sale->saleItems()->get()->sum('subtotal');
-            $sale->subtotal = $remainingSubtotal;
 
             $sale->save();
 
