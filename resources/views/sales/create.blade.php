@@ -359,6 +359,23 @@
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const form = document.getElementById('saleForm');
+                const submitBtn = form.querySelector('button[type="submit"]');
+
+                // Prevent double submit and show loading overlay early to reduce user retries on slow links
+                form.addEventListener('submit', function (e) {
+                    if (submitBtn.disabled) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('disabled');
+                    document.getElementById('loadingOverlay').style.display = 'block';
+                    // Allow form to submit normally
+                }, { once: true });
+            });
+
             // Retry customer search function (used by error retry button)
             function retryCustomerSearch(phoneNumber) {
                 const customerSearchResults = document.getElementById('customerSearchResults');
@@ -1308,7 +1325,7 @@
                         })
                     })
                     .then(response => response.json())
-                    .then(data => {
+                    .then((data) => {
                         // Hide loading overlay
                         document.getElementById('loadingOverlay').style.display = 'none';
 

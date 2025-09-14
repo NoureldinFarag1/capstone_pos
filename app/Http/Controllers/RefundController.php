@@ -156,6 +156,10 @@ class RefundController extends Controller
         }
 
         return $query->get()
+            // Filter out refunds without a sale or payment method
+            ->filter(function ($refund) {
+                return $refund->sale && !is_null($refund->sale->payment_method);
+            })
             ->groupBy('sale.payment_method')
             ->map(function ($refunds, $paymentMethod) {
                 return [
@@ -190,6 +194,7 @@ class RefundController extends Controller
     {
         return DB::transaction(function () use ($request) {
             // Validate the request data
+            // Note: 'refund.*.quantity' allows zero values, but refund quantities of zero are skipped in the processing loop below.
             $validated = $request->validate([
                 'sale_id' => 'required|exists:sales,id',
                 'refund.*.quantity' => 'nullable|numeric|min:0',
@@ -214,14 +219,14 @@ class RefundController extends Controller
                 // Validate refund quantity does not exceed sold quantity
                 if ($quantityToRefund > $saleItem->quantity) {
                     return redirect()->back()->withErrors([
-                        "Refund quantity for item '{$saleItem->item->name}' exceeds the sold quantity.",
+                        __('refund.exceed_quantity', ['item' => $saleItem->item->name]),
                     ]);
                 }
 
                 $item = $saleItem->item;
 
                 // Calculate refund amount
-                $unitPrice = $item->priceAfterSale();
+                $unitPrice = $saleItem->price;
                 $refundAmount = $unitPrice * $quantityToRefund;
                 $totalRefundAmount += $refundAmount;
 
@@ -233,7 +238,14 @@ class RefundController extends Controller
                 ]);
 
                 // Update item stock
-                $item->increment('quantity', $quantityToRefund);
+                // If your inventory system uses a different method, replace this with the appropriate stock update logic.
+                if (isset($item->quantity)) {
+                    $item->increment('quantity', $quantityToRefund);
+                } elseif (method_exists($item, 'increaseStock')) {
+                    $item->increaseStock($quantityToRefund);
+                } else {
+                    Log::warning("Item stock not updated: missing 'quantity' field or 'increaseStock' method.", ['item_id' => $item->id]);
+                }
 
                 // Create refund record
                 Refund::create([
@@ -268,7 +280,7 @@ class RefundController extends Controller
             }
 
             // Update sale total amount
-            $sale->total_amount -= $totalRefundAmount;
+            $sale->total_amount = max(0, $sale->total_amount - $totalRefundAmount);
 
             // Update sale refund status
             if ($sale->saleItems()->count() === 0) {
@@ -277,8 +289,9 @@ class RefundController extends Controller
                 $sale->refund_status = 'partial_refund';
             }
 
-            // Recalculate the sale's subtotal from the remaining sale items
-            $sale->subtotal = $sale->saleItems()->sum('subtotal');
+            // Recalculate the sale's subtotal from the remaining sale items using cached saleItems
+            $remainingSubtotal = $sale->saleItems()->get()->sum('subtotal');
+            $sale->subtotal = $remainingSubtotal;
 
             $sale->save();
 

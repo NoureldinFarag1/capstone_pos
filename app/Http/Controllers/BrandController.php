@@ -49,7 +49,7 @@ class BrandController extends Controller
         return redirect()->route('brands.index');
     }
 
-        public function edit($id)
+    public function edit($id)
     {
         $brand = Brand::findOrFail($id);
         return view('brands.edit', compact('brand'));
@@ -64,8 +64,12 @@ class BrandController extends Controller
 
         $brand = Brand::findOrFail($id);
 
-        // If a new picture is uploaded, store it
+        // If a new picture is uploaded, store it and delete the old one
         if ($request->hasFile('picture')) {
+            // Delete old picture if it exists
+            if ($brand->picture && Storage::disk('public')->exists($brand->picture)) {
+                Storage::disk('public')->delete($brand->picture);
+            }
             $picturePath = $request->file('picture')->store('brands', 'public');
             $brand->picture = $picturePath;
         }
@@ -225,6 +229,13 @@ class BrandController extends Controller
                             $totalItems++;
                         }
                     }
+                    if (
+                        !$item->barcode ||
+                        !file_exists(public_path("storage/{$item->barcode}"))
+                    ) {
+                        $this->regenerateBarcode($item);
+                        $item->refresh();
+                    }
                 }
                 // For regular items (not parents and not variants)
                 else if (!$item->parent_id) {
@@ -356,11 +367,11 @@ class BrandController extends Controller
                 $pdf->getDomPDF()->set_option('enable_php', true);
                 $pdf->getDomPDF()->set_option('enable_javascript', false);
                 $pdf->getDomPDF()->set_option('enable_remote', true);
-                $pdf->getDomPDF()->set_option('font_height_ratio', 1.0);
-                $pdf->getDomPDF()->set_option('isRemoteEnabled', true);
-
                 // Generate a unique temporary file name
                 $tempPath = $tempDir . '/label_' . $data['item']->id . '_' . time() . '.pdf';
+
+                // Save PDF temporarily
+                file_put_contents($tempPath, $pdf->output());
 
                 // Save PDF temporarily
                 $pdf->save($tempPath);
@@ -368,9 +379,19 @@ class BrandController extends Controller
                 // Print based on OS - use item quantity as the number of copies
                 $quantity = $data['item']->quantity;
                 if ($this->isWindows()) {
-                    $this->printLabelWindows($tempPath, $printerName, $quantity);
+                    try {
+                        $this->printLabelWindows($tempPath, $printerName, $quantity);
+                    } catch (\Exception $e) {
+                        Log::error('Windows label print failed: ' . $e->getMessage());
+                        continue; // Skip this label and continue with the next
+                    }
                 } else {
-                    $this->printLabelMac($tempPath, $printerName, $quantity);
+                    try {
+                        $this->printLabelMac($tempPath, $printerName, $quantity);
+                    } catch (\Exception $e) {
+                        Log::error('Mac label print failed: ' . $e->getMessage());
+                        continue; // Skip this label and continue with the next
+                    }
                 }
 
                 // Increment success counter by the quantity

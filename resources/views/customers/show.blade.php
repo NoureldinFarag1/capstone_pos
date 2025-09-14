@@ -4,14 +4,20 @@
 <div class="container mx-auto p-6">
     <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
         <div class="px-6 py-4 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
+            <div class="flex items-center">
+                <a href="{{ route('customers.index') }}"
+                   class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md transition-colors duration-150 focus:outline-none">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back
+                </a>
+            </div>
             <h1 class="text-xl font-semibold text-gray-800">Customer Details</h1>
             <div class="flex space-x-3">
+                <!--
                 <a href="{{ route('customers.edit', $customer->id) }}" class="bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-md inline-flex items-center">
                     <i class="fas fa-edit mr-2"></i> Edit
                 </a>
-                <a href="{{ route('customers.index') }}" class="text-blue-500 hover:text-blue-700">
-                    <i class="fas fa-arrow-left mr-1"></i> Back to List
-                </a>
+                -->
             </div>
         </div>
 

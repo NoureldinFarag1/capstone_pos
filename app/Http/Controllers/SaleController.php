@@ -16,7 +16,7 @@ use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
 use Mike42\Escpos\PrintConnectors\CupsPrintConnector;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\DB as FacadesDB;
 use Illuminate\Support\Facades\Log;
 use Mike42\Escpos\EscposImage;
 use Illuminate\Support\Facades\Config;
@@ -26,6 +26,7 @@ use App\Exports\HourlySalesReportExport;
 use App\Exports\PaymentMethodReportExport;
 use App\Exports\RefundsReportExport;
 use App\Exports\DailyTotalsReportExport;
+use App\Jobs\PrintSaleReceipt;
 
 class SaleController extends Controller
 {
@@ -140,133 +141,136 @@ class SaleController extends Controller
         $lastSale = Sale::where('sale_date', $today)->orderBy('display_id', 'desc')->first();
         $displayId = $lastSale ? $lastSale->display_id + 1 : 1;
 
-        // Create sale record
-        $sale = Sale::create([
-            'user_id' => \Illuminate\Support\Facades\Auth::user()->id,
-            'customer_id' => $customerId, // Link to customer model
-            'total_amount' => 0,  // Set initial value
-            'subtotal' => 0,      // Set initial value
-            'customer_name' => $request->customer_name,
-            'customer_phone' => $request->customer_phone,
-            'payment_method' => $request->payment_method,
-            'payment_reference' => $request->payment_reference,
-            'discount_type' => $validated['discount_type'],
-            'discount_value' => $validated['discount_value'],
-            'shipping_fees' => $request->shipping_fees ?? 0,
-            'address' => $request->address,
-            'notes' => $request->notes,
-            'display_id' => $displayId,
-            'sale_date' => $today,
-            'is_arrived' => ($request->payment_method === 'cod') ? 'pending' : null,
-        ]);
-
-        // Track the computed subtotal from sale items
-        $computedSubtotal = 0;
-
-        // Add sale items and update inventory
-        foreach ($request->items as $itemData) {
-            $item = Item::find($itemData['item_id']);
-
-            // Set price to 0 if item is marked as gift
-            $basePrice = $itemData['as_gift'] ? 0 : $itemData['price'];
-
-            // Calculate special discount
-            $specialDiscount = isset($itemData['special_discount']) ? floatval($itemData['special_discount']) : 0;
-            $specialDiscountAmount = $basePrice * ($specialDiscount / 100);
-            $finalPrice = $basePrice - $specialDiscountAmount;
-
-            // Calculate item subtotal after special discount
-            $itemSubtotal = $finalPrice * $itemData['quantity'];
-            $computedSubtotal += $itemSubtotal;
-
-            // Create sale item with the price, special discount and gift status
-            $sale->saleItems()->create([
-                'item_id' => $item->id,
-                'quantity' => $itemData['quantity'],
-                'price' => $basePrice,
-                'special_discount' => $specialDiscount,
-                'subtotal' => $itemSubtotal,
-                'as_gift' => $itemData['as_gift'],
+        // Use DB transaction with retry attempts; dispatch printing after response to avoid timeouts
+        return FacadesDB::transaction(function () use ($request, $customerId, $validated, $displayId, $today) {
+            // Create sale record
+            $sale = Sale::create([
+                'user_id' => \Illuminate\Support\Facades\Auth::user()->id,
+                'customer_id' => $customerId, // Link to customer model
+                'total_amount' => 0,  // Set initial value
+                'subtotal' => 0,      // Set initial value
+                'customer_name' => $request->customer_name,
+                'customer_phone' => $request->customer_phone,
+                'payment_method' => $request->payment_method,
+                'payment_reference' => $request->payment_reference,
+                'discount_type' => $validated['discount_type'],
+                'discount_value' => $validated['discount_value'],
+                'shipping_fees' => $request->shipping_fees ?? 0,
+                'address' => $request->address,
+                'notes' => $request->notes,
+                'display_id' => $displayId,
+                'sale_date' => $today,
+                'is_arrived' => ($request->payment_method === 'cod') ? 'pending' : null,
             ]);
 
-            // Update inventory
-            $item->decrement('quantity', $itemData['quantity']);
+            // Track the computed subtotal from sale items
+            $computedSubtotal = 0;
 
-            // If item is a variant, update the parent item's stock.
-            if ($item->parent_id) {
-                $parentItem = Item::findOrFail($item->parent_id);
-                $parentItem->quantity = $parentItem->variants()->sum('quantity');
-                $parentItem->save();
+            // Add sale items and update inventory
+            foreach ($request->items as $itemData) {
+                $item = Item::find($itemData['item_id']);
+
+                // Set price to 0 if item is marked as gift
+                $basePrice = $itemData['as_gift'] ? 0 : $itemData['price'];
+
+                // Calculate special discount
+                $specialDiscount = isset($itemData['special_discount']) ? floatval($itemData['special_discount']) : 0;
+                $specialDiscountAmount = $basePrice * ($specialDiscount / 100);
+                $finalPrice = $basePrice - $specialDiscountAmount;
+
+                // Calculate item subtotal after special discount
+                $itemSubtotal = $finalPrice * $itemData['quantity'];
+                $computedSubtotal += $itemSubtotal;
+
+                // Create sale item with the price, special discount and gift status
+                $sale->saleItems()->create([
+                    'item_id' => $item->id,
+                    'quantity' => $itemData['quantity'],
+                    'price' => $basePrice,
+                    'special_discount' => $specialDiscount,
+                    'subtotal' => $itemSubtotal,
+                    'as_gift' => $itemData['as_gift'],
+                ]);
+
+                // Update inventory
+                $item->decrement('quantity', $itemData['quantity']);
+
+                // If item is a variant, update the parent item's stock.
+                if ($item->parent_id) {
+                    $parentItem = Item::findOrFail($item->parent_id);
+                    $parentItem->quantity = $parentItem->variants()->sum('quantity');
+                    $parentItem->save();
+                }
             }
-        }
 
-        // Log the computed subtotal for debugging
-        Log::info('Computed Subtotal: ' . $computedSubtotal);
+            // Log the computed subtotal for debugging
+            Log::info('Computed Subtotal: ' . $computedSubtotal);
 
-        // Calculate actual discount amount
-        $discountAmount = 0;
-        if ($request->discount_type !== 'none' && $request->discount_value > 0) {
-            if ($request->discount_type === 'percentage') {
-                $discountAmount = $computedSubtotal * ($request->discount_value / 100);
-            } else if ($request->discount_type === 'fixed') {
-                $discountAmount = min($request->discount_value, $computedSubtotal);
+            // Calculate actual discount amount
+            $discountAmount = 0;
+            if ($request->discount_type !== 'none' && $request->discount_value > 0) {
+                if ($request->discount_type === 'percentage') {
+                    $discountAmount = $computedSubtotal * ($request->discount_value / 100);
+                } else if ($request->discount_type === 'fixed') {
+                    $discountAmount = min($request->discount_value, $computedSubtotal);
+                }
             }
-        }
 
-        // Log the discount calculation for debugging
-        Log::info('Discount Calculation: ', [
-            'type' => $request->discount_type,
-            'value' => $request->discount_value,
-            'amount' => $discountAmount
-        ]);
+            // Log the discount calculation for debugging
+            Log::info('Discount Calculation: ', [
+                'type' => $request->discount_type,
+                'value' => $request->discount_value,
+                'amount' => $discountAmount
+            ]);
 
-        // Calculate the total amount including shipping fees and discount
-        $shippingFees = $request->shipping_fees ?? 0;
-        $totalAmount = $computedSubtotal - $discountAmount + $shippingFees;
+            // Calculate the total amount including shipping fees and discount
+            $shippingFees = $request->shipping_fees ?? 0;
+            $totalAmount = $computedSubtotal - $discountAmount + $shippingFees;
 
-        // Ensure total is not negative
-        $totalAmount = max($totalAmount, 0);
+            // Ensure total is not negative
+            $totalAmount = max($totalAmount, 0);
 
-        // Log the final calculated amounts
-        Log::info('Final Calculations: ', [
-            'subtotal' => $computedSubtotal,
-            'discount' => $discountAmount,
-            'shipping' => $shippingFees,
-            'total' => $totalAmount
-        ]);
+            // Log the final calculated amounts
+            Log::info('Final Calculations: ', [
+                'subtotal' => $computedSubtotal,
+                'discount' => $discountAmount,
+                'shipping' => $shippingFees,
+                'total' => $totalAmount
+            ]);
 
-        // Update the sale with the correct calculated values
-        $sale->update([
-            'subtotal' => $computedSubtotal,
-            'total_amount' => $totalAmount,
-            'discount' => $discountAmount
-        ]);
+            // Update the sale with the correct calculated values
+            $sale->update([
+                'subtotal' => $computedSubtotal,
+                'total_amount' => $totalAmount,
+                'discount' => $discountAmount
+            ]);
 
-        // Update customer's total_spent amount if customer exists
-        if ($customerId) {
-            $customer->increment('total_spent', $totalAmount);
-        }
+            // Update customer's total_spent amount if customer exists (avoid undefined $customer)
+            if ($customerId) {
+                \App\Models\Customer::whereKey($customerId)->increment('total_spent', $totalAmount);
+            }
 
-        // Log the final sale record for debugging
-        Log::info('Final Sale Record: ', $sale->toArray());
+            // Log the final sale record for debugging
+            Log::info('Final Sale Record: ', $sale->toArray());
 
-        // Print the thermal receipt and open cash drawer
-        $this->printThermalReceipt($sale->id);
+            // Print the thermal receipt asynchronously AFTER the HTTP response is sent
+            PrintSaleReceipt::dispatchAfterResponse($sale->id);
 
-        return redirect()->route('sales.index')->with('success', 'Sale created successfully.');
+            return redirect()->route('sales.index')->with('success', 'Sale created successfully.');
+        }, 3);
     }
     private function getPrinterConnector()
     {
         $configPath = base_path('printer_config.json');
-        $config = json_decode(File::get($configPath), true);
+        $config = File::exists($configPath) ? json_decode(File::get($configPath), true) : [];
 
         if (PHP_OS_FAMILY === 'Windows') {
-            $printerName = $config['windows'];
+            $printerName = $config['windows'] ?? 'Receipt Printer';
             return new WindowsPrintConnector($printerName);
-        } else {
-            $printerName = $config['mac'];
-            return new CupsPrintConnector($printerName);
         }
+
+        $printerName = $config['mac'] ?? 'Receipt Printer';
+        return new CupsPrintConnector($printerName);
     }
 
     public function printGiftReceipt(Request $request)

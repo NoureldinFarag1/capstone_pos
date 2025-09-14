@@ -5,9 +5,11 @@
     <div class="bg-white rounded-lg shadow-md overflow-hidden">
         <div class="flex justify-between items-center px-6 py-4 bg-gray-100 border-b border-gray-200">
             <h1 class="text-xl font-semibold text-gray-800">Customer Management</h1>
+            <!--
             <a href="{{ route('customers.create') }}" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md">
                 <i class="fas fa-plus mr-2"></i>Add New Customer
             </a>
+            -->
         </div>
 
         <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
@@ -132,9 +134,11 @@
                                             <a href="{{ route('customers.show', $customer->id) }}" class="text-blue-600 hover:text-blue-900">
                                                 <i class="fas fa-eye"></i>
                                             </a>
+                                            <!--
                                             <a href="{{ route('customers.edit', $customer->id) }}" class="text-indigo-600 hover:text-indigo-900">
                                                 <i class="fas fa-edit"></i>
                                             </a>
+                                            -->
                                             <form action="{{ route('customers.destroy', $customer->id) }}" method="POST" class="inline-block"
                                                   onsubmit="return confirm('Are you sure you want to delete this customer?');">
                                                 @csrf
