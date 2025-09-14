@@ -376,6 +376,19 @@ class ItemController extends BaseController
 
     public function edit($id)
     {
+        // Remember the filtered items list URL so we can return to it after saving
+        $previous = url()->previous();
+        $indexUrl = route('items.index');
+        $indexPath = route('items.index', [], false); // "/items"
+        $prevPath = parse_url($previous, PHP_URL_PATH);
+        if ($previous && (
+                \Illuminate\Support\Str::startsWith($previous, $indexUrl) ||
+                ($prevPath && $prevPath === $indexPath)
+            )) {
+            // Store full previous URL including query string
+            session()->put('items.return_url', $previous);
+        }
+
         $item = Item::with(['variants', 'sizes', 'colors'])->findOrFail($id);
         $categories = Category::all();
         $brands = Brand::all();
@@ -387,7 +400,7 @@ class ItemController extends BaseController
         $hasNAColor = $item->colors()->where('name', 'N/A')->exists();
 
         if (!$item->is_parent) {
-            $parentItems = Item::where('is_parent', true)->get();
+            $parentItems = Item::where('is_parent', true)->with(['sizes', 'colors'])->get();
             return view('items.edit', compact('item', 'categories', 'brands', 'sizes', 'colors', 'parentItems', 'hasNASize', 'hasNAColor'));
         }
 
@@ -454,6 +467,14 @@ class ItemController extends BaseController
             }
 
             DB::commit();
+            // If we came from the items index with filters, go back there
+            $returnUrl = session()->pull('items.return_url');
+            $indexUrl = route('items.index');
+            $indexPath = route('items.index', [], false);
+            if ($returnUrl && (\Illuminate\Support\Str::startsWith($returnUrl, $indexUrl) || parse_url($returnUrl, PHP_URL_PATH) === $indexPath)) {
+                return redirect()->to($returnUrl)->with('success', 'Item updated successfully!');
+            }
+
             return redirect()->route('items.index')->with('success', 'Item updated successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
