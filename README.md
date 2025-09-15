@@ -47,6 +47,17 @@ LocalHub POS is an advanced Point of Sale solution built on Laravel that combine
 
 <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
   <div style="flex: 1; margin-right: 10px;">
+    <img src="public/screenshots/bulk-import.png" alt="Bulk Import" width="100%">
+    <p align="center"><em>Bulk Import - Import items via CSV/XLSX using template</em></p>
+  </div>
+  <div style="flex: 1; margin-left: 10px;">
+    <img src="public/screenshots/hourly-sales-report.png" alt="Hourly Sales Report" width="100%">
+    <p align="center"><em>Hourly Sales Report - Visualize intra-day performance</em></p>
+  </div>
+</div>
+
+<div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+  <div style="flex: 1; margin-right: 10px;">
     <img src="public/screenshots/pos-screen.png" alt="POS Screen" width="100%">
     <p align="center"><em>POS Interface - Streamlined checkout process</em></p>
   </div>
@@ -85,7 +96,7 @@ LocalHub POS is an advanced Point of Sale solution built on Laravel that combine
 - **Stock Control**: Real-time inventory tracking with low stock alerts
 - **Product Variants**: Support for products with multiple variants (size, color)
 - **Parent-Child Relationships**: Group related products under a parent item
-- **Bulk Import/Export**: Import/export inventory data via Excel/CSV
+- **Bulk Import/Export**: Import/export inventory data via CSV/XLSX, with downloadable template and sample (`test_import.csv`)
 - **Variant Bulk Editor**: Update quantities for multiple variants inline, then save all
 - **Add Variant Wizard**: Quickly add size/color variants right from the item edit screen
 - **Low Stock Alerts Drawer**: Notification bell with quick links to at-risk items
@@ -117,6 +128,12 @@ LocalHub POS is an advanced Point of Sale solution built on Laravel that combine
 - **Refund Analytics**: Refund KPIs, refund rate, and recent refund activity
 - **Payment Breakdown Widgets**: Daily and monthly payment method breakdowns
 - **Top Selling Brands (GOATS)**: All-time and monthly leaders with trends
+  
+  New Sales Reports:
+  - **Daily Sales Summary** (exportable)
+  - **Hourly Sales Report** (intra-day trend)
+  - **Payment Method Report** (by tender type)
+  - **Refunds Report** (time-bound refund overview)
 
 ### 💵 Cash Management
 - **Cash Tracking**: Monitor cash drawer contents
@@ -188,6 +205,7 @@ This project leverages a modern tech stack:
 ### File & Data Processing
 - **Laravel Excel/CSV** - For importing/exporting data
 - **File Storage** - For managing uploaded files and images
+  - Includes a downloadable import template and sample file (`test_import.csv`)
 
 ### Desktop Application
 - **Electron.js** - For wrapping the web app as a desktop application
@@ -269,6 +287,7 @@ Future plans for LocalHub POS include:
 - Low stock alerts notification drawer
 - Session keep-alive heartbeat and visible session timer
 - “Return to filtered list” after editing items
+ - New Sales Reports: Daily Sales Summary, Hourly Sales, Payment Method, and Refunds
 
 ### v1.0.0 (April 2025)
 - Initial release with core POS functionality
