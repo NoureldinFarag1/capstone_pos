@@ -25,6 +25,28 @@ LocalHub POS is an advanced Point of Sale solution built on Laravel that combine
 
 <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
   <div style="flex: 1; margin-right: 10px;">
+    <img src="public/screenshots/refund-analytics.png" alt="Refund Analytics" width="100%">
+    <p align="center"><em>Refund Analytics - KPIs, recent refunds, and trends</em></p>
+  </div>
+  <div style="flex: 1; margin-left: 10px;">
+    <img src="public/screenshots/cod-tracking.png" alt="COD Tracking" width="100%">
+    <p align="center"><em>COD Tracking - Manage cash-on-delivery orders</em></p>
+  </div>
+</div>
+
+<div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+  <div style="flex: 1; margin-right: 10px;">
+    <img src="public/screenshots/expenses.png" alt="Expenses" width="100%">
+    <p align="center"><em>Expenses - Track store expenses</em></p>
+  </div>
+  <div style="flex: 1; margin-left: 10px;">
+    <img src="public/screenshots/inventory-alerts.png" alt="Stock Alerts" width="100%">
+    <p align="center"><em>Low Stock Alerts - Quick access notification drawer</em></p>
+  </div>
+</div>
+
+<div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+  <div style="flex: 1; margin-right: 10px;">
     <img src="public/screenshots/pos-screen.png" alt="POS Screen" width="100%">
     <p align="center"><em>POS Interface - Streamlined checkout process</em></p>
   </div>
@@ -52,6 +74,8 @@ LocalHub POS is an advanced Point of Sale solution built on Laravel that combine
 - **Intuitive Sales UI**: Fast checkout process with product search and barcode scanning
 - **Discount System**: Apply percentage or fixed discounts to entire sales or individual items
 - **Returns & Exchanges**: Process returns and exchanges with full tracking
+- **Refund Analytics**: Dashboard KPIs, refund rate, and recent refunds list
+- **COD Tracking Board**: Dedicated view to track COD orders and statuses
 - **Gift Items**: Add complementary items to any purchase
 - **Cash Drawer Control**: Automatic cash drawer opening during sales
 - **Thermal Receipt Printing**: Direct integration with thermal receipt printers
@@ -62,6 +86,9 @@ LocalHub POS is an advanced Point of Sale solution built on Laravel that combine
 - **Product Variants**: Support for products with multiple variants (size, color)
 - **Parent-Child Relationships**: Group related products under a parent item
 - **Bulk Import/Export**: Import/export inventory data via Excel/CSV
+- **Variant Bulk Editor**: Update quantities for multiple variants inline, then save all
+- **Add Variant Wizard**: Quickly add size/color variants right from the item edit screen
+- **Low Stock Alerts Drawer**: Notification bell with quick links to at-risk items
 
 ### 🏷️ Barcode System
 - **Automatic Generation**: Generate barcodes for all inventory items
@@ -87,11 +114,15 @@ LocalHub POS is an advanced Point of Sale solution built on Laravel that combine
 - **Payment Method Reports**: Track sales by payment method
 - **Brand Performance**: Analyze sales performance by brand
 - **Excel/CSV Export**: Export all reports in various formats
+- **Refund Analytics**: Refund KPIs, refund rate, and recent refund activity
+- **Payment Breakdown Widgets**: Daily and monthly payment method breakdowns
+- **Top Selling Brands (GOATS)**: All-time and monthly leaders with trends
 
 ### 💵 Cash Management
 - **Cash Tracking**: Monitor cash drawer contents
 - **Cash Drawer Control**: Open cash drawer from the system
 - **Payment Recording**: Track all payment types
+- **Expenses Module**: Record and analyze operating expenses
 
 ### ⚙️ Store Settings
 - **Customizable Branding**: Configure store name, logo, and social media details
@@ -110,6 +141,7 @@ LocalHub POS is an advanced Point of Sale solution built on Laravel that combine
 - **Role-based Access Control**: Different permission levels for Admins, Managers, and Cashiers
 - **Input Validation**: Secure form processing and data validation
 - **CSRF Protection**: Prevention of cross-site request forgery
+- **Session Heartbeat**: Lightweight keep-alive to prevent unexpected logouts while in use
 
 ### 🖨️ Printing Technology
 - **ESC/POS Commands**: Industry standard for thermal receipt printers
@@ -159,6 +191,13 @@ This project leverages a modern tech stack:
 
 ### Desktop Application
 - **Electron.js** - For wrapping the web app as a desktop application
+
+## ✨ UX & Productivity Enhancements
+- **Modern Dashboard UI**: Glassmorphism navbar, gradients, and improved visual hierarchy
+- **Quick Actions**: One-click navigation to the most used operations
+- **Sticky Action Bars**: Important actions remain visible for long forms
+- **Session Timer**: Live session duration timer in the navbar
+- **Return-to-List Flow**: After editing, return to your filtered item list automatically
 
 ## 🏗️ Project Structure
 
@@ -219,6 +258,17 @@ Future plans for LocalHub POS include:
 - [ ] Enhanced reporting and analytics
 
 ## 📜 Changelog
+
+### v1.1.0 (September 2025)
+- Modernized dashboard UI with glass effects, gradients, and improved layout
+- Refunds now discount-aware; totals recomputed correctly in reports and analytics
+- Added Refund Analytics widget with KPIs and recent refunds
+- COD Tracking badge and view improvements
+- Expenses module added to Quick Actions and navigation
+- Variant bulk quantity editor and Add Variant wizard on item edit
+- Low stock alerts notification drawer
+- Session keep-alive heartbeat and visible session timer
+- “Return to filtered list” after editing items
 
 ### v1.0.0 (April 2025)
 - Initial release with core POS functionality
