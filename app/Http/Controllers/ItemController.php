@@ -19,11 +19,13 @@ use Picqer\Barcode\BarcodeGeneratorPNG;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
 use Illuminate\Support\Facades\Storage;
 use App\Exports\SalesPerBrandExport;
+use App\Exports\InventoryExport;
 
 class ItemController extends BaseController
 {
@@ -295,7 +297,7 @@ class ItemController extends BaseController
         $sortOrder = $request->input('sort_order', 'asc');
 
         // OPTIMIZED: Eager load relationships and transform data in a single query
-        $query = Item::with(['brand', 'category', 'sizes', 'colors', 'variants' => function($query) {
+    $query = Item::with(['brand', 'category', 'updatedBy', 'sizes', 'colors', 'variants' => function($query) {
                 // Only select necessary fields from variants to reduce data transfer
                 $query->select('id', 'parent_id', 'code', 'quantity');
             }])
@@ -411,6 +413,8 @@ class ItemController extends BaseController
     {
         DB::beginTransaction();
         try {
+            $userId = optional(Auth::user())->id;
+            $original = $item->toArray();
             if ($item->is_parent) {
                 // Update parent item
                 $item->update([
@@ -421,12 +425,13 @@ class ItemController extends BaseController
                     'tax' => $request->tax,
                     'discount_type' => $request->discount_type,
                     'discount_value' => $request->discount_value,
+                    'updated_by' => $userId,
                 ]);
 
                 // Handle picture upload
                 if ($request->hasFile('picture')) {
                     $picturePath = $request->file('picture')->store('items', 'public');
-                    $item->update(['picture' => $picturePath]);
+                    $item->update(['picture' => $picturePath, 'updated_by' => $userId]);
                 }
 
                 // Update all variants with new shared properties and names
@@ -444,13 +449,16 @@ class ItemController extends BaseController
                         $variantName = $request->name;
                     }
 
+                    $variantOriginal = $variant->toArray();
                     $variant->update([
                         'name' => $variantName,
                         'selling_price' => $request->selling_price,
                         'tax' => $request->tax,
                         'discount_type' => $request->discount_type,
                         'discount_value' => $request->discount_value,
+                        'updated_by' => $userId,
                     ]);
+                    $this->logItemChanges($variant, $variantOriginal, $userId);
                 }
             } else {
                 // Update variant
@@ -461,10 +469,14 @@ class ItemController extends BaseController
                 // Update parent's total quantity
                 if ($item->parent) {
                     $item->parent->update([
-                        'quantity' => $item->parent->variants()->sum('quantity')
+                        'quantity' => $item->parent->variants()->sum('quantity'),
+                        'updated_by' => $userId,
                     ]);
                 }
             }
+
+            // Log parent item changes
+            $this->logItemChanges($item, $original, $userId);
 
             DB::commit();
             // If we came from the items index with filters, go back there
@@ -497,7 +509,13 @@ class ItemController extends BaseController
 
     public function show($id)
     {
-        $item = Item::with(['category', 'brand', 'variants'])->findOrFail($id);
+        $item = Item::with(['category', 'brand', 'variants', 'updatedBy'])->findOrFail($id);
+        // Recent activity logs for this item
+        $activityLogs = \App\Models\ItemUpdateLog::with(['user'])
+            ->where('item_id', $item->id)
+            ->latest()
+            ->limit(25)
+            ->get();
         // If the brand no longer exists, remove this orphan item (and its variants) and redirect
         if (!$item->brand) {
             // delete variants first
@@ -505,7 +523,7 @@ class ItemController extends BaseController
             $item->delete();
             return redirect()->route('items.index')->with('success', 'Item removed because its brand was deleted.');
         }
-        return view('items.show', compact('item'));
+        return view('items.show', compact('item', 'activityLogs'));
     }
 
     public function getItemsByCategory($category_id)
@@ -615,12 +633,23 @@ class ItemController extends BaseController
     public function itemsExport(Request $request)
     {
         $brandId = $request->input('brand_id');
-        $items = Item::when($brandId, function ($query) use ($brandId) {
-            return $query->where('brand_id', $brandId);
-        })->get();
+        $variants = Item::with(['brand','category','updatedBy'])
+            ->when($brandId, fn($q)=>$q->where('brand_id', $brandId))
+            ->where('is_parent', false)
+            ->get();
+        $parents = Item::with(['brand','category','updatedBy'])
+            ->when($brandId, fn($q)=>$q->where('brand_id', $brandId))
+            ->where('is_parent', true)
+            ->get();
+        $updates = \App\Models\ItemUpdateLog::with(['item','user'])
+            ->when($brandId, function($q) use ($brandId) {
+                $q->whereHas('item', fn($iq)=>$iq->where('brand_id', $brandId));
+            })
+            ->orderByDesc('created_at')
+            ->limit(5000) // cap for practicality
+            ->get();
 
-        // Use Excel or CSV package (like Laravel Excel) to export
-        return Excel::download(new ItemsExport($items), 'items.xlsx');
+        return Excel::download(new InventoryExport($variants, $parents, $updates), 'inventory.xlsx');
     }
 
     /**
@@ -986,11 +1015,15 @@ class ItemController extends BaseController
 
             $totalQuantity = 0;
             $parentId = null;
+            $userId = optional(Auth::user())->id;
 
             foreach ($request->updates as $update) {
                 $variant = Item::findOrFail($update['id']);
+                $original = $variant->toArray();
                 $variant->quantity = (int) $update['quantity'];
+                $variant->updated_by = $userId;
                 $variant->save();
+                $this->logItemChanges($variant, $original, $userId);
 
                 $parentId = $variant->parent_id;
                 $totalQuantity += $variant->quantity;
@@ -999,8 +1032,11 @@ class ItemController extends BaseController
             // Update parent's quantity
             if ($parentId) {
                 $parent = Item::findOrFail($parentId);
+                $originalParent = $parent->toArray();
                 $parent->quantity = $totalQuantity;
+                $parent->updated_by = $userId;
                 $parent->save();
+                $this->logItemChanges($parent, $originalParent, $userId);
             }
 
             DB::commit();
@@ -1020,102 +1056,135 @@ class ItemController extends BaseController
         }
     }
 
+    /**
+     * Log item changes into item_update_logs table.
+     */
+    private function logItemChanges(Item $item, array $original, $userId = null): void
+    {
+        try {
+            $fresh = $item->fresh()->toArray();
+            // Fields to track
+            $track = [
+                'name','category_id','brand_id','selling_price','tax','discount_type','discount_value','quantity','picture','code','barcode'
+            ];
+            $changes = [];
+            foreach ($track as $field) {
+                $old = $original[$field] ?? null;
+                $new = $fresh[$field] ?? null;
+                if ($old !== $new) {
+                    $changes[$field] = ['old' => $old, 'new' => $new];
+                }
+            }
+            if (!empty($changes)) {
+                \App\Models\ItemUpdateLog::create([
+                    'item_id' => $item->id,
+                    'user_id' => $userId,
+                    'changes' => $changes,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Failed to log item changes: '.$e->getMessage());
+        }
+    }
+
     public function generateBarcodes()
     {
         try {
             $processed = 0;
             $errors = [];
+            $force = (bool) request('force', false);
 
-            // Get all parent items
-            $parentItems = Item::where('is_parent', true)->get();
-
-            if ($parentItems->isEmpty()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'No parent items found.',
-                    'processed' => 0
-                ]);
-            }
-
-            // Ensure the barcodes directory exists
+            // Ensure the barcodes directory exists once
             $barcodesPath = storage_path('app/public/barcodes');
-            if (!file_exists($barcodesPath)) {
+            if (!is_dir($barcodesPath)) {
                 mkdir($barcodesPath, 0755, true);
             }
 
             $barcodeGenerator = new BarcodeGeneratorPNG();
 
-            foreach ($parentItems as $parentItem) {
-                try {
-                    // Generate parent barcode if it doesn't exist
-                    if (empty($parentItem->code)) {
-                        $parentBarcode = Str::padLeft($parentItem->brand_id, 3, '0') .
-                            Str::padLeft($parentItem->category_id, 3, '0') .
-                            Str::padLeft($parentItem->id, 4, '0');
-
-                        $parentItem->code = $parentBarcode;
-                        $parentItem->save();
-                    } else {
-                        $parentBarcode = $parentItem->code;
+            // Process parents in chunks to lower memory usage
+            Item::where('is_parent', true)
+                ->orderBy('id')
+                ->chunkById(100, function ($parents) use (&$processed, &$errors, $barcodeGenerator, $force) {
+                    // Map parent_id => parentBarcode, ensure parent code exists
+                    $parentBarcodes = [];
+                    foreach ($parents as $parent) {
+                        if (empty($parent->code)) {
+                            $parent->code = Str::padLeft($parent->brand_id, 3, '0') .
+                                Str::padLeft($parent->category_id, 3, '0') .
+                                Str::padLeft($parent->id, 4, '0');
+                            // Save only when newly set
+                            $parent->save();
+                        }
+                        $parentBarcodes[$parent->id] = $parent->code;
                     }
 
-                    // Generate barcodes for all variants of this parent
-                    $variants = Item::where('parent_id', $parentItem->id)->get();
+                    // Fetch all variants for these parents at once with size/color ids eager loaded
+                    $parentIds = $parents->pluck('id');
+                    $variants = Item::with(['sizes:id', 'colors:id'])
+                        ->whereIn('parent_id', $parentIds)
+                        ->get();
 
                     foreach ($variants as $variant) {
                         try {
-                            // Get the first size and color for the variant
-                            $size = $variant->sizes->first();
-                            $color = $variant->colors->first();
+                            $sizeId = optional($variant->sizes->first())->id;
+                            $colorId = optional($variant->colors->first())->id;
+                            if (!$sizeId || !$colorId) {
+                                $errors[] = "Size or color missing for variant {$variant->id}";
+                                continue;
+                            }
 
-                            if ($size && $color) {
-                                $variantBarcode = $parentBarcode .
-                                    Str::padLeft($color->id, 2, '0') .
-                                    Str::padLeft($size->id, 2, '0');
+                            $parentBarcode = $parentBarcodes[$variant->parent_id] ?? null;
+                            if (!$parentBarcode) {
+                                $errors[] = "Missing parent barcode for variant {$variant->id}";
+                                continue;
+                            }
 
-                                $barcodePath = 'barcodes/' . $variantBarcode . '.png';
-                                $storagePath = storage_path('app/public/' . $barcodePath);
+                            $variantBarcode = $parentBarcode .
+                                Str::padLeft($colorId, 2, '0') .
+                                Str::padLeft($sizeId, 2, '0');
 
-                                $barcodeImage = $barcodeGenerator->getBarcode(
-                                    $variantBarcode,
-                                    $barcodeGenerator::TYPE_CODE_128,
-                                    3,
-                                    50
-                                );
+                            $barcodePath = 'barcodes/' . $variantBarcode . '.png';
+                            $storagePath = storage_path('app/public/' . $barcodePath);
 
-                                if (file_put_contents($storagePath, $barcodeImage)) {
+                            // Skip generation if file already exists and matches, unless forcing
+                            if (!$force && $variant->barcode === $barcodePath && file_exists($storagePath)) {
+                                continue;
+                            }
+
+                            $barcodeImage = $barcodeGenerator->getBarcode(
+                                $variantBarcode,
+                                $barcodeGenerator::TYPE_CODE_128,
+                                3,
+                                50
+                            );
+
+                            if (file_put_contents($storagePath, $barcodeImage) !== false) {
+                                // Update only when changed to minimize writes
+                                if ($variant->barcode !== $barcodePath || $variant->code !== $variantBarcode) {
                                     $variant->barcode = $barcodePath;
                                     $variant->code = $variantBarcode;
                                     $variant->save();
-                                    $processed++;
-                                    Log::info("Generated barcode for variant {$variant->id}: {$variantBarcode}");
-                                } else {
-                                    $errors[] = "Failed to save barcode image for variant {$variant->id}";
-                                    Log::error("Failed to save barcode image for variant {$variant->id}");
                                 }
+                                $processed++;
                             } else {
-                                $errors[] = "Size or color missing for variant {$variant->id}";
-                                Log::error("Size or color missing for variant {$variant->id}");
+                                $errors[] = "Failed to save barcode image for variant {$variant->id}";
                             }
-                        } catch (\Exception $e) {
+                        } catch (\Throwable $e) {
                             $errors[] = "Error processing variant {$variant->id}: " . $e->getMessage();
-                            Log::error("Barcode generation failed for variant {$variant->id}: " . $e->getMessage());
                         }
                     }
-                } catch (\Exception $e) {
-                    $errors[] = "Error processing parent item {$parentItem->id}: " . $e->getMessage();
-                    Log::error("Barcode generation failed for parent item {$parentItem->id}: " . $e->getMessage());
-                }
-            }
+                });
 
             return response()->json([
                 'success' => true,
                 'message' => $processed > 0 ? 'Barcodes generated successfully' : 'No barcodes generated',
                 'processed' => $processed,
-                'errors' => $errors
+                'errors' => $errors,
+                'forced' => $force,
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Barcode generation error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,

@@ -201,7 +201,11 @@ class RefundController extends Controller
                 'refund.*.reason' => 'nullable|string|max:255',
             ]);
 
-            $sale = Sale::with('saleItems')->findOrFail($validated['sale_id']);
+            // Lock the sale row for update to prevent concurrent modifications during refund
+            $sale = Sale::with('saleItems')
+                ->whereKey($validated['sale_id'])
+                ->lockForUpdate()
+                ->firstOrFail();
             $refunds = $validated['refund'] ?? [];
 
             // Capture original values for accurate discount apportioning

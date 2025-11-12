@@ -100,6 +100,11 @@ Route::get('/items/export-csv/{brand_id?}', [ItemController::class, 'exportCSV']
     ->name('items.exportCSV')
     ->middleware(['web', 'auth']);
 
+// XLSX multi-sheet inventory export (Inventory, Parent Items, Updates)
+Route::get('/items/export-xlsx', [ItemController::class, 'itemsExport'])
+    ->name('items.exportXlsx')
+    ->middleware(['web', 'auth']);
+
 Route::get('/items/sample-file', function () {
     $headers = ['name', 'brand_id', 'category_id', 'code', 'quantity', 'buying_price', 'selling_price', 'sale_price'];
     return response()->streamDownload(function () use ($headers) {
@@ -167,15 +172,16 @@ Route::get('/items/findByBarcode/{barcode}', function ($barcode) {
 });
 Route::post('/items/{id}/print-label', [ItemController::class, 'printLabel'])->name('items.print-label');
 Route::get('/refund', [RefundController::class, 'index'])->name('refunds.index');
-Route::get('/refund/create', [RefundController::class, 'create'])->name('refund.create');
-Route::post('/refund', [RefundController::class, 'store'])->name('refund.store');
+// Use a single canonical route for showing the refund form for a specific sale
 Route::get('/refund/create/{sale_id}', [RefundController::class, 'create'])->name('refund.create');
+// Process refund submissions
+Route::post('/refund', [RefundController::class, 'store'])->name('refund.store');
 Route::middleware(['auth'])->group(function () {
     Route::get('/cash-drawer', [CashDrawerController::class, 'showForm'])->name('cash-drawer.form');
     Route::post('/cash-drawer', [CashDrawerController::class, 'store'])->name('cash-drawer.store');
 });
-Route::get('/sales/{sale}/refund', [RefundController::class, 'create'])->name('refund.create');
-Route::post('/refund', [RefundController::class, 'store'])->name('refund.store');
+// Keep only one named route for refund creation to avoid ambiguity
+// Route::get('/sales/{sale}/refund', [RefundController::class, 'create'])->name('refund.create'); // Removed duplicate
 Route::resource('colors', ColorController::class);
 Route::post('/sales/print-gift-receipt', [SaleController::class, 'printGiftReceipt'])->name('sales.print-gift-receipt');
 Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');

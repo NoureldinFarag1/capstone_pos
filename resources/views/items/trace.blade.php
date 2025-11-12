@@ -191,7 +191,7 @@
                     <h1
                         class="text-3xl font-bold text-gray-900 flex items-center gap-3 animate__animated animate__fadeInDown">
                         <i class="fas fa-search-location text-blue-500"></i>
-                        Item Trace System
+                        Stock Movement Trace
                     </h1>
                     <p class="mt-2 text-gray-600 animate__animated animate__fadeInUp">Track sales history and performance
                         metrics for any item</p>

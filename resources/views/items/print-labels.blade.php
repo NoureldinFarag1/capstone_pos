@@ -8,7 +8,7 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h1 class="h3 mb-0">Print Item Labels</h1>
+                    <h1 class="h3 mb-0">Print Price Labels</h1>
                     <p class="text-muted">{{ count($labelData) }} items ready for printing</p>
                 </div>
                 <div class="d-flex gap-2">
@@ -16,7 +16,7 @@
                         <i class="fas fa-print me-2"></i>Print Labels
                     </button>
                     <a href="{{ route('items.index') }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Items
+                        <i class="fas fa-arrow-left me-2"></i>Back to All Items
                     </a>
                 </div>
             </div>

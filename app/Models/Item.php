@@ -26,6 +26,7 @@ class Item extends Model
         'is_parent',
         'code',
         'barcode',
+        'updated_by',
     ];
 
     public function category()
@@ -107,6 +108,16 @@ class Item extends Model
     public function variants()
     {
         return $this->hasMany(Item::class, 'parent_id');
+    }
+
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function updateLogs()
+    {
+        return $this->hasMany(ItemUpdateLog::class);
     }
 
 }

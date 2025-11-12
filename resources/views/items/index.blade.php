@@ -86,23 +86,17 @@
         <!-- Main Content Area -->
         <div class="col-lg-9 ps-lg-4">
             <!-- Page Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="fw-bold">Items</h1>
-                <div class="d-flex gap-2">
-                    <a href="{{ route('items.bulkImportPage') }}" class="btn btn-success">
-                        <i class="fas fa-upload"></i> Bulk Import
-                    </a>
-                    <a href="{{ route('items.create') }}" class="btn btn-primary">
-                        <i class="fas fa-plus-circle"></i> Add New Item
-                    </a>
-                    <button id="generateBarcodeBtn" class="btn btn-secondary">
-                        <i class="fas fa-barcode"></i> Generate Barcodes
-                    </button>
+            @include('items.partials._breadcrumbs', ['current' => 'All Items'])
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-end gap-3">
+                    <h1 class="fw-bold mb-0">All Items</h1>
+                    <span class="text-muted small">Showing {{ $items->firstItem() ?? 0 }} to {{ $items->lastItem() ?? 0 }} of {{ $items->total() ?? 0 }} items</span>
                 </div>
+                @include('items.partials._header_actions')
             </div>
 
             <!-- Clear Filters and Show All Items Buttons -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="d-flex gap-2">
                     <a href="{{ route('items.index') }}"
                        class="btn btn-outline-secondary {{ !request()->has('search') && !request()->has('brand_id') && !request()->has('show_all') ? 'disabled' : '' }}">
@@ -131,99 +125,7 @@
                     @foreach($items as $item)
                         @if($item->is_parent)
                             <div class="col-md-6 col-xl-4">
-                                <div class="card shadow-sm border-0 h-100 hover-shadow transition">
-                                    @if($item->quantity > 0)
-                                        <div class="position-absolute top-0 end-0 p-2">
-                                            <div class="form-check">
-                                                <input class="form-check-input item-checkbox"
-                                                       type="checkbox"
-                                                       value="{{ $item->id }}"
-                                                       id="item_{{ $item->id }}">
-                                                <label class="form-check-label" for="item_{{ $item->id }}">
-                                                    <span class="visually-hidden">Select for printing</span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    @endif
-                                    {{-- Show brand logo only if brand exists and has picture --}}
-                                    @if(optional($item->brand)->picture)
-                                        <div class="card-header bg-light border-0 py-2">
-                                            <img src="{{ asset('storage/' . $item->brand->picture) }}"
-                                                 alt="{{ $item->brand->name }}"
-                                                 class="brand-logo-sm"
-                                                 style="height: 30px; object-fit: contain;">
-                                        </div>
-                                    @endif
-                                    <div class="card-body d-flex flex-column">
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <a href="{{ route('items.show', $item->id) }}" class="text-decoration-none text-reset">
-                                                <h5 class="card-title fw-bold m-0">
-                                                    {{ $item->name }}@if(optional($item->brand)->name) - {{ $item->brand->name }}@endif
-                                                </h5>
-                                            </a>
-                                            @if($item->quantity <= 0)
-                                                <div class="stock-badge">
-                                                    <span class="badge bg-danger">Out of Stock</span>
-                                                </div>
-                                            @endif
-                                        </div>
-
-                                        <div class="item-details">
-                                            <div class="price-info mb-3">
-                                                <p class="mb-1 d-flex justify-content-between">
-                                                    <span class="text-muted">Base Price:</span>
-                                                    <span class="fw-bold">EGP{{ number_format($item->selling_price, 2) }}</span>
-                                                </p>
-                                                @if($item->discount_type === 'percentage')
-                                                    <p class="mb-1 d-flex justify-content-between">
-                                                        <span class="text-muted">Discount:</span>
-                                                        <span class='text-danger'>{{ $item->discount_value }}% OFF</span>
-                                                    </p>
-                                                @elseif($item->discount_type === 'fixed')
-                                                    <p class="mb-1 d-flex justify-content-between">
-                                                        <span class="text-muted">Discount:</span>
-                                                        <span class='text-danger'>EGP{{ number_format($item->discount_value, 2) }} OFF</span>
-                                                @endif
-                                                <p class="mb-1 d-flex justify-content-between">
-                                                    <span class="text-muted">Final Price:</span>
-                                                    <span class="fw-bold">
-                                                        EGP{{ number_format($item->priceAfterSale(), 2) }}
-                                                    </span>
-                                                </p>
-                                            </div>
-                                            <p class="mb-0 d-flex justify-content-between align-items-center">
-                                                <span class="text-muted">Stock:</span>
-                                                <span class="fw-medium">{{ $item->quantity }} units</span>
-                                            </p>
-                                        </div>
-
-                                        <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
-                                            <div class="d-flex gap-2">
-                                                @role('admin|moderator')
-                                                <a href="{{ route('items.edit', $item->id) }}" class="btn btn-outline-primary btn-sm">
-                                                    <i class="fas fa-edit"></i> Edit
-                                                </a>
-                                                @endrole
-                                                @if($item->quantity > 0)
-                                                    <a href="{{ route('items.printSingleLabel', $item->id) }}"
-                                                       class="btn btn-outline-success btn-sm"
-                                                       title="Print label for this item">
-                                                        <i class="fas fa-print"></i> Print Label
-                                                    </a>
-                                                @endif
-                                            </div>
-                                            @role('admin')
-                                                <form action="{{ route('items.destroy', $item->id) }}" method="POST" class="delete-item-form">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-outline-danger btn-sm">
-                                                        <i class="fas fa-trash-alt"></i> Delete
-                                                    </button>
-                                                </form>
-                                            @endrole
-                                        </div>
-                                    </div>
-                                </div>
+                                @include('items.partials._item-card', ['item' => $item])
                             </div>
                         @endif
                     @endforeach
@@ -307,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 return response.json();
             })
-            .then data => {
+            .then(data => {
                 if (data.success) {
                     Swal.fire({
                         title: 'Success!',
@@ -330,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .finally(() => {
                 button.disabled = false;
-                button.innerHTML = '<i class="fas fa-barcode"></i> Generate Barcodes';
+                button.innerHTML = '<i class="fas fa-barcode"></i> Create Barcodes';
             });
         });
     }
@@ -378,6 +280,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 @push('styles')
     <style>
+        /* Header toolbar spacing */
+        .btn-toolbar .btn { white-space: nowrap; }
+
         .color-preview {
             display: inline-block;
             border: 1px solid #dee2e6;
@@ -442,15 +347,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         /* Improve checkbox visibility on cards */
-        .card .form-check {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 4px;
-            padding: 2px;
-        }
-
-        .card:hover .form-check {
-            background: rgba(255, 255, 255, 1);
-        }
+        .card .form-check { background: rgba(255, 255, 255, 0.92); border-radius: 6px; padding: 3px 4px; }
+        .card:hover .form-check { background: rgba(255, 255, 255, 1); }
 
         /* Print labels button styling */
         .print-labels-section {
@@ -461,11 +359,11 @@ document.addEventListener('DOMContentLoaded', function () {
             margin-bottom: 0.25rem;
         }
 
-        /* Hover effects for cards with checkboxes */
-        .card.position-relative:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
+        /* Card improvements */
+        .card.hover-shadow { transition: box-shadow .2s, transform .2s; border: 1px solid #e9ecef; }
+        .card.hover-shadow:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,.12); }
+        .card .badge { font-weight: 500; }
+        .brand-logo-sm { filter: grayscale(15%); opacity: .9; }
     </style>
 @endpush
 @endsection

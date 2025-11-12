@@ -1,10 +1,11 @@
 @extends('layouts.dashboard')
 @section('content')
 <div class="container py-4">
+    @include('items.partials._breadcrumbs', ['current' => $item->name])
     <!-- Back Button -->
     <div class="mb-3">
         <a href="{{ route('items.index') }}" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-arrow-left"></i> Back to Items
+            <i class="fas fa-arrow-left"></i> Back to All Items
         </a>
     </div>
 
@@ -57,21 +58,27 @@
                         <span class="badge {{ $item->quantity > 0 ? 'bg-success' : 'bg-danger' }} badge-lg">
                             {{ $item->quantity > 0 ? 'In Stock' : 'Out of Stock' }}
                         </span>
-                        <span class="text-muted small">Last updated: {{ $item->updated_at->diffForHumans() }}</span>
+                        <span class="text-muted small text-end">
+                            @if($item->updatedBy)
+                                Last updated by <span class="fw-bold text-danger">{{ $item->updatedBy->name }}</span> {{ $item->updated_at->diffForHumans() }}
+                            @else
+                                Last updated: {{ $item->updated_at->diffForHumans() }}
+                            @endif
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Variants Table -->
+        <!-- Variants Table + Activity -->
         <div class="col-md-8">
             <div class="card shadow-sm">
                 <div class="card-header bg-light">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Item Variants</h5>
+                        <h5 class="mb-0">Variants & Stock</h5>
                         @role('admin|moderator')
-                        <button type="button" class="btn btn-primary btn-sm" id="saveAllQuantities">
-                            <i class="fas fa-save"></i> Save Changes
+                        <button type="button" class="btn btn-primary btn-sm" id="saveAllQuantities" title="Save stock changes for all variants">
+                            <i class="fas fa-save"></i> Save Stock Changes
                         </button>
                         @endrole
                     </div>
@@ -142,6 +149,43 @@
                     </div>
                 </div>
             </div>
+
+            @if(isset($activityLogs) && $activityLogs->isNotEmpty())
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Changes</h5>
+                    <span class="small text-muted">Who changed what and when</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>User</th>
+                                    <th>Field</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach($activityLogs as $log)
+                                @foreach(($log->changes ?? []) as $field => $diff)
+                                <tr>
+                                    <td class="text-nowrap">{{ $log->created_at->format('Y-m-d H:i') }}</td>
+                                    <td>{{ optional($log->user)->name ?? 'System' }}</td>
+                                    <td class="text-nowrap">{{ $field }}</td>
+                                    <td>{{ is_scalar($diff['old'] ?? null) ? ($diff['old'] ?? '') : json_encode($diff['old'] ?? '') }}</td>
+                                    <td>{{ is_scalar($diff['new'] ?? null) ? ($diff['new'] ?? '') : json_encode($diff['new'] ?? '') }}</td>
+                                </tr>
+                                @endforeach
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 </div>

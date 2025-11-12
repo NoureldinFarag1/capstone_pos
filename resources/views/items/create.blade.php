@@ -4,8 +4,8 @@
 <div class="container">
     <div class="card">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h2 class="mb-0">Create New Item</h2>
-            <a href="{{ route('items.index') }}" class="btn btn-light">← Back to Items</a>
+            <h2 class="mb-0">Add Item</h2>
+            <a href="{{ route('items.index') }}" class="btn btn-light">← Back to All Items</a>
         </div>
         <div class="card-body">
             @if(session('error'))
@@ -258,7 +258,7 @@
 
                 <div class="d-flex justify-content-end gap-2">
                     <a href="{{ route('items.index') }}" class="btn btn-secondary px-4">Cancel</a>
-                    <button type="submit" class="btn btn-primary px-4">Create Item</button>
+                    <button type="submit" class="btn btn-primary px-4">Save Item</button>
                 </div>
             </form>
         </div>

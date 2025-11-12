@@ -8,7 +8,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="fw-bold text-success">
-                        <i class="fas fa-check-circle me-2"></i>Import Results
+                        <i class="fas fa-check-circle me-2"></i>Import Summary
                     </h1>
                     <p class="text-muted mb-0">Review the results of your bulk import operation</p>
                 </div>
@@ -17,7 +17,7 @@
                         <i class="fas fa-upload me-1"></i> Import More Items
                     </a>
                     <a href="{{ route('items.index') }}" class="btn btn-secondary">
-                        <i class="fas fa-list me-1"></i> View All Items
+                        <i class="fas fa-list me-1"></i> Back to All Items
                     </a>
                 </div>
             </div>
@@ -72,7 +72,7 @@
                 <div class="col-lg-6 mb-4">
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-success text-white">
-                            <h5 class="mb-0"><i class="fas fa-plus me-2"></i>Created Items</h5>
+                            <h5 class="mb-0"><i class="fas fa-plus me-2"></i>Items Created</h5>
                         </div>
                         <div class="card-body">
                             <div class="list-group list-group-flush">

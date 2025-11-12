@@ -19,13 +19,16 @@ class ItemsExport implements FromCollection, WithHeadings, ShouldAutoSize
     {
         return $this->items->map(function ($item) {
             return [
+                'ID' => $item->id,
                 'Name' => $item->name,
                 'Brand' => $item->brand->name,
                 'Category' => $item->category->name,
                 'Stock' => $item->quantity,
                 'Regular Price' => $item->selling_price,
                 'Sale Price' => $item->priceAfterSale(),
-                'Total Value' => $item->quantity * $item->priceAfterSale()
+                'Total Value' => $item->quantity * $item->priceAfterSale(),
+                'Updated By' => optional($item->updatedBy)->name,
+                'Updated At' => optional($item->updated_at)->toDateTimeString(),
             ];
         });
     }
@@ -33,13 +36,16 @@ class ItemsExport implements FromCollection, WithHeadings, ShouldAutoSize
     public function headings(): array
     {
         return [
+            'ID',
             'Name',
             'Brand',
             'Category',
             'Stock',
             'Regular Price',
             'Sale Price',
-            'Total Value'
+            'Total Value',
+            'Updated By',
+            'Updated At'
         ];
     }
 }

@@ -189,14 +189,13 @@
                                 {{ $refund->created_at->format('M d, Y H:i') }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                @if($refund->sale->refund_status === 'partial_refund')
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                        Partial
-                                    </span>
-                                @elseif($refund->sale->refund_status === 'full_refund')
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                        Full
-                                    </span>
+                                @php($status = optional($refund->sale)->refund_status)
+                                @if($status === 'partial_refund')
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Partial</span>
+                                @elseif($status === 'full_refund')
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Full</span>
+                                @else
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">N/A</span>
                                 @endif
                             </td>
                         </tr>

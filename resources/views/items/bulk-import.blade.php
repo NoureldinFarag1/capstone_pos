@@ -7,8 +7,8 @@
             <!-- Page Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h1 class="fw-bold text-primary">
-                        <i class="fas fa-upload me-2"></i>Bulk Import Items
+                        <h1 class="fw-bold text-primary">
+                            <i class="fas fa-upload me-2"></i>Import Items from Excel
                     </h1>
                     <p class="text-muted mb-0">Import multiple items and variants from Excel or CSV files</p>
                 </div>

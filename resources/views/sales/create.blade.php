@@ -10,10 +10,29 @@
 
     <div class="container-fluid bg-light py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="create-sale-heading">Create New Sale</h1>
+            <div class="d-flex align-items-center gap-3">
+                <a href="{{ url()->previous() }}" class="btn btn-outline-secondary btn-sm" aria-label="Back to previous">← Back</a>
+                <h1 class="create-sale-heading mb-0">Create New Sale</h1>
+            </div>
             <button type="button" class="btn btn-outline-secondary btn-sm" id="keyboardShortcutsBtn">
                 <i class="fas fa-keyboard me-2"></i>Shortcuts
             </button>
+        </div>
+
+        <!-- Top Mini Summary Chip (sticky) -->
+        <div class="position-sticky" style="top: 0; z-index: 6;">
+            <div class="d-inline-flex align-items-center gap-3 bg-white border rounded-pill px-3 py-2 shadow-sm">
+                <span class="text-muted small d-flex align-items-center gap-2">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>Items</span>
+                    <span class="badge bg-secondary" id="topMiniItems">0</span>
+                </span>
+                <span class="vr"></span>
+                <span class="small d-flex align-items-center gap-2">
+                    <span class="text-muted">Total</span>
+                    <strong id="topMiniTotal">EGP 0.00</strong>
+                </span>
+            </div>
         </div>
 
         @if ($errors->any())
@@ -124,8 +143,24 @@
                 </form>
             </div>
 
-            <!-- Right side - Customer info & payment -->
+            <!-- Right side - Summary, Customer info & payment -->
             <div class="col-lg-4">
+                <!-- Summary Card -->
+                <div class="card sale-card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold">Summary</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">Items</span>
+                            <span id="saleSummaryItemCount" class="badge bg-secondary">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Total</span>
+                            <span id="saleSummaryTotal" class="fw-bold">EGP 0.00</span>
+                        </div>
+                    </div>
+                </div>
                 <!-- Customer Details Card -->
                 <div class="card sale-card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -144,11 +179,13 @@
                                     <i class="fas fa-search"></i>
                                 </button>
                             </div>
+                            <div id="customerPhoneError" class="invalid-feedback d-none"></div>
                             <div id="customerSearchResults" class="mt-1 d-none"></div>
                         </div>
                         <div class="mb-3">
                             <label for="customerName" class="form-label">Customer Name</label>
                             <input type="text" id="customerName" name="customer_name" class="form-control" form="saleForm">
+                            <div id="customerNameError" class="invalid-feedback d-none"></div>
                         </div>
                     </div>
                 </div>
@@ -173,6 +210,7 @@
                             <div class="mb-3" id="addressContainer">
                                 <label for="address" class="form-label">Delivery Address</label>
                                 <input type="text" id="address" name="address" class="form-control" form="saleForm">
+                                <div id="addressError" class="invalid-feedback d-none"></div>
                             </div>
                             <div class="mb-3" id="shippingFeesContainer">
                                 <label for="shippingFees" class="form-label">Shipping Fees</label>
@@ -188,15 +226,18 @@
                                 <label class="form-label mb-0">Discount</label>
                                 <a href="#" class="text-decoration-none text-muted small" id="clearDiscountBtn">Clear</a>
                             </div>
-                            <div class="input-group">
-                                <select id="discountType" class="form-select">
-                                    <option value="none" selected>No Discount</option>
-                                    <option value="percentage">Percentage</option>
-                                    <option value="fixed">Fixed Amount</option>
-                                </select>
-                                <input type="number" id="discountValue" class="form-control" min="0" value="0" style="max-width: 100px;">
+                            <div>
+                                <div class="input-group">
+                                    <select id="discountType" class="form-select">
+                                        <option value="none" selected>No Discount</option>
+                                        <option value="percentage">Percentage</option>
+                                        <option value="fixed">Fixed Amount</option>
+                                    </select>
+                                    <input type="number" id="discountValue" class="form-control" min="0" value="0" style="max-width: 100px;">
+                                </div>
+                                <div id="discountError" class="invalid-feedback d-none"></div>
+                                <div id="discountLimitInfo" class="small text-muted mt-1"></div>
                             </div>
-                            <div id="discountLimitInfo" class="small text-muted"></div>
                         </div>
 
                         <div class="mb-3">
@@ -360,8 +401,64 @@
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
+                // Mirror totals/item count into right Summary and sticky bar
+                const sourceSummaryTotalEl = document.getElementById('summaryTotal');
+                const sourceSummaryItemCountEl = document.getElementById('summaryItemCount');
+                const saleSummaryTotalEl = document.getElementById('saleSummaryTotal');
+                const saleSummaryItemCountEl = document.getElementById('saleSummaryItemCount');
+                const stickySaleTotalEl = document.getElementById('stickySaleTotal');
+                const topMiniItemsEl = document.getElementById('topMiniItems');
+                const topMiniTotalEl = document.getElementById('topMiniTotal');
+
+                function mirror() {
+                    if (saleSummaryTotalEl && sourceSummaryTotalEl) saleSummaryTotalEl.textContent = sourceSummaryTotalEl.textContent;
+                    if (stickySaleTotalEl && sourceSummaryTotalEl) stickySaleTotalEl.textContent = sourceSummaryTotalEl.textContent;
+                    if (saleSummaryItemCountEl && sourceSummaryItemCountEl) saleSummaryItemCountEl.textContent = sourceSummaryItemCountEl.textContent;
+                    if (topMiniTotalEl && sourceSummaryTotalEl) topMiniTotalEl.textContent = sourceSummaryTotalEl.textContent;
+                    if (topMiniItemsEl && sourceSummaryItemCountEl) topMiniItemsEl.textContent = sourceSummaryItemCountEl.textContent;
+                }
+                mirror();
+                if (sourceSummaryTotalEl) {
+                    const mo1 = new MutationObserver(mirror);
+                    mo1.observe(sourceSummaryTotalEl, { characterData: true, childList: true, subtree: true });
+                }
+                if (sourceSummaryItemCountEl) {
+                    const mo2 = new MutationObserver(mirror);
+                    mo2.observe(sourceSummaryItemCountEl, { characterData: true, childList: true, subtree: true });
+                }
+
+                // Prevent scroll from changing number inputs while focused
+                (function preventScrollOnNumberInputs() {
+                    function onWheelBlock(e) { e.preventDefault(); }
+                    function onKeyBlock(e) {
+                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                            e.preventDefault();
+                        }
+                    }
+                    document.addEventListener('focusin', function(e) {
+                        const t = e.target;
+                        if (t && t.tagName === 'INPUT' && t.type === 'number') {
+                            t.addEventListener('wheel', onWheelBlock, { passive: false });
+                            t.addEventListener('keydown', onKeyBlock);
+                        }
+                    });
+                    document.addEventListener('focusout', function(e) {
+                        const t = e.target;
+                        if (t && t.tagName === 'INPUT' && t.type === 'number') {
+                            t.removeEventListener('wheel', onWheelBlock);
+                            t.removeEventListener('keydown', onKeyBlock);
+                        }
+                    });
+                })();
+
                 const form = document.getElementById('saleForm');
                 const submitBtn = form.querySelector('button[type="submit"]');
+                const submitSaleBtn = document.getElementById('submitSaleBtn');
+                if (submitSaleBtn && form) {
+                    submitSaleBtn.addEventListener('click', function() {
+                        if (form.requestSubmit) form.requestSubmit(); else form.submit();
+                    });
+                }
 
                 // Prevent double submit and show loading overlay early to reduce user retries on slow links
                 form.addEventListener('submit', function (e) {
@@ -484,6 +581,19 @@
                 const customerLookupBtn = document.getElementById('customerLookupBtn');
                 const customerSearchResults = document.getElementById('customerSearchResults');
                 const customerStatus = document.getElementById('customerStatus');
+                const customerPhoneError = document.getElementById('customerPhoneError');
+                const customerNameError = document.getElementById('customerNameError');
+                const addressError = document.getElementById('addressError');
+                const discountError = document.getElementById('discountError');
+                // Discount section is always visible; no collapse logic needed
+
+                // Clear inline errors as user types/changes
+                if (customerPhoneInput) customerPhoneInput.addEventListener('input', () => clearFieldError(customerPhoneInput, customerPhoneError));
+                if (customerNameInput) customerNameInput.addEventListener('input', () => clearFieldError(customerNameInput, customerNameError));
+                const addressInputEl = document.getElementById('address');
+                if (addressInputEl) addressInputEl.addEventListener('input', () => clearFieldError(addressInputEl, addressError));
+                if (discountValueInput) discountValueInput.addEventListener('input', () => clearFieldError(discountValueInput, discountError));
+                if (discountTypeSelect) discountTypeSelect.addEventListener('change', () => clearFieldError(discountValueInput, discountError));
 
                 // Track items in cart
                 const addedItems = new Map();
@@ -1108,6 +1218,14 @@
                     discountTypeSelect.dispatchEvent(new Event('change'));
                 });
 
+                // Ensure Clear doesn't toggle collapse
+                const clearBtn = document.getElementById('clearDiscountBtn');
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                    });
+                }
+
                 // Calculate total price with discount - define as window level function
                 calculateTotal = function() {
                     const currentDiscountType = discountTypeSelect.value;
@@ -1412,24 +1530,31 @@
 
                     // If walk-in customer is not checked, validate customer fields
                     if (!skipCustomerInfoCheckbox.checked) {
+                        // Phone validation
                         if (!customerPhoneInput.value.trim()) {
-                            showToast('Please enter customer phone number.', 'error');
-                            customerPhoneInput.focus();
+                            setFieldError(customerPhoneInput, customerPhoneError, 'Please enter customer phone number.');
                             return false;
+                        } else {
+                            clearFieldError(customerPhoneInput, customerPhoneError);
                         }
-
+                        // Name validation
                         if (!customerNameInput.value.trim()) {
-                            showToast('Please enter customer name.', 'error');
-                            customerNameInput.focus();
+                            setFieldError(customerNameInput, customerNameError, 'Please enter customer name.');
                             return false;
+                        } else {
+                            clearFieldError(customerNameInput, customerNameError);
                         }
                     }
 
                     // If COD is selected, validate address
-                    if (paymentMethodSelect.value === 'cod' && !document.getElementById('address').value.trim()) {
-                        showToast('Please enter delivery address for Cash on Delivery orders.', 'error');
-                        document.getElementById('address').focus();
-                        return false;
+                    if (paymentMethodSelect.value === 'cod') {
+                        const addressInput = document.getElementById('address');
+                        if (!addressInput.value.trim()) {
+                            setFieldError(addressInput, addressError, 'Please enter delivery address for Cash on Delivery orders.');
+                            return false;
+                        } else {
+                            clearFieldError(addressInput, addressError);
+                        }
                     }
 
                     // Validate discount based on user role
@@ -1439,21 +1564,35 @@
 
                     if (userRole === 'cashier') {
                         if (discountType === 'percentage' && discountValue > 20) {
-                            showToast('As a cashier, percentage discount cannot exceed 20%.', 'error');
-                            discountValueInput.focus();
+                            setFieldError(discountValueInput, discountError, 'As a cashier, percentage discount cannot exceed 20%.');
                             return false;
-                        }
-
-                        if (discountType === 'fixed' && discountValue > 100) {
-                            showToast('As a cashier, fixed amount discount cannot exceed 100 EGP.', 'error');
-                            discountValueInput.focus();
+                        } else if (discountType === 'fixed' && discountValue > 100) {
+                            setFieldError(discountValueInput, discountError, 'As a cashier, fixed discount cannot exceed 100 EGP.');
                             return false;
+                        } else {
+                            clearFieldError(discountValueInput, discountError);
                         }
                     }
 
                     return true;
                 }
             });
+
+            // Helpers to show/clear inline validation state
+            function setFieldError(inputEl, errorEl, message) {
+                if (!inputEl || !errorEl) return;
+                inputEl.classList.add('is-invalid');
+                errorEl.textContent = message;
+                errorEl.classList.remove('d-none');
+                inputEl.focus();
+            }
+
+            function clearFieldError(inputEl, errorEl) {
+                if (!inputEl || !errorEl) return;
+                inputEl.classList.remove('is-invalid');
+                errorEl.textContent = '';
+                errorEl.classList.add('d-none');
+            }
 
             // Global special discount update function
             function updateSpecialDiscount(input, itemId) {
@@ -1468,5 +1607,25 @@
             }
         </script>
     @endpush
+
+    <!-- Sticky Action Bar -->
+    <div class="position-sticky bottom-0 bg-white border-top py-3 mt-3" style="z-index:5;">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-muted">Total</span>
+                <strong id="stickySaleTotal">EGP 0.00</strong>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">Cancel</a>
+                <button type="button" class="btn btn-success" id="submitSaleBtn">Complete Sale</button>
+            </div>
+        </div>
+    </div>
+    <style>
+    /* Hide number input spinners to reduce accidental changes */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+    </style>
     <meta name="csrf-token" content="{{ csrf_token() }}">
 @endsection
