@@ -11,8 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('items', function (Blueprint $table) {
-            $table->json('barcodes')->nullable(); // This will store the barcodes as a JSON array
+        Schema::create('item_size', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->unsignedBigInteger('item_id')->index('item_size_item_id_foreign');
+            $table->unsignedBigInteger('size_id')->index('item_size_size_id_foreign');
+            $table->timestamps();
         });
     }
 
@@ -21,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('items', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('item_size');
     }
 };

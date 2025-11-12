@@ -11,8 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sale_items', function (Blueprint $table) {
-            $table->boolean('is_exchanged')->default(false)->after('as_gift');
+        Schema::create('categories', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('name');
+            $table->string('picture')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -21,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sale_items', function (Blueprint $table) {
-            $table->dropColumn('is_exchanged');
-        });
+        Schema::dropIfExists('categories');
     }
 };

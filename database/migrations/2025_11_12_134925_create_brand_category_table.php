@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('colors', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('hex_code')->nullable();
+        Schema::create('brand_category', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->unsignedBigInteger('brand_id')->index('brand_category_brand_id_foreign');
+            $table->unsignedBigInteger('category_id')->index('brand_category_category_id_foreign');
             $table->timestamps();
         });
     }
@@ -24,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('colors');
+        Schema::dropIfExists('brand_category');
     }
 };

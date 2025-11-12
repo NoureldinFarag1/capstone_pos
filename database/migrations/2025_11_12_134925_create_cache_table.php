@@ -11,8 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sale_items', function (Blueprint $table) {
-            $table->decimal('subtotal', 10, 2)->nullable()->after('price');
+        Schema::create('cache', function (Blueprint $table) {
+            $table->string('key')->primary();
+            $table->mediumText('value');
+            $table->integer('expiration');
         });
     }
 
@@ -21,8 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sale_items', function (Blueprint $table) {
-            $table->dropColumn('subtotal');
-        });
+        Schema::dropIfExists('cache');
     }
 };

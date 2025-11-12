@@ -30,3 +30,5 @@ yarn-error.log
 main.cjs
 preload.cjs
 storage/
+\# Ignore Laravel schema dump files to prevent load-on-migrate issues
+/database/schema/*.sql

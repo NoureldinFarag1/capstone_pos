@@ -12,16 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('color_item', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('id');
             $table->unsignedBigInteger('item_id');
-            $table->unsignedBigInteger('color_id');
+            $table->unsignedBigInteger('color_id')->index('color_item_color_id_foreign');
             $table->timestamps();
 
-            // Foreign key constraints
-            $table->foreign('item_id')->references('id')->on('items')->onDelete('cascade');
-            $table->foreign('color_id')->references('id')->on('colors')->onDelete('cascade');
-
-            // Composite unique key to prevent duplicate entries
             $table->unique(['item_id', 'color_id']);
         });
     }

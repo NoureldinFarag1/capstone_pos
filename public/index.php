@@ -4,6 +4,12 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
+// Temporary: suppress PHP 8.4 deprecation notices from third-party libs (e.g., voku/portable-ascii)
+// until upstream packages fully adopt explicit nullable types. This does not hide errors.
+if (PHP_VERSION_ID >= 80400) {
+    error_reporting(error_reporting() & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+}
+
 // Determine if the application is in maintenance mode...
 if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
     require $maintenance;

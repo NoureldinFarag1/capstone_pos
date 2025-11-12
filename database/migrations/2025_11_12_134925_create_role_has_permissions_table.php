@@ -11,8 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sales', function (Blueprint $table) {
-            $table->enum('is_arrived', ['pending', 'arrived'])->nullable()->after('payment_method');
+        Schema::create('role_has_permissions', function (Blueprint $table) {
+            $table->unsignedBigInteger('permission_id');
+            $table->unsignedBigInteger('role_id')->index('role_has_permissions_role_id_foreign');
+
+            $table->primary(['permission_id', 'role_id']);
         });
     }
 
@@ -21,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sales', function (Blueprint $table) {
-            $table->dropColumn('is_arrived');
-        });
+        Schema::dropIfExists('role_has_permissions');
     }
 };

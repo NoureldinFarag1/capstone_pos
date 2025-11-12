@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sales', function (Blueprint $table) {
-            $table->string('customer_name')->nullable()->after('total_amount');
-            $table->string('customer_phone')->nullable()->after('customer_name');
+        Schema::create('sizes', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('name');
+            $table->string('type');
+            $table->timestamps();
         });
     }
 
@@ -22,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sales', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('sizes');
     }
 };
