@@ -93,7 +93,7 @@
     </div>
 
     <!-- Users Table Card -->
-    <div class="card">
+    <div class="card mb-4 users-card shadow-sm border-0">
         <div class="card-header pb-0">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -102,21 +102,34 @@
                         Manage your team members and their account permissions here
                     </p>
                 </div>
+                <form method="GET" action="{{ route('users.index') }}" class="d-flex align-items-center gap-2 role-filter-form">
+                    <label for="role" class="text-sm text-secondary me-2 mb-0">Filter by Role:</label>
+                    <select name="role" id="role" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="" {{ empty($normalizedSelected) ? 'selected' : '' }}>All</option>
+                        @foreach($availableRoles as $r)
+                            <option value="{{ strtolower($r) }}" {{ (strtolower($r) === strtolower($normalizedSelected)) ? 'selected' : '' }}>{{ $r }}</option>
+                        @endforeach
+                    </select>
+                    @if(request('role'))
+                        <a href="{{ route('users.index') }}" class="btn btn-link btn-sm text-decoration-none text-secondary" title="Clear filter">Reset</a>
+                    @endif
+                </form>
             </div>
-            <div class="card-body px-0 pt-0 pb-2">
+        </div>
+        <div class="card-body px-0 pt-0 pb-2">
                 <!-- Search Bar -->
                 <div class="p-4">
-                    <div class="input-group">
-                        <span class="input-group-text bg-gradient-primary">
-                            <i class="fas fa-search text-black"></i>
+                    <div class="input-group neutral-input-group">
+                        <span class="input-group-text neutral-input-addon">
+                            <i class="fas fa-search"></i>
                         </span>
-                        <input type="text" class="form-control" id="userSearch" placeholder="Search by name, email, or role...">
+                        <input type="text" class="form-control neutral-input" id="userSearch" placeholder="Search by name, email, or role...">
                     </div>
                 </div>
 
                 <div class="table-responsive p-0">
                     @if($users->count())
-                        <table class="table align-items-center mb-0">
+                        <table class="table table-hover users-table align-items-center mb-0">
                             <thead>
                                 <tr>
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">User</th>
@@ -140,7 +153,7 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge text-white {{ $user->hasRole('Admin') ? 'bg-primary' : ($user->hasRole('Moderator') ? 'bg-warning' : 'bg-success') }}">
+                                        <span class="badge role-badge {{ $user->hasRole('Admin') ? 'role-admin' : ($user->hasRole('Moderator') ? 'role-moderator' : 'role-cashier') }}">
                                             {{ $user->getRoleNames()->implode(', ') }}
                                         </span>
                                     </td>
@@ -192,7 +205,6 @@
                         </div>
                     @endif
                 </div>
-            </div>
         </div>
     </div>
 </div>
@@ -234,6 +246,86 @@
     .add-user-btn:hover {
         background-color: #23272b;
         color: #fff;
+    }
+
+    .users-card {
+        background-color: #ffffff;
+        border-radius: 1rem;
+        border: 1px solid #e7e7ec;
+    }
+
+    .users-card .card-header {
+        background-color: transparent;
+        border-bottom: 1px solid #f1f1f4;
+    }
+
+    .neutral-input-group .form-control,
+    .neutral-input {
+        border-color: #d5d5dc;
+        background-color: #fafafb;
+        color: #2d2d34;
+    }
+
+    .neutral-input:focus {
+        border-color: #b7b7c4;
+        box-shadow: none;
+    }
+
+    .neutral-input-addon {
+        background-color: #f0f0f3;
+        border-color: #d5d5dc;
+        color: #6a6a74;
+    }
+
+    .users-table thead th {
+        background-color: #f8f8fb;
+        color: #6c6f7a;
+        border-bottom-width: 1px;
+        border-bottom-color: #e6e6ef;
+    }
+
+    .users-table tbody tr {
+        border-bottom: 1px solid #f0f0f5;
+    }
+
+    .users-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .users-table tbody tr:hover {
+        background-color: #f6f6f9;
+    }
+
+    .role-badge {
+        border-radius: 999px;
+        font-size: 0.75rem;
+        text-transform: capitalize;
+        padding: 0.35rem 0.85rem;
+    }
+
+    .role-badge.role-admin {
+        background-color: #2f2f37;
+        color: #fff;
+    }
+
+    .role-badge.role-moderator {
+        background-color: #5d5d68;
+        color: #fff;
+    }
+
+    .role-badge.role-cashier {
+        background-color: #8d8d98;
+        color: #fff;
+    }
+    .role-filter-form select.form-select.form-select-sm {
+        min-width: 140px;
+        background-color: #fafafb;
+        border-color: #d5d5dc;
+        color: #2d2d34;
+    }
+    .role-filter-form select.form-select.form-select-sm:focus {
+        border-color: #b7b7c4;
+        box-shadow: none;
     }
 </style>
 @endpush

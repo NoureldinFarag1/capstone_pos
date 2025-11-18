@@ -369,7 +369,8 @@ class ItemController extends BaseController
             $query->where('brand_id', $brandId);
         }
 
-        $items = $query->get();
+    $items = $query->get();
+    /** @var \Illuminate\Support\Collection<int, object> $items */
 
         $filename = $brandId ? Brand::find($brandId)->name . '_items.xlsx' : 'all_items.xlsx';
 
@@ -670,9 +671,18 @@ class ItemController extends BaseController
     private static function getPrinterName()
     {
         $configPath = base_path('printer_config.json');
-        $config = json_decode(file_get_contents($configPath), true);
+        if (!file_exists($configPath)) {
+            throw new \RuntimeException('Printer configuration file not found: ' . $configPath);
+        }
 
-        return self::isWindows() ? $config['windows'] : $config['mac'];
+        $config = json_decode(file_get_contents($configPath), true) ?: [];
+        $printer = self::isWindows() ? ($config['windows'] ?? null) : ($config['mac'] ?? null);
+
+        if (!$printer) {
+            throw new \RuntimeException('Printer name not configured for ' . (self::isWindows() ? 'Windows' : 'Mac/Linux'));
+        }
+
+        return $printer;
     }
 
     /**
@@ -693,7 +703,7 @@ class ItemController extends BaseController
             $quantity = (int) $request->input('quantity', 1);
 
             // Get printer name from config instead of hardcoding
-            $printerName = $this->getPrinterName();
+            $printerName = self::getPrinterName();
 
             // For variants, ensure we have the correct barcode
             if ($item->parent_id) {
@@ -744,7 +754,7 @@ class ItemController extends BaseController
             $pdf->save($tempPath);
 
             // Print based on OS
-            if ($this->isWindows()) {
+            if (self::isWindows()) {
                 $result = $this->printLabelWindows($tempPath, $printerName, $quantity);
             } else {
                 $result = $this->printLabelMac($tempPath, $printerName, $quantity);
@@ -869,6 +879,40 @@ class ItemController extends BaseController
         }
     }
 
+    /**
+     * Try to resolve SumatraPDF path on Windows; allow override via printer_config.json
+     * @return string Quoted executable path
+     */
+    private static function resolveSumatraPath(): string
+    {
+        // Allow overriding via config
+        try {
+            $configPath = base_path('printer_config.json');
+            if (file_exists($configPath)) {
+                $cfg = json_decode(file_get_contents($configPath), true) ?: [];
+                $path = $cfg['windows_sumatra_path'] ?? null;
+                if ($path && is_string($path)) {
+                    return '"' . $path . '"';
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore and fallback to defaults
+        }
+
+        // Common install locations
+        $candidates = [
+            'C:\\Program Files\\SumatraPDF\\SumatraPDF.exe',
+            'C:\\Program Files (x86)\\SumatraPDF\\SumatraPDF.exe',
+        ];
+        foreach ($candidates as $cand) {
+            if (file_exists($cand)) {
+                return '"' . $cand . '"';
+            }
+        }
+        // Fallback to default 64-bit path quoted; Sumatra may still be in PATH
+        return '"C:\\Program Files\\SumatraPDF\\SumatraPDF.exe"';
+    }
+
     public function exportCSV($brandId = null)
     {
         // Query builder for items
@@ -902,7 +946,8 @@ class ItemController extends BaseController
         $csvData .= "DETAILED INVENTORY LIST\n";
         $csvData .= "Brand,Item Name,Stock,Regular Price,Discount,Sale Price,Stock Value\n";
 
-        foreach ($items as $item) {
+    /** @var object $item */
+    foreach ($items as $item) {
             // Calculate values
             $salePrice = $item->discount_type === 'percentage'
                 ? $item->selling_price * (1 - ($item->discount_value / 100))
@@ -1218,12 +1263,14 @@ class ItemController extends BaseController
             $query->where('items.brand_id', $brandId);
         }
 
-        $items = $query->get();
+    $items = $query->get();
+    /** @var \Illuminate\Support\Collection<int, object> $items */
 
         // Create CSV data
         $csvData = "Brand,Item,Stock Quantity,Regular Price,Discount,Final Price\n";
 
-        foreach ($items as $item) {
+    /** @var object $item */
+    foreach ($items as $item) {
             $finalPrice = $item->discount_type === 'percentage'
                 ? $item->selling_price * (1 - ($item->discount_value / 100))
                 : $item->selling_price - $item->discount_value;
@@ -1575,11 +1622,11 @@ class ItemController extends BaseController
         $pdf->save($tempPath);
 
         // Get printer name from config
-        $printerName = $this->getPrinterName();
+    $printerName = self::getPrinterName();
 
         // Print based on OS
         try {
-            if ($this->isWindows()) {
+            if (self::isWindows()) {
                 $result = $this->printLabelWindows($tempPath, $printerName, 1);
             } else {
                 $result = $this->printLabelMac($tempPath, $printerName, 1);

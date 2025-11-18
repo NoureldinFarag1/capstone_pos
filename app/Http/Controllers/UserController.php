@@ -13,25 +13,38 @@ class UserController extends Controller
 {
     use AuthorizesRequests;
     // List all users
-    public function index()
+    public function index(Request $request)
     {
-        // OPTIMIZED: Get users with roles using eager loading (already good)
-        $users = User::with('roles')->get();
+        // Available roles for filtering (normalized)
+        $availableRoles = ['Admin','Moderator','Cashier'];
+        $selectedRole = $request->query('role');
+        $normalizedSelected = $selectedRole ? ucfirst(strtolower($selectedRole)) : null;
 
-        // OPTIMIZED: Replace multiple role count queries with a single query
+        // Base query with eager loading
+        $query = User::with('roles');
+
+        if ($normalizedSelected && in_array($normalizedSelected, $availableRoles, true)) {
+            $query->whereHas('roles', function($q) use ($normalizedSelected) {
+                $q->where(DB::raw('LOWER(name)'), strtolower($normalizedSelected));
+            });
+        }
+
+        $users = $query->get();
+
+        // Case-insensitive role counts to handle inconsistent role naming (e.g., 'admin' vs 'Admin')
         $roleCounts = User::join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
             ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
             ->where('model_has_roles.model_type', User::class)
-            ->select('roles.name', DB::raw('COUNT(*) as count'))
-            ->groupBy('roles.name')
-            ->pluck('count', 'name')
+            ->select(DB::raw('LOWER(roles.name) as name_lower'), DB::raw('COUNT(*) as count'))
+            ->groupBy('name_lower')
+            ->pluck('count', 'name_lower')
             ->toArray();
 
-        $adminCount = $roleCounts['Admin'] ?? 0;
-        $moderatorCount = $roleCounts['Moderator'] ?? 0;
-        $cashierCount = $roleCounts['Cashier'] ?? 0;
+        $adminCount = $roleCounts['admin'] ?? 0;
+        $moderatorCount = $roleCounts['moderator'] ?? 0;
+        $cashierCount = $roleCounts['cashier'] ?? 0;
 
-        return view('users.index', compact('users', 'adminCount', 'moderatorCount', 'cashierCount'));
+    return view('users.index', compact('users', 'adminCount', 'moderatorCount', 'cashierCount', 'availableRoles', 'normalizedSelected'));
     }
 
     // Create user view
@@ -50,12 +63,14 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:admin,manager,cashier',
+            // Allow both capitalized and lowercase variants for robustness
+            'role' => 'required|in:admin,Admin,moderator,Moderator,cashier,Cashier',
         ]);
         $username = strtolower(str_replace(' ', '_', $request->name));
-
-        $role = $request->role;
-        $email = "{$username}@{$role}.lhub";
+        // Normalize role naming to capitalized form used in counts/display
+        $roleInput = $request->role;
+        $normalizedRole = ucfirst(strtolower($roleInput));
+        $email = "{$username}@" . strtolower($normalizedRole) . ".lhub";
 
         $user = User::create([
             'name' => $request->name,
@@ -63,7 +78,7 @@ class UserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        $user->assignRole($request->role);
+    $user->assignRole($normalizedRole);
 
         return redirect()->route('users.index')->with('success', 'User created successfully');
     }
@@ -84,7 +99,7 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|unique:users,email,' . $id,
-            'role' => 'required|in:admin,moderator,cashier',
+            'role' => 'required|in:admin,Admin,moderator,Moderator,cashier,Cashier',
         ]);
 
         $user = User::findOrFail($id);
@@ -93,24 +108,22 @@ class UserController extends Controller
             'email' => $request->email,
         ]);
 
-        $oldRole = $user->getRoleNames()->first();
+    $oldRole = $user->getRoleNames()->first();
 
         // Update the user's name
         $user->name = $request->name;
 
         // If the role has changed, update the email
-        if ($oldRole !== $request->role) {
-            // Replace spaces with underscores in the name
+        $newRoleInput = $request->role;
+        $normalizedRole = ucfirst(strtolower($newRoleInput));
+        if ($oldRole !== $normalizedRole) {
             $username = strtolower(str_replace(' ', '_', $request->name));
-
-            // Generate the new email based on the role
-            $role = $request->role;
-            $user->email = "{$username}@{$role}.com";
+            $user->email = "{$username}@" . strtolower($normalizedRole) . ".lhub";
         }
 
         $user->save();
 
-        $user->syncRoles($request->role); // Sync new role
+    $user->syncRoles($normalizedRole); // Sync new role
         return redirect()->route('users.index')->with('success', 'User updated successfully');
     }
 

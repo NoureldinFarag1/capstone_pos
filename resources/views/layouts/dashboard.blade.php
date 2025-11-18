@@ -32,9 +32,9 @@ $siteTitle = Config::get('navbar.site_title');
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <!-- Left Section: Session Timer then Logo (timer at far-left) -->
-                <div class="flex items-center gap-3">
-                    <!-- Session duration (since login) - moved to far-left -->
-                    <div id="sessionTimer" class="relative" aria-label="Active session duration"
+                <div class="flex items-center gap-4">
+                    <!-- Floating session timer now positioned far-left -->
+                    <div id="sessionTimer" class="session-timer-floating" aria-label="Active session duration"
                          @if($user && $user->last_login) data-login-at="{{ $user->last_login->toIso8601String() }}" @endif>
                         <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-sm text-indigo-700">
                             <i class="fas fa-hourglass-half"></i>
@@ -42,7 +42,7 @@ $siteTitle = Config::get('navbar.site_title');
                         </span>
                     </div>
 
-                    <a href="#" class="flex items-center no-underline">
+                    <a href="#" class="flex items-center no-underline pl-20">
                         <img src="{{ asset($navbarLogoPath) }}" alt="LocalHUB Logo" class="h-12 w-auto ml-1">
                         <img src="{{ asset($navbarTextLogoPath) }}" alt="LocalHUB" class="h-8 w-auto mr-1">
                     </a>
@@ -62,18 +62,19 @@ $siteTitle = Config::get('navbar.site_title');
                     <!-- Dashboard -->
                     @role('admin|moderator')
                     <a href="{{ route('dashboard') }}"
-                        class="{{ request()->is('dashboard*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-lg text-sm font-medium no-underline">
-                        <i class="fas fa-home mr-2"></i>Dashboard
+                        class="nav-link-clean {{ request()->is('dashboard*') ? 'active' : '' }}">
+                        <i class="fas fa-home icon"></i>
+                        <span>Dashboard</span>
                     </a>
                     @endrole
 
                     <!-- Inventory Dropdown -->
             <div x-data="{ isOpen: false }" class="relative no-underline">
                         <button @click="isOpen = !isOpen" @keydown.escape.window="isOpen = false"
-                class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-lg text-sm font-medium flex items-center transition-colors">
-                            <i class="fas fa-box-open mr-2"></i>
+                class="nav-link-clean {{ (request()->is('brands*') || request()->is('categories*') || request()->is('items*') || request()->is('sizes*') || request()->is('colors*')) ? 'active' : '' }}">
+                            <i class="fas fa-box-open icon"></i>
                             <span>Inventory</span>
-                            <svg class="ml-2 h-4 w-4 transform transition-transform duration-200"
+                            <svg class="h-4 w-4 transform transition-transform duration-200"
                                 :class="{ 'rotate-180': isOpen }" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd"
                                     d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
@@ -81,39 +82,33 @@ $siteTitle = Config::get('navbar.site_title');
                             </svg>
                         </button>
 
-                        <div x-show="isOpen" @click.away="isOpen = false"
-                class="absolute z-10 mt-2 w-56 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 origin-top-right right-0">
-                <div class="py-1 bg-white rounded-lg">
-                                <a href="{{ route('brands.index') }}"
-                                    class="{{ request()->routeIs('brands.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
-                                    <i class="fas fa-tags mr-2"></i>Brands
+                        <div x-show="isOpen" @click.away="isOpen = false" class="nav-dropdown-panel">
+                <div class="py-1 rounded-lg">
+                                <a href="{{ route('brands.index') }}" class="{{ request()->routeIs('brands.index') ? 'active' : '' }}">
+                                    <i class="fas fa-tags icon"></i><span>Brands</span>
                                 </a>
-                                <a href="{{ route('categories.index') }}"
-                                    class="{{ request()->routeIs('categories.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
-                                    <i class="fas fa-th-list mr-2"></i>Categories
+                                <a href="{{ route('categories.index') }}" class="{{ request()->routeIs('categories.index') ? 'active' : '' }}">
+                                    <i class="fas fa-th-list icon"></i><span>Categories</span>
                                 </a>
-                                <a href="{{ route('items.index') }}"
-                                    class="{{ request()->routeIs('items.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
-                                    <i class="fas fa-box mr-2"></i>Items
+                                <a href="{{ route('items.index') }}" class="{{ request()->routeIs('items.index') ? 'active' : '' }}">
+                                    <i class="fas fa-box icon"></i><span>Items</span>
                                 </a>
-                                <a href="{{ route('sizes.index') }}"
-                                    class="{{ request()->routeIs('sizes.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
-                                    <i class="fas fa-ruler mr-2"></i>Sizes
+                                <a href="{{ route('sizes.index') }}" class="{{ request()->routeIs('sizes.index') ? 'active' : '' }}">
+                                    <i class="fas fa-ruler icon"></i><span>Sizes</span>
                                 </a>
-                                <a href="{{ route('colors.index') }}"
-                                    class="{{ request()->routeIs('colors.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
-                                    <i class="fas fa-tint mr-2"></i>Colors
+                                <a href="{{ route('colors.index') }}" class="{{ request()->routeIs('colors.index') ? 'active' : '' }}">
+                                    <i class="fas fa-tint icon"></i><span>Colors</span>
                                 </a>
                             </div>
                         </div>
                     </div>
 
                     <!-- Sales Dropdown -->
-            <div x-data="{ isOpen: false }" class="relative">
-                        <button @click="isOpen = !isOpen" @keydown.escape.window="isOpen = false"
-                class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-lg text-sm font-medium flex items-center transition-colors">
-                            <i class="fas fa-chart-line mr-2"></i>
-                            <span>Sales</span>
+        <div x-data="{ isOpen: false }" class="relative">
+            <button @click="isOpen = !isOpen" @keydown.escape.window="isOpen = false"
+        class="nav-link-clean {{ request()->is('sales*') ? 'active' : '' }}">
+                <i class="fas fa-chart-line icon"></i>
+                <span>Sales</span>
                             @if(isset($pendingCodCount) && $pendingCodCount > 0)
                             <span class="absolute -top-1 -right-1 flex h-4 w-4">
                                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
@@ -130,20 +125,16 @@ $siteTitle = Config::get('navbar.site_title');
                             </svg>
                         </button>
 
-                        <div x-show="isOpen" @click.away="isOpen = false"
-                class="absolute z-10 mt-2 w-56 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 origin-top-right right-0">
-                <div class="py-1 bg-white rounded-lg">
-                                <a href="{{ route('sales.index') }}"
-                                    class="{{ request()->routeIs('sales.index') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
-                                    <i class="fas fa-list mr-2"></i>Sales List
+            <div x-show="isOpen" @click.away="isOpen = false" class="nav-dropdown-panel">
+        <div class="py-1 rounded-lg">
+                                <a href="{{ route('sales.index') }}" class="{{ request()->routeIs('sales.index') ? 'active' : '' }}">
+                                    <i class="fas fa-list icon"></i><span>Sales List</span>
                                 </a>
-                                <a href="{{ route('sales.create') }}"
-                                    class="{{ request()->routeIs('sales.create') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
-                                    <i class="fas fa-plus-circle mr-2"></i>Create Sale
+                                <a href="{{ route('sales.create') }}" class="{{ request()->routeIs('sales.create') ? 'active' : '' }}">
+                                    <i class="fas fa-plus-circle icon"></i><span>Create Sale</span>
                                 </a>
-                                <a href="{{ route('sales.cod') }}"
-                                    class="{{ request()->routeIs('sales.cod') ? 'bg-gray-100 text-gray-900' : 'text-gray-700' }} block px-4 py-2 text-sm hover:bg-gray-100 no-underline">
-                                    <i class="fas fa-truck mr-2"></i>COD Tracking
+                                <a href="{{ route('sales.cod') }}" class="{{ request()->routeIs('sales.cod') ? 'active' : '' }}">
+                                    <i class="fas fa-truck icon"></i><span>COD Tracking</span>
                                 </a>
                             </div>
                         </div>
@@ -152,16 +143,17 @@ $siteTitle = Config::get('navbar.site_title');
                     <!-- Admin Section -->
                     @can('admin')
                     <a href="{{ route('users.index') }}"
-                        class="{{ request()->is('users*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-lg text-sm font-medium">
-                        <i class="fas fa-users-cog mr-2"></i>Manage Users
+                        class="nav-link-clean {{ request()->is('users*') ? 'active' : '' }}">
+                        <i class="fas fa-users-cog icon"></i>
+                        <span>Manage Users</span>
                     </a>
                     @endcan
                     <!-- Backup Button -->
                     <form action="{{ route('backup.download') }}" method="POST" class="inline">
                         @csrf
                         <button type="submit"
-                            class="{{ request()->is('backup*') ? 'bg-gray-100 text-gray-900' : 'text-gray-600' }} hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-lg text-sm font-medium flex items-center transition-colors">
-                            <i class="fas fa-download mr-2"></i>Backup
+                            class="nav-link-clean {{ request()->is('backup*') ? 'active' : '' }}">
+                            <i class="fas fa-download icon"></i><span>Backup</span>
                         </button>
                     </form>
                 </div>
@@ -191,10 +183,9 @@ $siteTitle = Config::get('navbar.site_title');
                     @endif
 
                     <div class="flex items-center space-x-4">
-                        <div>
-                            <span class="font-semibold">{{ $user->name }}</span>
-                            <span
-                                class="text-sm text-gray-500">({{ $user->getRoleNames()->first() ?? 'Role not assigned' }})</span>
+                        <div class="user-identity">
+                            <span class="user-name">{{ $user->name }}</span>
+                            <span class="user-role">({{ $user->getRoleNames()->first() ?? 'Role not assigned' }})</span>
                         </div>
                         <!-- Logout Button -->
                         <form action="{{ route('logout') }}" method="POST">
@@ -267,96 +258,82 @@ $siteTitle = Config::get('navbar.site_title');
                         </div>
                     </div>
                     <div class="p-6">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                        <div class="quick-actions-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                             <div class="col-span-full sm:col-span-2 lg:col-span-4">
                                 <h4 class="text-lg font-semibold mb-2 text-gray-700">Sales</h4>
                             </div>
-                            <a href="{{ route('sales.create') }}"
-                                class="group flex items-center justify-center p-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
-                                <i class="fas fa-plus-circle text-xl mr-2"></i>
-                                <span class="font-medium">New Sale</span>
+                            <a href="{{ route('sales.create') }}" class="qa-btn">
+                                <i class="fas fa-plus-circle icon"></i>
+                                <span>New Sale</span>
                             </a>
-                            <a href="{{ route('items.trace') }}"
-                                class="group flex items-center justify-center p-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
-                                <i class="fas fa-search-location text-xl mr-2"></i>
-                                <span class="font-medium">Trace Item</span>
+                            <a href="{{ route('items.trace') }}" class="qa-btn">
+                                <i class="fas fa-search-location icon"></i>
+                                <span>Trace Item</span>
                             </a>
-                            <a href="{{ route('sales.overview') }}"
-                                class="group flex items-center justify-center p-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
-                                <i class="fas fa-chart-line text-xl mr-2"></i>
-                                <span class="font-medium">Sales Overview</span>
+                            <a href="{{ route('sales.overview') }}" class="qa-btn">
+                                <i class="fas fa-chart-line icon"></i>
+                                <span>Sales Overview</span>
                             </a>
 
-                            <a href="{{ route('sales.cod') }}"
-                                class="group flex items-center justify-center p-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
-                                <i class="fas fa-truck text-xl mr-2"></i>
-                                <span class="font-medium">COD Tracking</span>
+                            <a href="{{ route('sales.cod') }}" class="qa-btn">
+                                <i class="fas fa-truck icon"></i>
+                                <span>COD Tracking</span>
                             </a>
-                            <a href="{{ route('expenses.index') }}"
-                                class="group flex items-center justify-center p-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
-                                <i class="fas fa-receipt text-xl mr-2"></i>
-                                <span class="font-medium">Expenses</span>
+                            <a href="{{ route('expenses.index') }}" class="qa-btn">
+                                <i class="fas fa-receipt icon"></i>
+                                <span>Expenses</span>
                             </a>
-                            <a href="{{ route('refunds.index') }}"
-                                class="group flex items-center justify-center p-4 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
-                                <i class="fas fa-undo text-xl mr-2"></i>
-                                <span class="font-medium">Refund Analytics</span>
+                            <a href="{{ route('refunds.index') }}" class="qa-btn qa-btn-danger">
+                                <i class="fas fa-undo icon"></i>
+                                <span>Refund Analytics</span>
                             </a>
 
 
                             <div class="col-span-full sm:col-span-2 lg:col-span-4">
                                 <h4 class="text-lg font-semibold mb-2 text-gray-700">Inventory</h4>
                             </div>
-                            <a href="/items/create"
-                                class="group flex items-center justify-center p-4 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
-                                <i class="fas fa-box-open text-xl mr-2"></i>
-                                <span class="font-medium">Add Item</span>
+                            <a href="/items/create" class="qa-btn">
+                                <i class="fas fa-box-open icon"></i>
+                                <span>Add Item</span>
                             </a>
-                            <a href="/items"
-                                class="group flex items-center justify-center p-4 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
-                                <i class="fas fa-boxes text-xl mr-2"></i>
-                                <span class="font-medium">View Inventory</span>
+                            <a href="/items" class="qa-btn">
+                                <i class="fas fa-boxes icon"></i>
+                                <span>View Inventory</span>
                             </a>
-                            <a href="{{ route('items.exportCSV') }}"
-                                class="group flex items-center justify-center p-4 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
-                                <i class="fas fa-file-download text-xl mr-2"></i>
-                                <span class="font-medium">Export Inventory</span>
+                            <a href="{{ route('items.exportCSV') }}" class="qa-btn">
+                                <i class="fas fa-file-download icon"></i>
+                                <span>Export Inventory</span>
                             </a>
-                            <a href="{{ route('brands.trace') }}"
-                                class="group flex items-center justify-center p-4 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
-                                <i class="fas fa-chart-line text-xl mr-2"></i>
-                                <span class="font-medium">Trace Brand Selling</span>
+                            <a href="{{ route('brands.trace') }}" class="qa-btn">
+                                <i class="fas fa-chart-line icon"></i>
+                                <span>Trace Brand Selling</span>
                             </a>
 
                             @can('admin')
                             <div class="col-span-full sm:col-span-2 lg:col-span-4">
                                 <h4 class="text-lg font-semibold mb-2 text-gray-700">Administration</h4>
                             </div>
-                            <a href="{{ route('store-settings.index') }}"
-                                class="group flex items-center justify-center p-4 bg-orange-500 hover:bg-orange-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
-                                <i class="fas fa-store text-xl mr-2"></i>
-                                <span class="font-medium">Store Settings</span>
+                            <a href="{{ route('store-settings.index') }}" class="qa-btn">
+                                <i class="fas fa-store icon"></i>
+                                <span>Store Settings</span>
                             </a>
-                            <a href="/users/create"
-                                class="group flex items-center justify-center p-4 bg-orange-500 hover:bg-orange-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
-                                <i class="fas fa-users-cog text-xl mr-2"></i>
-                                <span class="font-medium">New User</span>
+                            <a href="/users/create" class="qa-btn">
+                                <i class="fas fa-users-cog icon"></i>
+                                <span>New User</span>
                             </a>
                             @endcan
 
                             <div class="col-span-full sm:col-span-2 lg:col-span-4">
                                 <h4 class="text-lg font-semibold mb-2 text-gray-700">Other</h4>
                             </div>
-                            <a href="/brands/create"
-                                class="group flex items-center justify-center p-4 bg-gray-500 hover:bg-gray-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
-                                <i class="fas fa-tag text-xl mr-2"></i>
-                                <span class="font-medium">Add Brand</span>
+                            <a href="/brands/create" class="qa-btn">
+                                <i class="fas fa-tag icon"></i>
+                                <span>Add Brand</span>
                             </a>
 
-                            <a href="/categories/create"
-                                class="group flex items-center justify-center p-4 bg-gray-500 hover:bg-gray-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 no-underline">
-                                <i class="fas fa-th-list text-xl mr-2"></i>
-                                <span class="font-medium">Add Category</span>
+                            <a href="/categories/create" class="qa-btn">
+                                <i class="fas fa-th-list icon"></i>
+                                <span>Add Category</span>
                             </a>
                         </div>
                     </div>
@@ -406,52 +383,49 @@ $siteTitle = Config::get('navbar.site_title');
                 }">
 
                 <!-- Today's Earnings -->
-                <div
-                    class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                <div class="metric-card p-6 overflow-hidden">
                     <div class="relative z-10">
-                        <button @click="toggleVisibility('earnings')" class="text-white hover:text-white/80">
+                        <button @click="toggleVisibility('earnings')" class="text-gray-500 hover:text-gray-700">
                             <i class="fas" :class="visibleSection === 'earnings' ? 'fa-eye-slash' : 'fa-eye'"></i>
                         </button>
                         <!-- Added user-select-none to prevent text selection when blurred -->
-                        <div
-                            :class="{ 'blur-lg pointer-events-none user-select-none': visibleSection !== 'earnings' && !showAllSections }">
+                        <div :class="{ 'blur-lg pointer-events-none user-select-none': visibleSection !== 'earnings' && !showAllSections }">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-medium">Today's Earnings</h3>
-                                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                                    <i class="fas fa-dollar-sign text-2xl"></i>
+                                <h3>Today's Earnings</h3>
+                                <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                    <i class="fas fa-dollar-sign text-xl text-gray-600"></i>
                                 </div>
                             </div>
-                            <div class="text-3xl font-bold mb-2">{{ number_format($todayRevenue ?? 0, 2) }} EGP</div>
+                            <div class="metric-value mb-2">{{ number_format($todayRevenue ?? 0, 2) }} EGP</div>
                             @if (isset($revenueGrowth) && $revenueGrowth > 0)
-                            <div class="text-sm bg-white/20 rounded-lg px-3 py-1.5 inline-block">
-                                <i class="fas fa-arrow-up mr-1"></i>
-                                {{ number_format($revenueGrowth, 1) }}% from yesterday
+                            <div class="chip">
+                                <i class="fas fa-arrow-up mr-1 text-green-600"></i>{{ number_format($revenueGrowth, 1) }}% from yesterday
                             </div>
                             @endif
                             <div class="mt-6 space-y-3">
                                 <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'cash']) }}"
-                                    class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                    class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg text-sm hover:bg-gray-100 no-underline"
                                     :class="{ 'pointer-events-none': visibleSection !== 'earnings' && !showAllSections }">
                                     <span class="font-medium">Cash</span>
-                                    <span class="font-bold">{{ number_format($cashPayments, 2) }} EGP</span>
+                                    <span class="font-bold text-gray-700">{{ number_format($cashPayments, 2) }} EGP</span>
                                 </a>
                                 <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'credit_card']) }}"
-                                    class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                    class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg text-sm hover:bg-gray-100"
                                     :class="{ 'pointer-events-none': visibleSection !== 'earnings' && !showAllSections }">
                                     <span class="font-medium">Visa</span>
-                                    <span class="font-bold">{{ number_format($creditPayments, 2) }} EGP</span>
+                                    <span class="font-bold text-gray-700">{{ number_format($creditPayments, 2) }} EGP</span>
                                 </a>
                                 <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'mobile_pay']) }}"
-                                    class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                    class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg text-sm hover:bg-gray-100"
                                     :class="{ 'pointer-events-none': visibleSection !== 'earnings' && !showAllSections }">
                                     <span class="font-medium">Mobile Payment</span>
-                                    <span class="font-bold">{{ number_format($mobilePayments, 2) }} EGP</span>
+                                    <span class="font-bold text-gray-700">{{ number_format($mobilePayments, 2) }} EGP</span>
                                 </a>
                                 <a href="{{ route('sales.by-payment-method', ['period' => 'daily', 'method' => 'cod']) }}"
-                                    class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                    class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg text-sm hover:bg-gray-100"
                                     :class="{ 'pointer-events-none': visibleSection !== 'earnings' && !showAllSections }">
                                     <span class="font-medium">COD</span>
-                                    <span class="font-bold">{{ number_format($codPayments, 2) }} EGP</span>
+                                    <span class="font-bold text-gray-700">{{ number_format($codPayments, 2) }} EGP</span>
                                 </a>
                             </div>
                         </div>
@@ -459,50 +433,47 @@ $siteTitle = Config::get('navbar.site_title');
                 </div>
 
                 <!-- Monthly Sales -->
-                <div
-                    class="bg-gradient-to-br from-green-500 to-green-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                <div class="metric-card p-6 overflow-hidden">
                     <div class="relative z-10">
-                        <button @click="toggleVisibility('monthly')" class="text-white hover:text-white/80">
+                        <button @click="toggleVisibility('monthly')" class="text-gray-500 hover:text-gray-700">
                             <i class="fas" :class="visibleSection === 'monthly' ? 'fa-eye-slash' : 'fa-eye'"></i>
                         </button>
                         <!-- Added user-select-none to prevent text selection when blurred -->
-                        <div
-                            :class="{ 'blur-lg pointer-events-none user-select-none': visibleSection !== 'monthly' && !showAllSections }">
+                        <div :class="{ 'blur-lg pointer-events-none user-select-none': visibleSection !== 'monthly' && !showAllSections }">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-medium">Monthly Sales</h3>
-                                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                                    <i class="fas fa-chart-bar text-2xl"></i>
+                                <h3>Monthly Sales</h3>
+                                <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                    <i class="fas fa-chart-bar text-xl text-gray-600"></i>
                                 </div>
                             </div>
-                            <div class="text-3xl font-bold mb-2">{{ number_format($monthlySales, 2) }} EGP</div>
-                            <div class="text-sm bg-white/20 rounded-lg px-3 py-1.5 inline-block">
-                                {{ $salesGrowthPercentage >= 0 ? '+' : '' }}{{ number_format($salesGrowthPercentage, 2) }}%
-                                from last month
+                            <div class="metric-value mb-2">{{ number_format($monthlySales, 2) }} EGP</div>
+                            <div class="chip">
+                                {{ $salesGrowthPercentage >= 0 ? '+' : '' }}{{ number_format($salesGrowthPercentage, 2) }}% from last month
                             </div>
                             <div class="mt-6 space-y-3">
                                 <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'cash']) }}"
-                                    class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                    class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg text-sm hover:bg-gray-100"
                                     :class="{ 'pointer-events-none': visibleSection !== 'monthly' && !showAllSections }">
                                     <span class="font-medium">Cash</span>
-                                    <span class="font-bold">{{ number_format($cashPaymentsMonthly, 2) }} EGP</span>
+                                    <span class="font-bold text-gray-700">{{ number_format($cashPaymentsMonthly, 2) }} EGP</span>
                                 </a>
                                 <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'credit_card']) }}"
-                                    class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                    class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg text-sm hover:bg-gray-100"
                                     :class="{ 'pointer-events-none': visibleSection !== 'monthly' && !showAllSections }">
                                     <span class="font-medium">Visa</span>
-                                    <span class="font-bold">{{ number_format($creditPaymentsMonthly, 2) }} EGP</span>
+                                    <span class="font-bold text-gray-700">{{ number_format($creditPaymentsMonthly, 2) }} EGP</span>
                                 </a>
                                 <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'mobile_pay']) }}"
-                                    class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                    class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg text-sm hover:bg-gray-100"
                                     :class="{ 'pointer-events-none': visibleSection !== 'monthly' && !showAllSections }">
                                     <span class="font-medium">Mobile Payment</span>
-                                    <span class="font-bold">{{ number_format($mobilePaymentsMonthly, 2) }} EGP</span>
+                                    <span class="font-bold text-gray-700">{{ number_format($mobilePaymentsMonthly, 2) }} EGP</span>
                                 </a>
                                 <a href="{{ route('sales.by-payment-method', ['period' => 'monthly', 'method' => 'cod']) }}"
-                                    class="flex justify-between items-center py-2 px-3 bg-white/20 rounded-lg text-sm hover:bg-white/30 text-white"
+                                    class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg text-sm hover:bg-gray-100"
                                     :class="{ 'pointer-events-none': visibleSection !== 'monthly' && !showAllSections }">
                                     <span class="font-medium">COD</span>
-                                    <span class="font-bold">{{ number_format($codPaymentsMonthly, 2) }} EGP</span>
+                                    <span class="font-bold text-gray-700">{{ number_format($codPaymentsMonthly, 2) }} EGP</span>
                                 </a>
                             </div>
                         </div>
@@ -510,40 +481,35 @@ $siteTitle = Config::get('navbar.site_title');
                 </div>
 
                 <!-- Top Payment Method -->
-                <div
-                    class="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                <div class="metric-card p-6 overflow-hidden">
                     <div class="relative z-10">
-                        <button @click="toggleVisibility('payment')" class="text-white hover:text-white/80">
+                        <button @click="toggleVisibility('payment')" class="text-gray-500 hover:text-gray-700">
                             <i class="fas" :class="visibleSection === 'payment' ? 'fa-eye-slash' : 'fa-eye'"></i>
                         </button>
                         <!-- Added user-select-none to prevent text selection when blurred -->
-                        <div
-                            :class="{ 'blur-lg pointer-events-none user-select-none': visibleSection !== 'payment' && !showAllSections }">
+                        <div :class="{ 'blur-lg pointer-events-none user-select-none': visibleSection !== 'payment' && !showAllSections }">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-medium">Top Payment Method</h3>
-                                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                <h3>Top Payment Method</h3>
+                                <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
                                     @if ($topPaymentMethod === 'cash')
-                                    <i class="fas fa-cash-register text-2xl"></i>
+                                    <i class="fas fa-cash-register text-xl text-gray-600"></i>
                                     @elseif ($topPaymentMethod === 'credit_card')
-                                    <i class="fas fa-credit-card text-2xl"></i>
+                                    <i class="fas fa-credit-card text-xl text-gray-600"></i>
                                     @elseif($topPaymentMethod === 'mobile_pay')
-                                    <i class="fas fa-mobile-alt text-2xl"></i>
+                                    <i class="fas fa-mobile-alt text-xl text-gray-600"></i>
                                     @endif
                                 </div>
                             </div>
-                            <div class="text-3xl font-bold mb-4">{{ ucfirst($topPaymentMethod) }}</div>
-                            <div class="bg-white/20 rounded-lg p-4 text-sm">
-                                <div class="mb-2 flex justify-between">
+                            <div class="metric-value mb-4">{{ ucfirst($topPaymentMethod) }}</div>
+                            <div class="payment-box text-sm">
+                                <div class="mb-2 flex justify-between text-gray-700">
                                     <span class="font-medium">Top Payment Method</span>
                                     <span class="font-bold">{{ number_format($topPaymentMethodPercentage, 2) }}%</span>
                                 </div>
-                                <div class="w-full bg-white/30 rounded-full h-2 mb-4">
-                                    <div class="bg-white h-2 rounded-full"
-                                        style="width: {{ $topPaymentMethodPercentage }}%"></div>
+                                <div class="track mb-4">
+                                    <div class="track-fill" style="width: {{ $topPaymentMethodPercentage }}%"></div>
                                 </div>
-                                <div class="text-white/80">
-                                    {{ $topPaymentMethodCount }} out of {{ $AllSalesCount }} transactions
-                                </div>
+                                <div class="text-gray-600 text-xs">{{ $topPaymentMethodCount }} out of {{ $AllSalesCount }} transactions</div>
                             </div>
                         </div>
                     </div>
@@ -628,7 +594,7 @@ $siteTitle = Config::get('navbar.site_title');
                     <h3 class="text-xl font-bold mb-4">Customer Insights</h3>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="p-4 bg-purple-50 rounded-lg">
-                            <a href="{{ route('sales.loyal-customers') }}" class="block">
+                            <a href="{{ route('sales.loyal-customers') }}" class="block no-underline">
                                 <div class="text-sm text-purple-600 font-medium">Loyal Customers</div>
                                 <div class="text-2xl font-bold text-purple-700">
                                     {{ $customerMetrics['repeat_customers'] }}
@@ -636,7 +602,7 @@ $siteTitle = Config::get('navbar.site_title');
                             </a>
                         </div>
                         <!-- All Customers -->
-                        <a href="{{ route('customers.index') }}" class="p-4 bg-blue-50 rounded-lg hover:bg-blue-100">
+                        <a href="{{ route('customers.index') }}" class="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 no-underline">
                             <div class="text-sm text-blue-600 font-medium">All Customers</div>
                             <div class="text-2xl font-bold text-blue-700">
                                 {{ $customerMetrics['total_customers'] }}
@@ -665,29 +631,21 @@ $siteTitle = Config::get('navbar.site_title');
                 <div
                     :class="{ 'blur-lg pointer-events-none user-select-none': visibleSection !== 'inventory' && !showAllSections }">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="p-4 bg-green-50 rounded-lg">
-                            <div class="text-sm text-green-600 font-medium">Total Value</div>
-                            <div class="text-2xl font-bold text-green-700">
-                                {{ number_format($inventoryMetrics['total_value'], 2) }} EGP
-                            </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Total Value</div>
+                            <div class="stat-value">{{ number_format($inventoryMetrics['total_value'], 2) }} EGP</div>
                         </div>
-                        <div class="p-4 bg-yellow-50 rounded-lg">
-                            <div class="text-sm text-yellow-600 font-medium">Avg Item Price</div>
-                            <div class="text-2xl font-bold text-yellow-700">
-                                {{ number_format($inventoryMetrics['avg_item_price'], 2) }} EGP
-                            </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Avg Item Price</div>
+                            <div class="stat-value">{{ number_format($inventoryMetrics['avg_item_price'], 2) }} EGP</div>
                         </div>
-                        <div class="p-4 bg-red-50 rounded-lg">
-                            <div class="text-sm text-red-600 font-medium">Out of Stock</div>
-                            <div class="text-2xl font-bold text-red-700">
-                                {{ $inventoryMetrics['out_of_stock'] }}
-                            </div>
+                        <div class="stat-box stat-box-danger">
+                            <div class="stat-label">Out of Stock</div>
+                            <div class="stat-value">{{ $inventoryMetrics['out_of_stock'] }}</div>
                         </div>
-                        <div class="p-4 bg-blue-50 rounded-lg">
-                            <div class="text-sm text-blue-600 font-medium">Inventory Turnover</div>
-                            <div class="text-2xl font-bold text-blue-700">
-                                {{ number_format($inventoryMetrics['inventory_turnover'], 2) }}x
-                            </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Inventory Turnover</div>
+                            <div class="stat-value">{{ number_format($inventoryMetrics['inventory_turnover'], 2) }}x</div>
                         </div>
                     </div>
                 </div>
@@ -703,7 +661,7 @@ $siteTitle = Config::get('navbar.site_title');
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     @foreach ($categoryPerformance as $index => $category)
-                    <div x-show="showAllCategories || $index < 8" class="p-4 bg-gray-50 rounded-lg">
+                    <div x-show="showAllCategories || $index < 8" class="category-chip">
                         <div class="text-sm font-medium text-gray-600">{{ $category->name }}</div>
                         <div class="mt-2 space-y-1">
                             <div class="flex justify-between text-xs">
@@ -726,7 +684,7 @@ $siteTitle = Config::get('navbar.site_title');
                 </div>
             </div>
             <!-- Refund Metrics -->
-            <div class="bg-white rounded-xl shadow-lg p-6 mb-8" x-data="{ isOpen: false }">
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8 stripe-critical" x-data="{ isOpen: false }">
                 <div class="border-b border-gray-100 mb-6">
                     <div class="flex items-center justify-between">
                         <h3 class="text-2xl font-bold text-gray-900">Refund Analytics</h3>
@@ -833,16 +791,9 @@ $siteTitle = Config::get('navbar.site_title');
                                     @if ($brand['image'])
                                     <img src="{{ asset('storage/' . $brand['image']) }}" alt="{{ $brand['name'] }}"
                                         class="w-12 h-12 rounded-lg object-cover border-2
-                                                 @if ($index == 0) border-yellow-400
-                                                 @elseif($index == 1) border-blue-400
-                                                 @elseif($index == 2) border-red-600
-                                                 @else border-green-100 @endif">
+                                                rank-box {{ $index == 0 ? 'rank-1' : ($index == 1 ? 'rank-2' : ($index == 2 ? 'rank-3' : '')) }}">
                                     @else
-                                    <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center border-2
-                                                 @if ($index == 0) border-yellow-400
-                                                 @elseif($index == 1) border-gray-400
-                                                 @elseif($index == 2) border-orange-600
-                                                 @else border-gray-100 @endif">
+                                    <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center border-2 rank-box {{ $index == 0 ? 'rank-1' : ($index == 1 ? 'rank-2' : ($index == 2 ? 'rank-3' : '')) }}">
                                         <span class="text-xl font-bold text-gray-400">
                                             {{ substr($brand['name'], 0, 1) }}
                                         </span>
@@ -872,16 +823,9 @@ $siteTitle = Config::get('navbar.site_title');
                                     @if ($brand->picture)
                                     <img src="{{ asset('storage/' . $brand->picture) }}" alt="{{ $brand->name }}"
                                         class="w-12 h-12 rounded-lg object-cover border-2
-                                                 @if ($index == 0) border-yellow-400
-                                                 @elseif($index == 1) border-blue-400
-                                                 @elseif($index == 2) border-red-600
-                                                 @else border-green-100 @endif">
+                                                rank-box {{ $index == 0 ? 'rank-1' : ($index == 1 ? 'rank-2' : ($index == 2 ? 'rank-3' : '')) }}">
                                     @else
-                                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border-2
-                                                 @if ($index == 0) border-yellow-400
-                                                 @elseif($index == 1) border-gray-400
-                                                 @elseif($index == 2) border-orange-600
-                                                 @else border-gray-100 @endif">
+                                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border-2 rank-box {{ $index == 0 ? 'rank-1' : ($index == 1 ? 'rank-2' : ($index == 2 ? 'rank-3' : '')) }}">
                                         <span class="text-xl font-bold text-white">
                                             {{ substr($brand->name, 0, 1) }}
                                         </span>
@@ -1013,7 +957,7 @@ $siteTitle = Config::get('navbar.site_title');
                     </div>
                 </div>
                 <!-- Low Stock Alerts -->
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden" x-data="{ isOpen: false }">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden stripe-critical" x-data="{ isOpen: false }">
                     <div class="border-b border-gray-100 p-6">
                         <div class="flex items-center justify-between">
                             <h3 class="text-2xl font-bold text-gray-900">Stock Warnings</h3>
