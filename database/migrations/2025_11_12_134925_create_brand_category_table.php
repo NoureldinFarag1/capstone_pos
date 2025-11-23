@@ -11,12 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('brand_category', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->unsignedBigInteger('brand_id')->index('brand_category_brand_id_foreign');
-            $table->unsignedBigInteger('category_id')->index('brand_category_category_id_foreign');
-            $table->timestamps();
-        });
+        // Guard against recreation if table already exists (idempotent fix for environments with pre-existing table)
+        if (!Schema::hasTable('brand_category')) {
+            Schema::create('brand_category', function (Blueprint $table) {
+                $table->bigIncrements('id');
+                $table->unsignedBigInteger('brand_id')->index('brand_category_brand_id_foreign');
+                $table->unsignedBigInteger('category_id')->index('brand_category_category_id_foreign');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

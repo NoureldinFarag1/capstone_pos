@@ -39,7 +39,8 @@ class SaleController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        // Conditional validation: allow walk-in (skip_customer) without customer data
+        $rules = [
             'items.*.item_id' => 'required|exists:items,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
@@ -48,10 +49,19 @@ class SaleController extends Controller
             'discount_type' => 'nullable|in:none,percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
             'shipping_fees' => 'nullable|numeric|min:0',
-            'customer_name' => 'required|string|max:255',
-            'customer_phone' => 'required|string|max:255',
             'notes' => 'nullable|string|max:1000',
-        ]);
+            'skip_customer' => 'sometimes|boolean',
+        ];
+
+        if (!$request->boolean('skip_customer')) {
+            $rules['customer_name'] = 'required|string|max:255';
+            $rules['customer_phone'] = 'required|string|max:255';
+        } else {
+            $rules['customer_name'] = 'nullable|string|max:255';
+            $rules['customer_phone'] = 'nullable|string|max:255';
+        }
+
+        $validated = $request->validate($rules);
 
         $userRole = $request->user()->role;
 
@@ -150,8 +160,9 @@ class SaleController extends Controller
                 'customer_id' => $customerId, // Link to customer model
                 'total_amount' => 0,  // Set initial value
                 'subtotal' => 0,      // Set initial value
-                'customer_name' => $request->customer_name,
-                'customer_phone' => $request->customer_phone,
+                // Persist provided customer data only if not walk-in
+                'customer_name' => $request->boolean('skip_customer') ? null : $request->customer_name,
+                'customer_phone' => $request->boolean('skip_customer') ? null : $request->customer_phone,
                 'payment_method' => $request->payment_method,
                 'payment_reference' => $request->payment_reference,
                 'discount_type' => $validated['discount_type'],

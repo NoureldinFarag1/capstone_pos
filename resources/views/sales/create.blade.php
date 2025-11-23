@@ -4,11 +4,7 @@
     @php
         use Illuminate\Support\Facades\Auth;
     @endphp
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
-    <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <div class="container-fluid bg-light py-4">
+    <div class="sale-create py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div class="d-flex align-items-center gap-3">
                 <a href="{{ url()->previous() }}" class="btn btn-outline-secondary btn-sm" aria-label="Back to previous">← Back</a>
@@ -61,6 +57,10 @@
                                 <button type="button" class="btn btn-primary" id="printGiftReceiptBtn" title="Print gift receipt">
                                     <i class="fas fa-gift me-1"></i> Gift Receipt
                                 </button>
+                                <div class="form-check form-switch d-inline-flex align-items-center ms-2">
+                                    <input class="form-check-input" type="checkbox" id="rapidScanToggle" checked>
+                                    <label class="form-check-label ms-2 small" for="rapidScanToggle">Rapid scan</label>
+                                </div>
                             </div>
                         </div>
                         <div class="card-body">
@@ -166,7 +166,8 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">Customer</h5>
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="skipCustomerInfo">
+                            <!-- Walk-in customer flag - include in form submission -->
+                            <input class="form-check-input" type="checkbox" id="skipCustomerInfo" name="skip_customer" value="1" form="saleForm" checked>
                             <label class="form-check-label" for="skipCustomerInfo">Walk-in customer</label>
                         </div>
                     </div>
@@ -272,9 +273,12 @@
                             </div>
                         </div>
 
-                        <div class="d-grid">
+                        <div class="d-grid gap-2">
                             <button type="submit" form="saleForm" class="btn btn-primary btn-lg">
                                 <i class="fas fa-check-circle me-2"></i>Complete Sale (F8)
+                            </button>
+                            <button type="button" id="quickCashBtn" class="btn btn-success">
+                                <i class="fas fa-money-bill me-2"></i>Quick Cash (F7)
                             </button>
                         </div>
                     </div>
@@ -585,6 +589,12 @@
                 const customerNameError = document.getElementById('customerNameError');
                 const addressError = document.getElementById('addressError');
                 const discountError = document.getElementById('discountError');
+                const rapidScanToggle = document.getElementById('rapidScanToggle');
+                const quickCashBtn = document.getElementById('quickCashBtn');
+                let rapidScan = true;
+                if (rapidScanToggle) {
+                    rapidScanToggle.addEventListener('change', () => { rapidScan = rapidScanToggle.checked; });
+                }
                 // Discount section is always visible; no collapse logic needed
 
                 // Clear inline errors as user types/changes
@@ -608,14 +618,15 @@
                 initializeCustomerInfoHandling();
 
                 // Initialize cart clear button
-                clearCartBtn.addEventListener('click', function() {
+                clearCartBtn.addEventListener('click', function(e) {
                     if (itemList.children.length === 0) return;
-
-                    if (confirm('Are you sure you want to clear the cart?')) {
+                    const bypass = e.shiftKey;
+                    if (bypass || confirm('Clear cart? Hold Shift to bypass this dialog.')) {
                         itemList.innerHTML = '';
                         addedItems.clear();
                         calculateTotal();
                         updateEmptyCartVisibility();
+                        showToast('Cart cleared', 'success');
                     }
                 });
 
@@ -711,6 +722,19 @@
                             }
                         }
 
+                        // F7 quick cash checkout
+                        if (e.key === 'F7') {
+                            e.preventDefault();
+                            paymentMethodSelect.value = 'cash';
+                            paymentMethodSelect.dispatchEvent(new Event('change'));
+                            skipCustomerInfoCheckbox.checked = true;
+                            skipCustomerInfoCheckbox.dispatchEvent(new Event('change'));
+                            if (validateForm()) {
+                                document.getElementById('loadingOverlay').style.display = 'block';
+                                saleForm.submit();
+                            }
+                        }
+
                         // F9 to cycle through payment methods
                         if (e.key === 'F9') {
                             e.preventDefault();
@@ -772,6 +796,8 @@
                             customerNameInput.setAttribute('required', 'required');
                         }
                     });
+                    // Apply default state on load (checked by default)
+                    skipCustomerInfoCheckbox.dispatchEvent(new Event('change'));
 
                     // Add debounce function to limit search frequency
                     function debounce(func, wait) {
@@ -998,7 +1024,7 @@
 
                     // Check if item is in stock
                     if (stockQuantity <= 0) {
-                        alert('This item is out of stock.');
+                        showToast('This item is out of stock.', 'error');
                         return false;
                     }
 
@@ -1010,7 +1036,7 @@
 
                     // Check if total quantity exceeds stock
                     if (totalRequestedQuantity > stockQuantity) {
-                        alert(`Cannot add ${quantity} items. Only ${stockQuantity} available in stock.`);
+                        showToast(`Only ${stockQuantity} available in stock.`, 'error');
                         return false;
                     }
 
@@ -1166,7 +1192,7 @@
 
                                 calculateTotal();
                             } else {
-                                alert(`Cannot add more items. Only ${stockQuantity} available in stock.`);
+                                showToast(`Only ${stockQuantity} available in stock.`, 'error');
                             }
                         }
                     });
@@ -1202,7 +1228,7 @@
                     const discountValue = parseFloat(discountValueInput.value) || 0;
 
                     if (discountType === 'percentage' && discountValue > 100) {
-                        alert('Percentage discount cannot exceed 100%.');
+                        showToast('Percentage discount cannot exceed 100%.', 'error');
                         discountValueInput.value = 100;
                     }
 
@@ -1342,21 +1368,26 @@
                     barcodeInput.focus();
                 });
 
-                // Barcode input handler
+                // Barcode handlers: Enter submits, rapid-scan acts on full code
+                barcodeInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const { code, qty } = parseBarcodeInput(barcodeInput.value.trim());
+                        if (code) handleBarcodeScanning(code, qty);
+                        if (rapidScan) setTimeout(() => barcodeInput.focus(), 50);
+                    }
+                });
                 barcodeInput.addEventListener('input', function (e) {
-                    const barcode = e.target.value.trim();
-
-                    // Trigger barcode search immediately after input
-                    if (barcode.length >= 14) {
-                        handleBarcodeScanning(barcode);
-                        setTimeout(() => {
-                            barcodeInput.focus(); // Refocus after scanning
-                        }, 100);
+                    const raw = e.target.value.trim();
+                    const { code, qty } = parseBarcodeInput(raw);
+                    if (rapidScan && code.length >= 8) {
+                        handleBarcodeScanning(code, qty);
+                        setTimeout(() => { barcodeInput.focus(); }, 50);
                     }
                 });
 
                 // Barcode scanning function
-                function handleBarcodeScanning(barcode) {
+                function handleBarcodeScanning(barcode, qty = 1) {
                     // Find the option with matching code
                     const matchingOption = Array.from(itemSelect.options).find(
                         option => option.getAttribute('data-code') === barcode
@@ -1364,7 +1395,7 @@
 
                     if (matchingOption) {
                         if (matchingOption.disabled) {
-                            alert('This item is out of stock.');
+                            showToast('This item is out of stock.', 'error');
                             barcodeInput.value = '';
                             return;
                         }
@@ -1377,13 +1408,23 @@
                             originalPrice: parseFloat(matchingOption.getAttribute('data-original-price'))
                         };
 
-                        if (addItemToList(item, 1)) {
+                        if (addItemToList(item, qty)) {
                             barcodeInput.value = '';
+                            const li = itemList.querySelector(`[data-item-id="${item.id}"]`);
+                            if (li) { li.classList.add('flash'); setTimeout(() => li.classList.remove('flash'), 500); }
                         }
                     } else {
-                        alert('Item not found for the scanned barcode code.');
+                        showToast('Item not found for the scanned barcode.', 'error');
                         barcodeInput.value = '';
                     }
+                }
+
+                // Parse patterns like CODE*3 or CODE x 3
+                function parseBarcodeInput(str) {
+                    let code = str, qty = 1;
+                    const m = str.match(/^(.*?)\s*(?:[xX\*])\s*(\d{1,3})$/);
+                    if (m) { code = m[1]; qty = parseInt(m[2]) || 1; }
+                    return { code: code.trim(), qty };
                 }
 
                 // Payment method change
@@ -1406,6 +1447,19 @@
                 // Print Gift Receipt Handler
                 if (printGiftReceiptBtn) {
                     printGiftReceiptBtn.addEventListener('click', handlePrintGiftReceipt);
+                }
+
+                if (quickCashBtn) {
+                    quickCashBtn.addEventListener('click', function() {
+                        paymentMethodSelect.value = 'cash';
+                        paymentMethodSelect.dispatchEvent(new Event('change'));
+                        skipCustomerInfoCheckbox.checked = true;
+                        skipCustomerInfoCheckbox.dispatchEvent(new Event('change'));
+                        if (validateForm()) {
+                            document.getElementById('loadingOverlay').style.display = 'block';
+                            saleForm.submit();
+                        }
+                    });
                 }
 
                 function handlePrintGiftReceipt() {
@@ -1502,6 +1556,21 @@
                     toastEl.addEventListener('hidden.bs.toast', function() {
                         toastEl.remove();
                     });
+                }
+
+                // Tiny beep feedback using WebAudio
+                function playBeep(kind = 'success') {
+                    try {
+                        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.type = 'sine';
+                        o.frequency.value = kind === 'success' ? 880 : 220;
+                        g.gain.value = 0.05;
+                        o.connect(g); g.connect(ctx.destination);
+                        o.start();
+                        setTimeout(() => { o.stop(); ctx.close(); }, 120);
+                    } catch (_) { /* ignore */ }
                 }
 
                 // Form validation and submission
@@ -1621,11 +1690,31 @@
             </div>
         </div>
     </div>
-    <style>
+                <style>
     /* Hide number input spinners to reduce accidental changes */
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
+    /* Quick flash highlight when an item gets added */
+    .flash { animation: flashfade 600ms ease-out; }
+    @keyframes flashfade { from { background-color: #fef3c7; } to { background-color: transparent; } }
+                /* Modern neutral toggle styling (rapid scan & walk-in) */
+                .sale-create .form-switch .form-check-input {
+                    width: 2.5rem; height: 1.3rem; cursor: pointer; border-radius: 2rem; border: 1px solid #d1d5db;
+                    background: linear-gradient(145deg,#f3f4f6,#ffffff); position: relative; transition: background .25s ease, box-shadow .25s ease;
+                }
+                .sale-create .form-switch .form-check-input:focus { box-shadow: 0 0 0 3px rgba(79,70,229,.25); outline: none; }
+                .sale-create .form-switch .form-check-input:checked {
+                    background: linear-gradient(145deg,#4f46e5,#6366f1); border-color: #4f46e5;
+                }
+                .sale-create .form-switch .form-check-input::before {
+                    content:""; position:absolute; top:50%; left:4px; transform:translateY(-50%);
+                    width:1rem; height:1rem; background:#ffffff; border-radius:50%; box-shadow:0 1px 2px rgba(0,0,0,.25);
+                    transition:left .25s cubic-bezier(.4,0,.2,1);
+                }
+                .sale-create .form-switch .form-check-input:checked::before { left: calc(100% - 1rem - 4px); }
+                .sale-create .form-switch .form-check-input:not(:checked) { background:#e5e7eb; }
+                .sale-create .form-switch label.form-check-label { font-size: .75rem; font-weight:500; color:#374151; }
+                .sale-create .form-switch .form-check-input:checked + .form-check-label { color:#111827; }
     </style>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
 @endsection

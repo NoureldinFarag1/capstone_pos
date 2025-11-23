@@ -153,7 +153,7 @@
             @if(isset($activityLogs) && $activityLogs->isNotEmpty())
             <div class="card shadow-sm mt-3">
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Recent Changes</h5>
+                    <h5 class="mb-0 text-black">Recent Changes</h5>
                     <span class="small text-muted">Who changed what and when</span>
                 </div>
                 <div class="card-body p-0">
