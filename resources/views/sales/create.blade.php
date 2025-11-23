@@ -57,9 +57,14 @@
                                 <button type="button" class="btn btn-primary" id="printGiftReceiptBtn" title="Print gift receipt">
                                     <i class="fas fa-gift me-1"></i> Gift Receipt
                                 </button>
-                                <div class="form-check form-switch d-inline-flex align-items-center ms-2">
-                                    <input class="form-check-input" type="checkbox" id="rapidScanToggle" checked>
-                                    <label class="form-check-label ms-2 small" for="rapidScanToggle">Rapid scan</label>
+                                <div class="form-check form-switch d-inline-flex align-items-center ms-2" title="Toggle rapid scan mode">
+                                    <!-- Rapid scan disabled by default; user must opt-in -->
+                                    <input class="form-check-input" type="checkbox" id="rapidScanToggle">
+                                    <label class="form-check-label ms-2 small" for="rapidScanToggle">Rapid scan (off)</label>
+                                    <span class="ms-1" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                          title="Manual mode: scan then press Enter or click Add. Rapid scan: items auto-add as soon as barcode is read (supports CODE*3). Use for high volume scanning.">
+                                        <i class="fas fa-question-circle text-muted"></i>
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -475,6 +480,12 @@
                     document.getElementById('loadingOverlay').style.display = 'block';
                     // Allow form to submit normally
                 }, { once: true });
+
+                // Initialize Bootstrap tooltips (manual vs rapid explanation)
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                    new bootstrap.Tooltip(tooltipTriggerEl);
+                });
             });
 
             // Retry customer search function (used by error retry button)
@@ -591,9 +602,14 @@
                 const discountError = document.getElementById('discountError');
                 const rapidScanToggle = document.getElementById('rapidScanToggle');
                 const quickCashBtn = document.getElementById('quickCashBtn');
-                let rapidScan = true;
+                let rapidScan = false; // Default OFF; user must enable manually
                 if (rapidScanToggle) {
-                    rapidScanToggle.addEventListener('change', () => { rapidScan = rapidScanToggle.checked; });
+                    rapidScanToggle.checked = false; // ensure unchecked state in case of cached DOM
+                    rapidScanToggle.addEventListener('change', () => {
+                        rapidScan = rapidScanToggle.checked;
+                        const label = document.querySelector('label[for="rapidScanToggle"]');
+                        if (label) label.textContent = rapidScan ? 'Rapid scan (on)' : 'Rapid scan (off)';
+                    });
                 }
                 // Discount section is always visible; no collapse logic needed
 
