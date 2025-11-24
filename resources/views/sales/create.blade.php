@@ -54,7 +54,7 @@
                                 <button type="button" class="btn btn-danger" id="clearCartBtn" title="Clear cart">
                                     <i class="fas fa-trash-alt me-1"></i> Clear Cart
                                 </button>
-                                <button type="button" class="btn btn-primary" id="printGiftReceiptBtn" title="Print gift receipt">
+                                <button type="button" class="btn btn-primary hide-in-rapid" id="printGiftReceiptBtn" title="Print gift receipt">
                                     <i class="fas fa-gift me-1"></i> Gift Receipt
                                 </button>
                                 <div class="form-check form-switch d-inline-flex align-items-center ms-2" title="Toggle rapid scan mode">
@@ -246,14 +246,14 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-3 hide-in-rapid">
                             <label for="notes" class="form-label">Notes</label>
                             <textarea id="notes" name="notes" class="form-control" rows="2" form="saleForm"></textarea>
                         </div>
 
                         <!-- Totals Section -->
-                        <div class="card bg-light mb-4">
-                            <div class="card sale-card mb-4" id="customerCard">
+                        <div class="card bg-light mb-4 totals-wrapper">
+                            <div class="card sale-card mb-0">
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Items:</span>
                                     <span id="itemCount" class="fw-bold">0</span>
@@ -604,21 +604,57 @@
                 const quickCashBtn = document.getElementById('quickCashBtn');
                 let rapidScan = false; // Default OFF; user must enable manually
                 if (rapidScanToggle) {
-                    rapidScanToggle.checked = false; // ensure unchecked state in case of cached DOM
+                    rapidScanToggle.checked = false; // ensure unchecked state
+                    const paymentCard = document.getElementById('paymentCard');
+                    const summaryCard = document.getElementById('summaryCard');
+                    const saleRoot = document.querySelector('.sale-create');
+
+                    function streamlinePaymentCard(active) {
+                        if (!paymentCard) return;
+                        if (active) {
+                            paymentCard.classList.add('rapid-streamlined');
+                        } else {
+                            paymentCard.classList.remove('rapid-streamlined');
+                        }
+                    }
+
                     rapidScanToggle.addEventListener('change', () => {
                         rapidScan = rapidScanToggle.checked;
                         const label = document.querySelector('label[for="rapidScanToggle"]');
                         if (label) label.textContent = rapidScan ? 'Rapid scan (on)' : 'Rapid scan (off)';
 
-                        // Rush mode UI adjustments
-                        const saleRoot = document.querySelector('.sale-create');
                         const customerCard = document.getElementById('customerCard');
                         if (rapidScan) {
+                            // Hide customer card
                             if (customerCard) customerCard.style.display = 'none';
+                            // Relocate payment card into the form just before hidden totals inputs for faster access
+                            if (paymentCard && saleForm && !paymentCard.classList.contains('moved-rush')) {
+                                paymentCard.dataset.originalParentId = paymentCard.parentElement.id || '';
+                                saleForm.appendChild(paymentCard);
+                                paymentCard.classList.add('moved-rush');
+                            }
+                            streamlinePaymentCard(true);
                             if (saleRoot) saleRoot.classList.add('rapid-scan-active');
-                            // Auto focus barcode for immediate scanning
                             if (barcodeInput) barcodeInput.focus();
                         } else {
+                            // Restore payment card
+                            if (paymentCard && paymentCard.classList.contains('moved-rush')) {
+                                const originalParent = paymentCard.dataset.originalParentId ? document.getElementById(paymentCard.dataset.originalParentId) : null;
+                                if (originalParent) {
+                                    // Insert after summary card if exists, otherwise append
+                                    if (summaryCard && summaryCard.parentElement === originalParent) {
+                                        originalParent.insertBefore(paymentCard, summaryCard.nextSibling);
+                                    } else {
+                                        originalParent.appendChild(paymentCard);
+                                    }
+                                } else {
+                                    // Fallback: place back into right column
+                                    const rightCol = document.querySelector('.col-lg-4');
+                                    if (rightCol) rightCol.appendChild(paymentCard);
+                                }
+                                paymentCard.classList.remove('moved-rush');
+                            }
+                            streamlinePaymentCard(false);
                             if (customerCard) customerCard.style.display = '';
                             if (saleRoot) saleRoot.classList.remove('rapid-scan-active');
                         }
@@ -1752,7 +1788,10 @@
                 .sale-create.rapid-scan-active .floating-summary { box-shadow:0 2px 8px rgba(0,0,0,.15); }
                 .sale-create.rapid-scan-active .select2-container--default .select2-selection--single { min-height:34px; }
                 @media (min-width: 992px) { .sale-create.rapid-scan-active .col-lg-8 { flex: 0 0 100%; max-width:100%; } }
-                .sale-create.rapid-scan-active #summaryCard, .sale-create.rapid-scan-active #customerCard { display:none !important; }
+                .sale-create.rapid-scan-active #summaryCard, .sale-create.rapid-scan-active .card#customerCard { display:none !important; }
+                .sale-create.rapid-scan-active .hide-in-rapid { display:none !important; }
+                .sale-create.rapid-scan-active #paymentCard.rapid-streamlined .card-body { padding:.75rem .9rem; }
+                .sale-create.rapid-scan-active #paymentCard.rapid-streamlined h5.card-title { font-size:1rem; margin-bottom:.25rem; }
                 /* Subtle pulse when mode changes */
                 .sale-create.rapid-scan-active .sale-card { animation: rapidPulse 700ms ease-out 1; }
                 @keyframes rapidPulse { 0% { box-shadow:0 0 0 0 rgba(16,185,129,.45); } 60% { box-shadow:0 0 0 10px rgba(16,185,129,0); } 100% { box-shadow:none; } }
