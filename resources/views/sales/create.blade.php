@@ -54,7 +54,7 @@
                                 <button type="button" class="btn btn-danger" id="clearCartBtn" title="Clear cart">
                                     <i class="fas fa-trash-alt me-1"></i> Clear Cart
                                 </button>
-                                <button type="button" class="btn btn-primary hide-in-rapid" id="printGiftReceiptBtn" title="Print gift receipt">
+                                <button type="button" class="btn btn-primary" id="printGiftReceiptBtn" title="Print gift receipt">
                                     <i class="fas fa-gift me-1"></i> Gift Receipt
                                 </button>
                                 <div class="form-check form-switch d-inline-flex align-items-center ms-2" title="Toggle rapid scan mode">
