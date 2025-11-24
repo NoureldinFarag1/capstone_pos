@@ -151,7 +151,7 @@
             <!-- Right side - Summary, Customer info & payment -->
             <div class="col-lg-4">
                 <!-- Summary Card -->
-                <div class="card sale-card mb-4">
+                <div class="card sale-card mb-4" id="summaryCard">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span class="fw-semibold">Summary</span>
                     </div>
@@ -197,7 +197,7 @@
                 </div>
 
                 <!-- Payment Details Card -->
-                <div class="card sale-card mb-4">
+                <div class="card sale-card mb-4" id="paymentCard">
                     <div class="card-header">
                         <h5 class="card-title mb-0">Payment</h5>
                     </div>
@@ -253,7 +253,7 @@
 
                         <!-- Totals Section -->
                         <div class="card bg-light mb-4">
-                            <div class="card-body p-3">
+                            <div class="card sale-card mb-4" id="customerCard">
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Items:</span>
                                     <span id="itemCount" class="fw-bold">0</span>
@@ -609,6 +609,19 @@
                         rapidScan = rapidScanToggle.checked;
                         const label = document.querySelector('label[for="rapidScanToggle"]');
                         if (label) label.textContent = rapidScan ? 'Rapid scan (on)' : 'Rapid scan (off)';
+
+                        // Rush mode UI adjustments
+                        const saleRoot = document.querySelector('.sale-create');
+                        const customerCard = document.getElementById('customerCard');
+                        if (rapidScan) {
+                            if (customerCard) customerCard.style.display = 'none';
+                            if (saleRoot) saleRoot.classList.add('rapid-scan-active');
+                            // Auto focus barcode for immediate scanning
+                            if (barcodeInput) barcodeInput.focus();
+                        } else {
+                            if (customerCard) customerCard.style.display = '';
+                            if (saleRoot) saleRoot.classList.remove('rapid-scan-active');
+                        }
                     });
                 }
                 // Discount section is always visible; no collapse logic needed
@@ -1732,5 +1745,16 @@
                 .sale-create .form-switch .form-check-input:not(:checked) { background:#e5e7eb; }
                 .sale-create .form-switch label.form-check-label { font-size: .75rem; font-weight:500; color:#374151; }
                 .sale-create .form-switch .form-check-input:checked + .form-check-label { color:#111827; }
+                /* Rush mode (rapid scan active) */
+                .sale-create.rapid-scan-active #customerCard { display:none !important; }
+                .sale-create.rapid-scan-active .sale-card { transition: box-shadow .3s ease, transform .3s ease; }
+                .sale-create.rapid-scan-active .sale-card:not(#customerCard):hover { box-shadow:0 0 0 2px #10b981 inset; }
+                .sale-create.rapid-scan-active .floating-summary { box-shadow:0 2px 8px rgba(0,0,0,.15); }
+                .sale-create.rapid-scan-active .select2-container--default .select2-selection--single { min-height:34px; }
+                @media (min-width: 992px) { .sale-create.rapid-scan-active .col-lg-8 { flex: 0 0 100%; max-width:100%; } }
+                .sale-create.rapid-scan-active #summaryCard, .sale-create.rapid-scan-active #customerCard { display:none !important; }
+                /* Subtle pulse when mode changes */
+                .sale-create.rapid-scan-active .sale-card { animation: rapidPulse 700ms ease-out 1; }
+                @keyframes rapidPulse { 0% { box-shadow:0 0 0 0 rgba(16,185,129,.45); } 60% { box-shadow:0 0 0 10px rgba(16,185,129,0); } 100% { box-shadow:none; } }
     </style>
 @endsection
