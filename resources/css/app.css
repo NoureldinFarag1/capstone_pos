@@ -467,4 +467,38 @@ body { background: var(--mono-bg); }
 .action-buttons-bar .btn.btn-outline-secondary { border-color:#e5e7eb; }
 .action-buttons-bar.compact .btn { padding:.45rem .75rem; font-size:.75rem; }
 
+/* =============================
+   Sale Show Page Styling (HCI principles)
+   ============================= */
+.sale-show .sale-summary-bar {
+	background: linear-gradient(145deg,#ffffff,#f7f8fa);
+	border:1px solid #e5e7eb;
+	box-shadow:0 2px 4px rgba(0,0,0,.05);
+	border-radius:1rem;
+}
+.sale-show .sale-summary-bar h1 { font-size:1.15rem; letter-spacing:.5px; }
+.sale-show .sale-summary-bar .totals-chip { border-left:1px solid #e5e7eb; }
+.sale-show .sale-summary-bar .status-badge { font-size:.75rem; padding:.5rem .75rem; }
+
+.sale-show table caption { caption-side: bottom; font-size:.7rem; }
+.sale-show table thead th { font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; }
+.sale-show table tbody td { font-size:.8rem; }
+
+.sale-show .customer-card, .sale-show .totals-card { border:1px solid #e5e7eb; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+.sale-show .customer-card .fw-semibold { font-size:.85rem; }
+
+.sale-show .totals-card h4 { font-size:1rem; }
+.sale-show .totals-card h6 { font-size:.8rem; }
+.sale-show .totals-card .text-muted { font-size:.7rem; }
+
+.sale-show .refunded-section button { border-radius:.6rem; }
+
+@media (min-width: 992px) {
+	.sale-show .totals-card { position:relative; }
+}
+
+/* Focus visibility */
+.sale-show a:focus-visible, .sale-show button:focus-visible { outline:2px solid #6366f1; outline-offset:2px; }
+
+
 
