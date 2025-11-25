@@ -28,8 +28,23 @@ class BackupDatabase extends Command
     public function handle()
     {
         $this->info('Starting database backup');
-        Artisan::call('backup:run --only-db');
-        $this->info('Database backup completed!');
+
+        try {
+            // Correct option passing syntax
+            Artisan::call('backup:run', ['--only-db' => true]);
+            $output = Artisan::output();
+            if ($output) {
+                $this->line($output);
+            }
+            $this->info('Database backup completed!');
+            // Cleanup old backups after successful run
+            $this->cleanupOldBackups();
+        } catch (\Throwable $e) {
+            $this->error('Backup failed: ' . $e->getMessage());
+            \Log::error('BackupDatabase command failure', [
+                'exception' => $e,
+            ]);
+        }
     }
 
     protected function cleanupOldBackups()

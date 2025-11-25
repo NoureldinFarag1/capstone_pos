@@ -321,6 +321,10 @@ $siteTitle = Config::get('navbar.site_title');
                                 <i class="fas fa-users-cog icon"></i>
                                 <span>New User</span>
                             </a>
+                            <a href="{{ route('backup.sync.form') }}" class="qa-btn qa-btn-success">
+                                <i class="fas fa-sync-alt icon"></i>
+                                <span>Sync Database</span>
+                            </a>
                             @endcan
 
                             <div class="col-span-full sm:col-span-2 lg:col-span-4">

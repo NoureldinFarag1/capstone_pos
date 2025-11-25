@@ -220,6 +220,12 @@ Route::get('/brands/most-selling', [DashboardController::class, 'mostSellingBran
 Route::get('/customers/fetch-name', [CustomerController::class, 'fetchName']);
 Route::post('/backup/download', [BackupController::class, 'download'])->name('backup.download');
 
+// Admin-only database sync (restore) interface and action
+Route::middleware(['auth','role:admin'])->group(function () {
+    Route::get('/backup/sync', [BackupController::class, 'showSyncForm'])->name('backup.sync.form');
+    Route::post('/backup/sync', [BackupController::class, 'sync'])->name('backup.sync');
+});
+
 // Default homepage
 Route::get('/', function () {
     return view('welcome');
