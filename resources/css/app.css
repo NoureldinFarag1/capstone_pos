@@ -455,4 +455,16 @@ body { background: var(--mono-bg); }
 .sale-create .card-header .btn.btn-primary,
 .sale-create .card-header .btn.btn-danger { text-shadow: none; }
 
+/* ============================================
+	Reusable Action Buttons Bar
+	Applies consistent spacing/weight for grouped action buttons
+	Used on sales show page, create sale, dashboard utility strips
+	============================================ */
+.action-buttons-bar { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
+.action-buttons-bar.justify-end { justify-content:flex-end; }
+.action-buttons-bar .btn { font-weight:600; border-radius:.6rem; padding:.55rem .9rem; display:inline-flex; align-items:center; gap:.45rem; }
+.action-buttons-bar .btn i { font-size:.9rem; opacity:.85; }
+.action-buttons-bar .btn.btn-outline-secondary { border-color:#e5e7eb; }
+.action-buttons-bar.compact .btn { padding:.45rem .75rem; font-size:.75rem; }
+
 

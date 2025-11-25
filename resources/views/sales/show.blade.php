@@ -129,6 +129,7 @@
                         @endif
 
                         <div class="mb-4">
+                            @if($sale->customer_name || $sale->customer_phone)
                             <h3 class="card-title text-secondary mb-3">Customer Information</h3>
                             <div class="card bg-light">
                                 <div class="card-body p-3">
@@ -144,9 +145,17 @@
                                             <span>{{ $sale->customer_phone }}</span>
                                         </div>
                                     @endif
+                            @else
+                                <h3 class="card-title text-secondary mb-3">Customer Information</h3>
+                                <div class="card bg-light">
+                                    <div class="card-body p-3">
+                                        <div class="text-center text-muted">
+                                            <h1>Walk-in Customer</h1>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        @endif
 
                         @if($sale->notes)
                             <div class="mb-4">
@@ -204,27 +213,29 @@
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-between align-items-center">
-                            <a href="{{ route('sales.index') }}" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left me-2"></i>Back to Sales
-                            </a>
-                            <div class="btn-group">
-                                <form action="{{ route('sales.thermalReceipt', $sale->id) }}" method="POST" class="me-2">
-                                    @csrf
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-print me-2"></i>Print Receipt
-                                    </button>
-                                </form>
-                                <form action="{{ route('sales.invoice', $sale->id) }}" method="GET" class="me-2">
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-file-invoice me-2"></i>Print Invoice
-                                    </button>
-                                </form>
-                                <a href="{{ route('sales.showExchangeForm', $sale->id) }}" class="btn btn-warning me-2">
-                                    <i class="fas fa-exchange-alt me-2"></i>Exchange Item
+                        <div class="d-flex justify-content-between align-items-center mt-4 action-buttons-wrapper">
+                            <div>
+                                <a href="{{ route('sales.index') }}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to Sales
                                 </a>
-                                <a href="{{ route('refund.create', $sale->id) }}" class="btn btn-danger">
-                                    <i class="fas fa-undo-alt me-2"></i>Refund
+                            </div>
+                            <div class="action-buttons-bar justify-end">
+                                <form action="{{ route('sales.thermalReceipt', $sale->id) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-print me-1"></i>Receipt
+                                    </button>
+                                </form>
+                                <form action="{{ route('sales.invoice', $sale->id) }}" method="GET" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-file-invoice me-1"></i>Invoice
+                                    </button>
+                                </form>
+                                <a href="{{ route('sales.showExchangeForm', $sale->id) }}" class="btn btn-outline-warning btn-sm">
+                                    <i class="fas fa-exchange-alt me-1"></i>Exchange
+                                </a>
+                                <a href="{{ route('refund.create', $sale->id) }}" class="btn btn-outline-danger btn-sm">
+                                    <i class="fas fa-undo-alt me-1"></i>Refund
                                 </a>
                             </div>
                         </div>
