@@ -1113,7 +1113,7 @@ $siteTitle = Config::get('navbar.site_title');
         <script>
         // Lightweight heartbeat to keep the session active while the user is logged in
         (function () {
-            const HEARTBEAT_MS = 60 * 1000; // every 60s
+            const HEARTBEAT_MS = 180 * 1000; // every 180s
             function ping() {
                 fetch('{{ route('session.keepalive') }}', {
                     method: 'GET',
