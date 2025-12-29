@@ -1,4 +1,4 @@
-# LocalHub POS - Point of Sale System
+<h1 align="center">LocalHub POS - Point of Sale System</h1>
 
 <div align="center">
   <img src="public/images/logo.png" alt="LocalHub POS Logo" width="200">
