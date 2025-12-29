@@ -597,7 +597,7 @@ $siteTitle = Config::get('navbar.site_title');
                 <div class="bg-white rounded-xl shadow-lg p-6">
                     <h3 class="text-xl font-bold mb-4">Customer Insights</h3>
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="p-4 bg-purple-50 rounded-lg">
+                        <div class="p-4 bg-purple-50 rounded-lg hover:bg-purple-100">
                             <a href="{{ route('sales.loyal-customers') }}" class="block no-underline">
                                 <div class="text-sm text-purple-600 font-medium">Loyal Customers</div>
                                 <div class="text-2xl font-bold text-purple-700">
