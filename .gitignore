@@ -32,3 +32,5 @@ preload.cjs
 storage/
 \# Ignore Laravel schema dump files to prevent load-on-migrate issues
 /database/schema/*.sql
+public/screenshots/.DS_Store
+public/.DS_Store

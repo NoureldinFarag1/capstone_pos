@@ -78,7 +78,18 @@ LocalHub POS is an advanced Point of Sale solution built on Laravel that combine
   </div>
 </div>
 
+<p align="center">
+  <img src="public/screenshots/syncing-database.png" alt="Database Sync / Restore" width="80%">
+  <p align="center"><em>Database Sync - Upload + restore a verified SQL dump with a safety checklist</em></p>
+</p>
+
 ## 🌟 Key Features
+
+### 🔄 Database Sync (Restore)
+- **Upload + restore SQL dumps**: Restore the entire database from a verified `.sql`/`.txt` dump
+- **Safety-first workflow**: Explicit confirmation + checklist before restoring
+- **Rollback on failure**: Designed to run the restore inside a protected transaction
+- **Guardrails**: File type restrictions and a 50MB upload limit
 
 ### 💼 Sales Management
 - **Multi-payment processing**: Support for Cash, Credit Card, Mobile Pay, and COD
