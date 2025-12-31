@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Sales by Payment Method')
 
 @section('content')
 <div class="bg-white rounded-xl shadow-lg p-6">

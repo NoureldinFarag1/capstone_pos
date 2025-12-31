@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Refund Analytics')
 
 @section('content')
 <div class="container mx-auto py-6 px-4">

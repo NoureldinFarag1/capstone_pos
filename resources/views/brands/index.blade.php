@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Brand Management')
 
 @push('styles')
     @vite('resources/css/brands.css')

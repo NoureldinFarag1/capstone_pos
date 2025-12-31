@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Item Details')
 @section('content')
 <div class="container py-4">
     @include('items.partials._breadcrumbs', ['current' => $item->name])

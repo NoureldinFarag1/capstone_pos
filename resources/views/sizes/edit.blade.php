@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Edit Size')
 
 @section('content')
     <h1>Edit Size</h1>

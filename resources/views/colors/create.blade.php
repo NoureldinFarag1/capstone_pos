@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Add Color')
 
 @section('content')
 <div class="container">

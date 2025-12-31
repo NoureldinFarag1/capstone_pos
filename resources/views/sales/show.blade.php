@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Sale Details')
 @section('content')
     <div class="sale-show container py-4" aria-labelledby="saleSummaryHeading">
         <!-- Top summary header -->

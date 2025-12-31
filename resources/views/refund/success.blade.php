@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Refund Success')
 
 @section('content')
 <div class="container">

@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Import Summary')
 
 @section('content')
 <div class="container-fluid px-4">

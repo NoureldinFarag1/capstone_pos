@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Create Sale')
 
 @section('content')
     @php

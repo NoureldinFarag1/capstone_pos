@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Create Category')
 
 @section('content')
 <div class="row">

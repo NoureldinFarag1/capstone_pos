@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Loyal Customers')
 
 @section('content')
 <div class="bg-white rounded-xl shadow-lg p-6">

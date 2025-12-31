@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Customer Details')
 
 @section('content')
 <div class="container mx-auto p-6">

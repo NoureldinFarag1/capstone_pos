@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'COD Tracking')
 
 @section('content')
 <div class="container mx-auto py-6 px-4 max-w-7xl">

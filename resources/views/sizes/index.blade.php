@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Product Sizes')
 
 @section('content')
 <div class="container-fluid">

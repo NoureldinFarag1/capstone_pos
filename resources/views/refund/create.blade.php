@@ -1,5 +1,6 @@
 {{-- resources/views/refunds/create.blade.php --}}
 @extends('layouts.dashboard')
+@section('title', 'Create Refund')
 @section('content')
 <div class="container mx-auto py-6 px-4">
     <h3 class="text-2xl font-bold mb-6">Refund for Sale #{{ $sale->id }}</h3>

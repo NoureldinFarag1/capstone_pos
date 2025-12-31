@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Store Settings')
 
 @section('content')
     <div class="container">

@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Edit User')
 
 @section('content')
 <div class="container mx-auto px-4 py-8">

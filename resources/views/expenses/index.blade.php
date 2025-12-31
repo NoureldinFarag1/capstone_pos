@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Expenses')
 
 @push('styles')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -333,7 +334,7 @@
                 const button = document.getElementById('submitExpenseBtn');
                 const normalState = button.querySelector('.normal-state');
                 const loadingState = button.querySelector('.loading-state');
-                
+
                 button.disabled = true;
                 normalState.classList.add('hidden');
                 loadingState.classList.remove('hidden');

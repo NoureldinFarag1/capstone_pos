@@ -1,4 +1,5 @@
 @extends('layouts.dashboard')
+@section('title', 'Add Brand')
 
 @section('content')
 <form action="{{ route('brands.store') }}" method="POST" enctype="multipart/form-data">

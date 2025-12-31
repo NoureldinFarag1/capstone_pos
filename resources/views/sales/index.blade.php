@@ -1,4 +1,6 @@
 @extends('layouts.dashboard')
+@section('title', 'Sales Command Center')
+
 
 @section('content')
 <div class="container mx-auto py-8 px-4 max-w-7xl">
